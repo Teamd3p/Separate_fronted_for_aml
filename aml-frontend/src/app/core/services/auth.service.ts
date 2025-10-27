@@ -22,22 +22,44 @@ export class AuthService {
     }
   }
 
-  login(loginData: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/login`, loginData)
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials, this.getHttpOptions())
       .pipe(
         tap(response => {
           if (response.success && response.token) {
             localStorage.setItem('token', response.token);
-            localStorage.setItem('email', response.email || '');
-            localStorage.setItem('role', response.role || '');
-            this.currentUserSubject.next(response);
+            localStorage.setItem('email', credentials.email);
+            
+            // Store additional user info if available in response
+            if (response.user) {
+              if (response.user.firstName) localStorage.setItem('firstName', response.user.firstName);
+              if (response.user.lastName) localStorage.setItem('lastName', response.user.lastName);
+              if (response.user.contactNumber) localStorage.setItem('contactNumber', response.user.contactNumber);
+            }
+            
+            this.currentUserSubject.next({ 
+              token: response.token, 
+              email: credentials.email,
+              user: response.user 
+            });
           }
         })
       );
   }
 
   register(registerData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/register`, registerData);
+    return this.http.post<AuthResponse>(`${this.API_URL}/register`, registerData)
+      .pipe(
+        tap(response => {
+          if (response.success) {
+            // Store user registration data for later use
+            localStorage.setItem('email', registerData.email);
+            localStorage.setItem('firstName', registerData.firstName);
+            localStorage.setItem('lastName', registerData.lastName);
+            localStorage.setItem('contactNumber', registerData.contactNumber);
+          }
+        })
+      );
   }
 
   verifyOtp(otpData: VerifyOtpRequest): Observable<AuthResponse> {

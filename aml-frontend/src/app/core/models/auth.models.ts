@@ -21,10 +21,18 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   success: boolean;
+  message: string;
   token?: string;
   email?: string;
   role?: string;
-  message: string;
+  user?: {
+    id?: number;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    contactNumber?: string;
+    kycStatus?: string;
+  };
 }
 
 export interface VerifyOtpRequest {
