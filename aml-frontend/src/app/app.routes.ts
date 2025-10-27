@@ -25,6 +25,41 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'admin/dashboard',
+    loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/kyc-review',
+    loadComponent: () => import('./features/admin/kyc-review/kyc-review').then(m => m.KycReview),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/users',
+    loadComponent: () => import('./features/admin/users/users').then(m => m.Users),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/rules',
+    loadComponent: () => import('./features/admin/rules/rules').then(m => m.Rules),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/audit',
+    loadComponent: () => import('./features/admin/audit/audit').then(m => m.Audit),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/keywords',
+    loadComponent: () => import('./features/admin/keywords/keywords').then(m => m.Keywords),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/countries',
+    loadComponent: () => import('./features/admin/country/country').then(m => m.Country),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: '/auth/login'
   }

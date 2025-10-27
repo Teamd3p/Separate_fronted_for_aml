@@ -61,8 +61,20 @@ export class Login {
               queryParams: { email: this.loginData.email } 
             });
           } else {
-            // Direct login success, navigate to dashboard
-            this.router.navigate(['/dashboard']);
+            // Direct login success, extract role from JWT token
+            console.log('Login successful, extracting role from token...');
+            const role = this.authService.getUserRoleFromToken();
+            console.log('Extracted role:', role);
+            
+            if (role) {
+              localStorage.setItem('role', role);
+              console.log('Navigating based on role:', role);
+              this.navigateBasedOnRole(role);
+            } else {
+              // Fallback to customer if role not found
+              console.log('No role found in token, defaulting to CUSTOMER');
+              this.navigateBasedOnRole('CUSTOMER');
+            }
           }
         } else {
           this.errorMessage = response.message || 'Login failed';
@@ -71,20 +83,42 @@ export class Login {
       },
       error: (error) => {
         this.isLoading = false;
-        // Since API is not available, simulate successful login for demo
-        console.log('API not available, simulating login success');
-        
-        // Store user data
-        localStorage.setItem('token', 'demo-token');
-        localStorage.setItem('email', this.loginData.email);
-        
-        // Navigate to dashboard
-        this.router.navigate(['/dashboard']);
+        console.error('Login error:', error);
+        this.errorMessage = 'Invalid email or password. Please try again.';
+        this.scrollToTop();
       }
     });
   }
 
   private scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private navigateBasedOnRole(role: string): void {
+    // Normalize role to uppercase for comparison
+    const normalizedRole = role.toUpperCase();
+    console.log('navigateBasedOnRole called with role:', role, 'normalized:', normalizedRole);
+    
+    switch (normalizedRole) {
+      case 'ADMIN':
+      case 'COMPLIANCE_OFFICER':
+      case 'OFFICER':
+        console.log('Redirecting to admin dashboard...');
+        this.router.navigate(['/admin/dashboard']).then(success => {
+          console.log('Navigation to admin dashboard:', success ? 'SUCCESS' : 'FAILED');
+        });
+        break;
+      case 'CUSTOMER':
+      case 'USER':
+        console.log('Redirecting to customer dashboard...');
+        this.router.navigate(['/dashboard']).then(success => {
+          console.log('Navigation to customer dashboard:', success ? 'SUCCESS' : 'FAILED');
+        });
+        break;
+      default:
+        console.warn('Unknown role:', role, '- redirecting to customer dashboard');
+        this.router.navigate(['/dashboard']);
+        break;
+    }
   }
 }
