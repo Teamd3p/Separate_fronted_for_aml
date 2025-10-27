@@ -26,7 +26,9 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials, this.getHttpOptions())
       .pipe(
         tap(response => {
+          console.log('Login response:', response);
           if (response.success && response.token) {
+            console.log('Storing token:', response.token);
             localStorage.setItem('token', response.token);
             localStorage.setItem('email', credentials.email);
             
@@ -97,6 +99,28 @@ export class AuthService {
 
   getCurrentUser(): any {
     return this.currentUserSubject.value;
+  }
+
+  getUserRoleFromToken(): string | null {
+    const token = this.getToken();
+    console.log('Getting role from token:', token ? 'Token exists' : 'No token');
+    
+    if (!token) return null;
+
+    try {
+      // Decode JWT token (split by '.' and decode the payload)
+      const payload = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      console.log('Decoded token payload:', decodedPayload);
+      
+      // Extract role from token payload
+      const role = decodedPayload.role || decodedPayload.authorities?.[0] || null;
+      console.log('Extracted role from token:', role);
+      return role;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
   }
 
   private getHttpOptions() {

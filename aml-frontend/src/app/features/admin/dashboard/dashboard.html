@@ -16,7 +16,7 @@
       <div class="nav-section">
         <span class="nav-section-title">ADMIN NAVIGATION</span>
         
-        <a href="#" class="nav-item active">
+        <a href="#" class="nav-item active" (click)="setActiveTab('dashboard')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
             <rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -26,7 +26,7 @@
           Admin Dashboard
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('users')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" stroke-width="2"/>
             <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -34,35 +34,35 @@
           User Management
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('kyc')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
           </svg>
           KYC Review
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('rules')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
           </svg>
           Rule Management
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('audit')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
           </svg>
           Audit Logs
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('reports')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="currentColor" stroke-width="2" fill="none"/>
           </svg>
           Reports & Analytics
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('keywords')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
             <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2"/>
@@ -70,7 +70,7 @@
           Suspicious Keywords
         </a>
 
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" (click)="setActiveTab('countries')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
           </svg>
@@ -80,7 +80,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button class="logout-btn">
+      <button class="logout-btn" (click)="logout()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2"/>
           <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2"/>
@@ -142,7 +142,7 @@
             </svg>
             <span class="stat-label">Total Users</span>
           </div>
-          <div class="stat-value">7</div>
+          <div class="stat-value">{{stats.totalUsers}}</div>
         </div>
 
         <div class="stat-card customers-card">
@@ -155,7 +155,7 @@
             </svg>
             <span class="stat-label">Customers</span>
           </div>
-          <div class="stat-value">5</div>
+          <div class="stat-value">{{stats.totalCustomers}}</div>
         </div>
 
         <div class="stat-card officers-card">
@@ -167,7 +167,7 @@
             </svg>
             <span class="stat-label">Compliance Officers</span>
           </div>
-          <div class="stat-value">1</div>
+          <div class="stat-value">{{stats.totalOfficers}}</div>
         </div>
 
         <div class="stat-card alerts-card">
@@ -179,7 +179,7 @@
             </svg>
             <span class="stat-label">Total Alerts</span>
           </div>
-          <div class="stat-value">12</div>
+          <div class="stat-value">{{stats.totalAlerts}}</div>
         </div>
 
         <!-- Second Row Stats -->
@@ -190,7 +190,7 @@
             </svg>
             <span class="stat-label">Pending Alerts</span>
           </div>
-          <div class="stat-value">7</div>
+          <div class="stat-value">{{stats.pendingAlerts}}</div>
         </div>
 
         <div class="stat-card sars-card">
@@ -203,7 +203,7 @@
             </svg>
             <span class="stat-label">Total SARs</span>
           </div>
-          <div class="stat-value">4</div>
+          <div class="stat-value">{{stats.totalSars}}</div>
         </div>
 
         <div class="stat-card support-card">
@@ -213,7 +213,7 @@
             </svg>
             <span class="stat-label">Support Tickets</span>
           </div>
-          <div class="stat-value">1</div>
+          <div class="stat-value">{{stats.totalSupportTickets}}</div>
         </div>
 
         <div class="stat-card open-tickets-card">
@@ -226,7 +226,7 @@
             </svg>
             <span class="stat-label">Open Tickets</span>
           </div>
-          <div class="stat-value">0</div>
+          <div class="stat-value">{{stats.openSupportTickets}}</div>
         </div>
       </div>
 
@@ -271,7 +271,7 @@
               <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#374151" stroke-width="2" fill="none"/>
               <polyline points="14,2 14,8 20,8" stroke="#374151" stroke-width="2" fill="none"/>
             </svg>
-            <h3>Drafted SARs Pending Submission (2)</h3>
+            <h3>Drafted SARs Pending Submission ({{draftedSars.length}})</h3>
           </div>
         </div>
 
@@ -288,30 +288,14 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="table-row">
-                <td class="sar-id">#4</td>
-                <td class="alert-id">#4</td>
-                <td class="officer-name">Ashish Kumer Dabbi</td>
-                <td class="summary">note for this</td>
-                <td class="created-date">27/10/2025</td>
+              <tr class="table-row" *ngFor="let sar of draftedSars">
+                <td class="sar-id">#{{sar.id}}</td>
+                <td class="alert-id">#{{sar.alertId}}</td>
+                <td class="officer-name">{{sar.officerName}}</td>
+                <td class="summary">{{sar.summary}}</td>
+                <td class="created-date">{{sar.createdDate}}</td>
                 <td class="action">
-                  <button class="submit-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M22 2L11 13" stroke="currentColor" stroke-width="2"/>
-                      <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    Submit
-                  </button>
-                </td>
-              </tr>
-              <tr class="table-row">
-                <td class="sar-id">#2</td>
-                <td class="alert-id">#5</td>
-                <td class="officer-name">Ashish Kumer Dabbi</td>
-                <td class="summary">Hi im good</td>
-                <td class="created-date">25/10/2025</td>
-                <td class="action">
-                  <button class="submit-btn">
+                  <button class="submit-btn" (click)="submitSar(sar.id)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                       <path d="M22 2L11 13" stroke="currentColor" stroke-width="2"/>
                       <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"/>

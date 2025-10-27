@@ -59,7 +59,15 @@ export class VerifyOtp implements OnInit {
         if (response.success) {
           this.successMessage = 'Verification successful! Redirecting to dashboard...';
           setTimeout(() => {
-            this.router.navigate(['/dashboard']);
+            // Extract role from JWT token
+            const role = this.authService.getUserRoleFromToken();
+            if (role) {
+              localStorage.setItem('role', role);
+              this.navigateBasedOnRole(role);
+            } else {
+              // Fallback to customer dashboard
+              this.navigateBasedOnRole('CUSTOMER');
+            }
           }, 1000);
         } else {
           this.errorMessage = response.message || 'Verification failed';
@@ -110,6 +118,27 @@ export class VerifyOtp implements OnInit {
     const value = event.target.value.replace(/\D/g, ''); // Remove non-digits
     this.verificationCode = value.substring(0, 6); // Limit to 6 digits
     this.errorMessage = ''; // Clear error on input
+  }
+
+  private navigateBasedOnRole(role: string): void {
+    // Normalize role to uppercase for comparison
+    const normalizedRole = role.toUpperCase();
+    
+    switch (normalizedRole) {
+      case 'ADMIN':
+      case 'COMPLIANCE_OFFICER':
+      case 'OFFICER':
+        this.router.navigate(['/admin/dashboard']);
+        break;
+      case 'CUSTOMER':
+      case 'USER':
+        this.router.navigate(['/dashboard']);
+        break;
+      default:
+        console.warn('Unknown role:', role, '- redirecting to customer dashboard');
+        this.router.navigate(['/dashboard']);
+        break;
+    }
   }
 
   private scrollToTop(): void {
