@@ -10,8 +10,8 @@ interface DashboardStats {
   totalAlerts: number;
   pendingAlerts: number;
   totalSars: number;
-  totalSupportTickets: number;
-  openSupportTickets: number;
+  totalAccounts: number;
+  activeAccounts: number;
 }
 
 interface DraftedSar {
@@ -37,8 +37,8 @@ export class Dashboard implements OnInit {
     totalAlerts: 0,
     pendingAlerts: 0,
     totalSars: 0,
-    totalSupportTickets: 0,
-    openSupportTickets: 0
+    totalAccounts: 0,
+    activeAccounts: 0
   };
 
   private customersCount = 0;
@@ -156,19 +156,43 @@ export class Dashboard implements OnInit {
         }
       });
 
-    // Try to load support tickets
-    this.http.get<any[]>(`${this.apiUrl}/support/tickets`, { headers })
+    // Load accounts data from customers endpoint
+    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
       .subscribe({
-        next: (tickets) => {
-          console.log('Support tickets received:', tickets);
-          this.stats.totalSupportTickets = tickets.length;
-          this.stats.openSupportTickets = tickets.filter(t => t.status === 'OPEN').length;
+        next: (response) => {
+          console.log('Accounts data received:', response);
+          
+          // Handle different response formats
+          let accounts: any[] = [];
+          if (Array.isArray(response)) {
+            accounts = response;
+          } else if (response && Array.isArray(response.content)) {
+            accounts = response.content;
+          } else if (response && Array.isArray(response.data)) {
+            accounts = response.data;
+          } else if (response && typeof response === 'object') {
+            const keys = Object.keys(response);
+            for (const key of keys) {
+              if (Array.isArray(response[key])) {
+                accounts = response[key];
+                break;
+              }
+            }
+          }
+          
+          this.stats.totalAccounts = accounts.length;
+          // Count active accounts (status is ACTIVE or not FROZEN/SUSPENDED)
+          this.stats.activeAccounts = accounts.filter(acc => 
+            acc.accountStatus === 'ACTIVE' || 
+            (!acc.accountStatus || acc.accountStatus === 'VERIFIED')
+          ).length;
+          
+          console.log('Total Accounts:', this.stats.totalAccounts, 'Active:', this.stats.activeAccounts);
         },
         error: (error) => {
-          console.error('Error loading support tickets:', error);
-          // Keep default values if endpoint doesn't exist
-          this.stats.totalSupportTickets = 0;
-          this.stats.openSupportTickets = 0;
+          console.error('Error loading accounts:', error);
+          this.stats.totalAccounts = 0;
+          this.stats.activeAccounts = 0;
         }
       });
   }
