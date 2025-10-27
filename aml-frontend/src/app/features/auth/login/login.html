@@ -1,0 +1,40 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-title">
+      <h1>AML Detection System</h1>
+      <h2>Login</h2>
+      <p>Enter your credentials to access your account.</p>
+    </div>
+
+    <!-- Username -->
+    <div class="input-group">
+      <lucide-icon name="mail" class="icon"></lucide-icon>
+      <input type="email" placeholder="john.doe@example.com" [(ngModel)]="username">
+    </div>
+
+    <!-- Password -->
+    <div class="input-group">
+      <lucide-icon name="lock" class="icon"></lucide-icon>
+      <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="password">
+      <button type="button" class="toggle-btn" (click)="togglePasswordVisibility()">
+        <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'"></lucide-icon>
+      </button>
+    </div>
+
+    <!-- Options -->
+    <div class="options">
+      <label>
+        <input type="checkbox" [(ngModel)]="remember"> Remember me
+      </label>
+      <a href="#">Forgot password?</a>
+    </div>
+
+    <!-- Login Button -->
+    <button class="login-btn" (click)="onLogin()">Login</button>
+
+    <!-- Register -->
+    <p class="register-text">
+      Don't have an account? <a href="#">Register</a>
+    </p>
+  </div>
+</div>

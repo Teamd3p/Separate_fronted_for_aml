@@ -1,0 +1,26 @@
+:root {
+  --bg-color: #f9fafb;
+  --card-bg: #ffffff;
+  --text-color: #111827;
+  --muted-text: #6b7280;
+  --primary-color: #4f46e5;
+  --border-color: #e5e7eb;
+  --input-bg: #f3f4f6;
+}
+
+.dark-theme {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-color: #f1f5f9;
+  --muted-text: #94a3b8;
+  --primary-color: #6366f1;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+  font-family: 'Inter', sans-serif;
+}
