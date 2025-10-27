@@ -1,143 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinTrace - Create Your Account</title>
-  
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-      <div class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-          <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span>FinTrace</span>
-      </div>
-    </header>
-
-    <main class="main-content">
-      <div class="form-container">
-        <h1>Create Your Account</h1>
-        <p class="subtitle">Join FinTrace to enhance financial security and streamline compliance.</p>
-
-        <form class="signup-form" id="signupForm">
-          <section class="form-section">
-            <h2>Personal Details</h2>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email" placeholder="john.doe@example.com" required>
-              </div>
-              <div class="form-group">
-                <label for="firstName">First Name *</label>
-                <input type="text" id="firstName" name="firstName" placeholder="John" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="middleName">Middle Name</label>
-                <input type="text" id="middleName" name="middleName" placeholder="Michael">
-              </div>
-              <div class="form-group">
-                <label for="lastName">Last Name *</label>
-                <input type="text" id="lastName" name="lastName" placeholder="Doe" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="dateOfBirth">Date of Birth *</label>
-                <input type="date" id="dateOfBirth" name="dateOfBirth" placeholder="dd/mm/yyyy" required>
-              </div>
-              <div class="form-group">
-                <label for="nationality">Nationality *</label>
-                <input type="text" id="nationality" name="nationality" placeholder="American" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="contactNumber">Contact Number *</label>
-                <input type="tel" id="contactNumber" name="contactNumber" placeholder="1234567890" required>
-              </div>
-              <div class="form-group">
-                <label for="password">Password *</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
-                <div class="password-hint">
-                  Must contain at least 8 characters with uppercase, lowercase, number, and special character
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" stroke="#007AFF" stroke-width="2" fill="none"/>
+                    </svg>
                 </div>
-              </div>
+                <span class="logo-text">FinTrace</span>
             </div>
-          </section>
+        </header>
 
-          <section class="form-section">
-            <h2>Address Details</h2>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label for="streetAddress">Street Address</label>
-                <input type="text" id="streetAddress" name="streetAddress" placeholder="123 Main Street">
-              </div>
-              <div class="form-group">
-                <label for="city">City *</label>
-                <input type="text" id="city" name="city" placeholder="New York" required>
-              </div>
+        <main class="main-content">
+            <div class="form-header">
+                <h1 class="form-title">Create Your Account</h1>
+                <p class="form-subtitle">Join FinTrace to enhance financial security and streamline compliance.</p>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="stateProvince">State/Province *</label>
-                <input type="text" id="stateProvince" name="stateProvince" placeholder="NY" required>
-              </div>
-              <div class="form-group">
-                <label for="zipCode">PIN/ZIP Code *</label>
-                <input type="text" id="zipCode" name="zipCode" placeholder="10001" required>
-              </div>
+            <!-- Error Message -->
+            <div *ngIf="errorMessage" class="error-message" style="background: #fee; color: #c53030; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #fecaca;">
+                {{ errorMessage }}
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="country">Country *</label>
-                <select id="country" name="country" required>
-                  <option value="">Select country</option>
-                  <option value="US">United States</option>
-                  <option value="CA">Canada</option>
-                  <option value="UK">United Kingdom</option>
-                  <option value="AU">Australia</option>
-                  <option value="DE">Germany</option>
-                  <option value="FR">France</option>
-                  <option value="JP">Japan</option>
-                  <option value="IN">India</option>
-                </select>
-              </div>
-              <div class="form-group"></div>
+            <form class="registration-form" [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+                <section class="form-section">
+                    <h2 class="section-title">Personal Details</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address <span class="required">*</span></label>
+                            <input type="email" id="email" formControlName="email" class="form-input" placeholder="john.doe@example.com">
+                            <div *ngIf="getFieldError('email')" class="field-error">{{ getFieldError('email') }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="firstName" class="form-label">First Name <span class="required">*</span></label>
+                            <input type="text" id="firstName" formControlName="firstName" class="form-input" placeholder="John">
+                            <div *ngIf="getFieldError('firstName')" class="field-error">{{ getFieldError('firstName') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="middleName" class="form-label">Middle Name</label>
+                            <input type="text" id="middleName" formControlName="middleName" class="form-input" placeholder="Michael">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="form-label">Last Name <span class="required">*</span></label>
+                            <input type="text" id="lastName" formControlName="lastName" class="form-input" placeholder="Doe">
+                            <div *ngIf="getFieldError('lastName')" class="field-error">{{ getFieldError('lastName') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dateOfBirth" class="form-label">Date of Birth <span class="required">*</span></label>
+                            <input type="date" id="dateOfBirth" formControlName="dateOfBirth" class="form-input">
+                            <div *ngIf="getFieldError('dateOfBirth')" class="field-error">{{ getFieldError('dateOfBirth') }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="nationality" class="form-label">Nationality <span class="required">*</span></label>
+                            <select id="nationality" formControlName="nationality" class="form-input">
+                                <option value="">Select nationality</option>
+                                <option value="american">American</option>
+                                <option value="british">British</option>
+                                <option value="canadian">Canadian</option>
+                                <option value="indian">Indian</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div *ngIf="getFieldError('nationality')" class="field-error">{{ getFieldError('nationality') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contactNumber" class="form-label">Contact Number <span class="required">*</span></label>
+                            <input type="tel" id="contactNumber" formControlName="contactNumber" class="form-input" placeholder="1234567890">
+                            <div *ngIf="getFieldError('contactNumber')" class="field-error">{{ getFieldError('contactNumber') }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password <span class="required">*</span></label>
+                            <input type="password" id="password" formControlName="password" class="form-input" placeholder="••••••••">
+                            <div *ngIf="getFieldError('password')" class="field-error">{{ getFieldError('password') }}</div>
+                            <div class="password-hint">
+                                Must contain at least 8 characters with uppercase, lowercase, number, and special character
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h2 class="section-title">Address Details</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="streetAddress" class="form-label">Street Address</label>
+                            <input type="text" id="streetAddress" formControlName="street" class="form-input" placeholder="123 Main Street">
+                        </div>
+                        <div class="form-group">
+                            <label for="city" class="form-label">City <span class="required">*</span></label>
+                            <input type="text" id="city" formControlName="city" class="form-input" placeholder="New York">
+                            <div *ngIf="getFieldError('city')" class="field-error">{{ getFieldError('city') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="stateProvince" class="form-label">State/Province <span class="required">*</span></label>
+                            <input type="text" id="stateProvince" formControlName="state" class="form-input" placeholder="NY">
+                            <div *ngIf="getFieldError('state')" class="field-error">{{ getFieldError('state') }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pinZipCode" class="form-label">PIN/ZIP Code <span class="required">*</span></label>
+                            <input type="text" id="pinZipCode" formControlName="pincode" class="form-input" placeholder="10001">
+                            <div *ngIf="getFieldError('pincode')" class="field-error">{{ getFieldError('pincode') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-group--full">
+                            <label for="country" class="form-label">Country <span class="required">*</span></label>
+                            <select id="country" formControlName="country" class="form-input">
+                                <option value="">Select country</option>
+                                <option value="united-states">United States</option>
+                                <option value="canada">Canada</option>
+                                <option value="united-kingdom">United Kingdom</option>
+                                <option value="india">India</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div *ngIf="getFieldError('country')" class="field-error">{{ getFieldError('country') }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-agreement">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="agreement" formControlName="agreement">
+                        <span class="checkmark"></span>
+                        <span class="agreement-text">
+                            I agree to the <a href="#" class="agreement-link">Terms of Service</a> and <a href="#" class="agreement-link">Privacy Policy</a>.
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn" [disabled]="isLoading || !registrationForm.valid">
+                    <span *ngIf="isLoading">Processing...</span>
+                    <span *ngIf="!isLoading">Save Details & Send Verification Code</span>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <p class="login-link">Already have an account? <a routerLink="/auth/login" class="link">Log in</a></p>
             </div>
-          </section>
-
-          <div class="terms-section">
-            <label class="checkbox-container">
-              <input type="checkbox" id="terms" name="terms" required>
-              <span class="checkmark"></span>
-              I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
-            </label>
-          </div>
-
-          <button type="submit" class="submit-btn">Save Details & Send Verification Code</button>
-
-          <div class="login-link">
-            Already have an account? <a href="#" class="link">Log in</a>
-          </div>
-        </form>
-      </div>
-    </main>
-  </div>
-
-  <script src="script.js"></script>
-</body>
-
-</html>
+        </main>
+    </div>
