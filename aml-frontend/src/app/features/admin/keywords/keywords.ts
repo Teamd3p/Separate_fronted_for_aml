@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { KeywordService } from '../../../core/services/keyword.service';
+import { KeywordApiTestService } from '../../../core/services/keyword-api-test.service';
 import { Keyword, KeywordCreateRequest, KeywordUpdateRequest } from '../../../core/models/keyword.models';
 
 @Component({
@@ -65,6 +66,7 @@ export class Keywords implements OnInit {
 
   constructor(
     private keywordService: KeywordService,
+    private keywordApiTestService: KeywordApiTestService,
     private router: Router
   ) {}
 
@@ -194,7 +196,8 @@ export class Keywords implements OnInit {
       error: (error) => {
         console.error('Error creating keyword:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to create keyword');
+        const errorMsg = error.error?.message || error.message || 'Failed to create keyword';
+        this.showErrorMessage(`Failed to create keyword: ${errorMsg}`);
       }
     });
   }
@@ -219,7 +222,8 @@ export class Keywords implements OnInit {
       error: (error) => {
         console.error('Error updating keyword:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to update keyword');
+        const errorMsg = error.error?.message || error.message || 'Failed to update keyword';
+        this.showErrorMessage(`Failed to update keyword: ${errorMsg}`);
       }
     });
   }
@@ -239,7 +243,8 @@ export class Keywords implements OnInit {
       error: (error) => {
         console.error('Error deleting keyword:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to delete keyword');
+        const errorMsg = error.error?.message || error.message || 'Failed to delete keyword';
+        this.showErrorMessage(`Failed to delete keyword: ${errorMsg}`);
       }
     });
   }
@@ -258,7 +263,8 @@ export class Keywords implements OnInit {
       },
       error: (error) => {
         console.error('Error updating keyword status:', error);
-        this.showErrorMessage('Failed to update keyword status');
+        const errorMsg = error.error?.message || error.message || 'Failed to update keyword status';
+        this.showErrorMessage(`Failed to update keyword status: ${errorMsg}`);
       }
     });
   }
@@ -337,5 +343,14 @@ export class Keywords implements OnInit {
   logout(): void {
     localStorage.removeItem('token');
     this.router.navigate(['/login']);
+  }
+
+  // Debug methods - can be called from browser console
+  async runApiTests(): Promise<void> {
+    await this.keywordApiTestService.testKeywordEndpoints();
+  }
+
+  async testUpdateKeywordById(id: number): Promise<void> {
+    await this.keywordApiTestService.testUpdateKeyword(id);
   }
 }

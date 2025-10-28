@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Keyword, KeywordCreateRequest, KeywordUpdateRequest } from '../models/keyword.models';
 import { AuthTokenService } from './auth-token.service';
@@ -51,19 +51,25 @@ export class KeywordService {
   // Create new keyword
   createKeyword(keywordData: KeywordCreateRequest): Observable<Keyword> {
     const payload = {
-      keyword: keywordData.keyword,
+      word: keywordData.keyword,  // Backend expects 'word'
       category: keywordData.category || 'OTHER',
       severity: keywordData.severity || 50,
-      description: keywordData.description || ''
+      active: true  // Backend expects 'active' (boolean)
     };
+    
+    console.log('Creating keyword with payload:', payload);
     
     return this.http.post<any>(`${this.API_URL}/admin/keywords`, payload, this.getHttpOptions()).pipe(
       map((response: any) => {
+        console.log('Create keyword response:', response);
         const responseData = response.data || response;
         return this.mapToKeyword(responseData);
       }),
       catchError(error => {
         console.error('Keyword create failed:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        console.error('Full error:', error.error);
         return throwError(() => error);
       })
     );
@@ -72,19 +78,25 @@ export class KeywordService {
   // Update keyword
   updateKeyword(id: number, keywordData: KeywordUpdateRequest): Observable<Keyword> {
     const payload = {
-      keyword: keywordData.keyword,
+      word: keywordData.keyword,  // Backend expects 'word'
       category: keywordData.category || 'OTHER',
       severity: keywordData.severity || 50,
-      description: keywordData.description || ''
+      active: keywordData.isActive !== undefined ? keywordData.isActive : true  // Backend expects 'active'
     };
+    
+    console.log(`Updating keyword ${id} with payload:`, payload);
     
     return this.http.put<any>(`${this.API_URL}/admin/keywords/${id}`, payload, this.getHttpOptions()).pipe(
       map((response: any) => {
+        console.log('Update keyword response:', response);
         const responseData = response.data || response;
         return this.mapToKeyword(responseData);
       }),
       catchError(error => {
         console.error('Keyword update failed:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        console.error('Full error:', error.error);
         return throwError(() => error);
       })
     );
@@ -92,16 +104,44 @@ export class KeywordService {
 
   // Delete keyword (soft delete by setting isActive to false)
   deleteKeyword(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.API_URL}/admin/keywords/${id}`, this.getHttpOptions());
+    console.log(`Deleting keyword ${id}`);
+    return this.http.delete<void>(`${this.API_URL}/admin/keywords/${id}`, this.getHttpOptions()).pipe(
+      catchError(error => {
+        console.error('Keyword delete failed:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        console.error('Full error:', error.error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Toggle keyword status
   toggleKeywordStatus(id: number, isActive: boolean): Observable<Keyword> {
-    return this.http.patch<any>(`${this.API_URL}/admin/keywords/${id}/status`, 
-      { isActive }, this.getHttpOptions()).pipe(
+    console.log(`Toggling keyword ${id} status to:`, isActive);
+    // Backend requires all fields for update, so fetch current keyword first
+    return this.getKeywordById(id).pipe(
+      switchMap((currentKeyword: Keyword) => {
+        const payload = {
+          word: currentKeyword.keyword,
+          category: currentKeyword.category,
+          severity: currentKeyword.severity,
+          active: isActive
+        };
+        console.log('Toggle status payload:', payload);
+        return this.http.put<any>(`${this.API_URL}/admin/keywords/${id}`, payload, this.getHttpOptions());
+      }),
       map((response: any) => {
+        console.log('Toggle status response:', response);
         const keywordData = response.data || response;
         return this.mapToKeyword(keywordData);
+      }),
+      catchError(error => {
+        console.error('Keyword status toggle failed:', error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        console.error('Full error:', error.error);
+        return throwError(() => error);
       })
     );
   }
@@ -110,11 +150,11 @@ export class KeywordService {
   private mapToKeyword(data: any): Keyword {
     const mapped = {
       id: data.id || data.keywordId,
-      keyword: data.keyword || data.keywordText || data.word || '',
+      keyword: data.word || data.keyword || data.keywordText || '',  // Backend returns 'word'
       category: data.category || data.keywordCategory || 'OTHER',
       severity: data.severity || data.riskLevel || 50,
       description: data.description || data.desc || '',
-      isActive: data.isActive !== false && data.status !== 'INACTIVE',
+      isActive: data.active !== undefined ? data.active : (data.isActive !== false && data.status !== 'INACTIVE'),  // Backend returns 'active'
       createdAt: data.createdAt || data.dateCreated,
       updatedAt: data.updatedAt || data.dateUpdated
     };

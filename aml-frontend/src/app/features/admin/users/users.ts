@@ -526,34 +526,30 @@ export class Users implements OnInit {
   }
   
   private tryUpdateUserStatus(user: User, newStatus: string, action: string, headers: HttpHeaders): void {
-    // Use the correct admin endpoint that exists in backend
+    // Use the customer status endpoint
     const endpoint = `${this.apiUrl}/admin/customers/${user.userId}/status`;
     
     const payload = {
-      status: newStatus,
-      reason: `${action.toUpperCase()} by admin`
+      status: newStatus
     };
     
-    // Try PUT first as per backend controller
-    this.http.put(endpoint, payload, { headers }).subscribe({
+    console.log(`Updating customer status via ${endpoint}`, payload);
+    
+    // Use PUT as per backend controller, expect text response
+    this.http.put(endpoint, payload, { headers, responseType: 'text' }).subscribe({
       next: (response) => {
+        console.log('Customer status updated successfully:', response);
         user.status = newStatus;
         user.isActive = newStatus === 'ACTIVE';
-        // No alert - status updated successfully
+        alert(`Customer ${action}d successfully!`);
+        // Reload to ensure data is fresh
+        this.loadCustomers();
       },
       error: (error) => {
-        // Try PATCH as fallback
-        this.http.patch(endpoint, payload, { headers }).subscribe({
-          next: (response) => {
-            user.status = newStatus;
-            user.isActive = newStatus === 'ACTIVE';
-            // No alert - status updated successfully
-          },
-          error: (patchError) => {
-            console.error(`Customer status update failed:`, patchError);
-            alert(`Failed to ${action} customer. Please try again.`);
-          }
-        });
+        console.error(`Customer status update failed:`, error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        alert(`Failed to ${action} customer: ${error.error?.message || error.message || 'Unknown error'}`);
       }
     });
   }
