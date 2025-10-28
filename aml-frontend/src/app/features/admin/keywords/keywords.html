@@ -218,13 +218,6 @@
             </select>
           </div>
           <div class="filter-group">
-            <label for="severityFilter">Severity Level:</label>
-            <select id="severityFilter" [(ngModel)]="severityFilter" (change)="onFilterChange()">
-              <option value="all">All Severity Levels</option>
-              <option *ngFor="let severity of severityLevels" [value]="severity.value">{{ severity.label }}</option>
-            </select>
-          </div>
-          <div class="filter-group">
             <label for="statusFilter">Status:</label>
             <select id="statusFilter" [(ngModel)]="statusFilter" (change)="onFilterChange()">
               <option value="all">All Status</option>
@@ -343,15 +336,17 @@
         </div>
         
         <div class="form-group">
-          <label for="severity">Severity Level *</label>
-          <select 
+          <label for="severity">Severity (1-100) *</label>
+          <input 
+            type="number" 
             id="severity" 
             [(ngModel)]="newKeyword.severity" 
             name="severity"
+            min="1"
+            max="100"
+            placeholder="Enter severity level (1-100)"
             [class.error]="formErrors.severity"
             required>
-            <option *ngFor="let severity of severityLevels" [value]="severity.value">{{ severity.label }}</option>
-          </select>
           <div *ngIf="formErrors.severity" class="error-message">{{ formErrors.severity }}</div>
         </div>
         
@@ -412,15 +407,17 @@
         </div>
         
         <div class="form-group">
-          <label for="editSeverity">Severity Level *</label>
-          <select 
+          <label for="editSeverity">Severity (1-100) *</label>
+          <input 
+            type="number" 
             id="editSeverity" 
             [(ngModel)]="editKeyword.severity" 
             name="editSeverity"
+            min="1"
+            max="100"
+            placeholder="Enter severity level (1-100)"
             [class.error]="formErrors.severity"
             required>
-            <option *ngFor="let severity of severityLevels" [value]="severity.value">{{ severity.label }}</option>
-          </select>
           <div *ngIf="formErrors.severity" class="error-message">{{ formErrors.severity }}</div>
         </div>
         

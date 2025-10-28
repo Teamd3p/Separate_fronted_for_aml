@@ -25,7 +25,6 @@ export class Keywords implements OnInit {
   
   // Filter states
   categoryFilter: string = 'all';
-  severityFilter: string = 'all';
   statusFilter: string = 'all';
   
   // Modal states
@@ -121,12 +120,6 @@ export class Keywords implements OnInit {
     // Category filter
     if (this.categoryFilter !== 'all') {
       filtered = filtered.filter(keyword => keyword.category === this.categoryFilter);
-    }
-
-    // Severity filter
-    if (this.severityFilter !== 'all') {
-      const severityValue = parseInt(this.severityFilter);
-      filtered = filtered.filter(keyword => keyword.severity === severityValue);
     }
 
     // Status filter

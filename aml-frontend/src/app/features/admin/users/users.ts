@@ -517,7 +517,7 @@ export class Users implements OnInit {
       'Content-Type': 'application/json'
     });
 
-    const newStatus = user.isActive ? 'SUSPENDED' : 'ACTIVE';
+    const newStatus = user.isActive ? 'INACTIVE' : 'ACTIVE';
     const action = user.isActive ? 'suspend' : 'activate';
 
     if (confirm(`Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`)) {
@@ -526,23 +526,36 @@ export class Users implements OnInit {
   }
   
   private tryUpdateUserStatus(user: User, newStatus: string, action: string, headers: HttpHeaders): void {
-    // Try multiple endpoints for updating user status
-    const endpoints = [
-      `${this.apiUrl}/admin/customers/${user.userId}/account-status`,
-      `${this.apiUrl}/admin/customers/${user.userId}/status`,
-      `${this.apiUrl}/admin/users/${user.userId}/status`,
-      `${this.apiUrl}/users/${user.userId}/status`,
-      `${this.apiUrl}/customers/${user.userId}/status`
-    ];
+    // Use the correct admin endpoint that exists in backend
+    const endpoint = `${this.apiUrl}/admin/customers/${user.userId}/status`;
     
-    const payloads = [
-      { status: newStatus, reason: `${action.toUpperCase()} by admin` },
-      { accountStatus: newStatus, reason: `${action.toUpperCase()} by admin` },
-      { isActive: newStatus === 'ACTIVE', status: newStatus },
-      { active: newStatus === 'ACTIVE' }
-    ];
+    const payload = {
+      status: newStatus,
+      reason: `${action.toUpperCase()} by admin`
+    };
     
-    this.tryEndpointsSequentially(endpoints, payloads, user, newStatus, action, headers, 0);
+    // Try PUT first as per backend controller
+    this.http.put(endpoint, payload, { headers }).subscribe({
+      next: (response) => {
+        user.status = newStatus;
+        user.isActive = newStatus === 'ACTIVE';
+        // No alert - status updated successfully
+      },
+      error: (error) => {
+        // Try PATCH as fallback
+        this.http.patch(endpoint, payload, { headers }).subscribe({
+          next: (response) => {
+            user.status = newStatus;
+            user.isActive = newStatus === 'ACTIVE';
+            // No alert - status updated successfully
+          },
+          error: (patchError) => {
+            console.error(`Customer status update failed:`, patchError);
+            alert(`Failed to ${action} customer. Please try again.`);
+          }
+        });
+      }
+    });
   }
   
   private tryEndpointsSequentially(endpoints: string[], payloads: any[], user: User, newStatus: string, action: string, headers: HttpHeaders, index: number): void {
@@ -657,59 +670,36 @@ export class Users implements OnInit {
       
       const newStatus = !officer.isActive;
       const endpoints = [
-        `${this.apiUrl}/admin/officers/${officer.officerId}/status`,
-        `${this.apiUrl}/officers/${officer.officerId}/status`,
-        `${this.apiUrl}/admin/officers/${officer.officerId}`,
-        `${this.apiUrl}/officers/${officer.officerId}`
+        `${this.apiUrl}/admin/officers/${officer.officerId}/status`
       ];
       
       const statusString = newStatus ? 'ACTIVE' : 'INACTIVE';
-      const payloads = [
-        { status: statusString },
-        { isActive: newStatus },
-        { active: newStatus }
-      ];
+      const payload = {
+        status: statusString,
+        isActive: newStatus
+      };
       
-      this.tryOfficerStatusUpdate(endpoints, payloads, officer, newStatus, action, headers, 0);
+      this.tryOfficerStatusUpdate(endpoints[0], payload, officer, newStatus, action, headers);
     }
   }
   
-  private tryOfficerStatusUpdate(endpoints: string[], payloads: any[], officer: ComplianceOfficer, newStatus: boolean, action: string, headers: HttpHeaders, index: number): void {
-    if (index >= endpoints.length) {
-      // All endpoints failed - show error message
-      alert(`Failed to ${action} officer. Please check your connection and try again.`);
-      console.error('All officer status update endpoints failed');
-      return;
-    }
-    
-    const endpoint = endpoints[index];
-    const payload = payloads[Math.min(index, payloads.length - 1)];
-    
-    console.log(`Trying officer status endpoint ${index + 1}/${endpoints.length}: ${endpoint}`, payload);
-    
+  private tryOfficerStatusUpdate(endpoint: string, payload: any, officer: ComplianceOfficer, newStatus: boolean, action: string, headers: HttpHeaders): void {
+    // Try PUT first as per backend controller
     this.http.put(endpoint, payload, { headers }).subscribe({
       next: (response) => {
-        console.log(`Officer ${action}d successfully via ${endpoint}:`, response);
-        
-        // Only update UI after successful database update
         this.updateOfficerStatusLocally(officer, newStatus);
-        alert(`Officer ${action}d successfully!`);
+        // No alert - status updated successfully
       },
       error: (error) => {
-        console.log(`Officer status endpoint ${endpoint} failed:`, error.status, error.message);
-        // Try PATCH method
+        // Try PATCH as fallback
         this.http.patch(endpoint, payload, { headers }).subscribe({
           next: (response) => {
-            console.log(`Officer ${action}d successfully via PATCH ${endpoint}:`, response);
-            
-            // Only update UI after successful database update
             this.updateOfficerStatusLocally(officer, newStatus);
-            alert(`Officer ${action}d successfully!`);
+            // No alert - status updated successfully
           },
           error: (patchError) => {
-            console.log(`PATCH officer status endpoint ${endpoint} failed:`, patchError.status, patchError.message);
-            // Try next endpoint
-            this.tryOfficerStatusUpdate(endpoints, payloads, officer, newStatus, action, headers, index + 1);
+            console.error(`Officer status update failed:`, patchError);
+            alert(`Failed to ${action} officer. Please try again.`);
           }
         });
       }
