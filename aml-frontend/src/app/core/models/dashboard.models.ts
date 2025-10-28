@@ -14,6 +14,17 @@ export interface Transaction {
   status: 'COMPLETED' | 'BLOCKED' | 'PENDING';
   fromAccount?: string;
   toAccount?: string;
+  receiver?: string;
+  country?: string;
+  transactionId?: string;
+}
+
+export interface TransactionCreateRequest {
+  senderAccountNumber: string;
+  receiverAccountNumber: string;
+  amount: number;
+  description?: string;
+  countryCode?: string;
 }
 
 export interface Alert {
