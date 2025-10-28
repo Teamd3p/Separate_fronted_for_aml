@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Country, CountryCreateRequest, CountryUpdateRequest } from '../models/country.models';
+import { AuthTokenService } from './auth-token.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,10 @@ import { Country, CountryCreateRequest, CountryUpdateRequest } from '../models/c
 export class CountryService {
   private readonly API_URL = `${environment.apiUrl || 'http://localhost:8080/api'}`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authTokenService: AuthTokenService
+  ) {}
 
   // Get all countries
   getCountries(): Observable<Country[]> {
@@ -49,8 +53,7 @@ export class CountryService {
     const payload = {
       code: countryData.code?.toUpperCase(),
       name: countryData.name,
-      riskLevel: countryData.riskLevel || 'MEDIUM',
-      isActive: true
+      riskLevel: countryData.riskLevel || 'MEDIUM'
     };
     
     return this.http.post<any>(`${this.API_URL}/admin/countries`, payload, this.getHttpOptions()).pipe(
@@ -59,7 +62,8 @@ export class CountryService {
         return this.mapToCountry(responseData);
       }),
       catchError(error => {
-        throw error;
+        console.error('Country create failed:', error);
+        return throwError(() => error);
       })
     );
   }
@@ -69,8 +73,7 @@ export class CountryService {
     const payload = {
       code: countryData.code?.toUpperCase(),
       name: countryData.name,
-      riskLevel: countryData.riskLevel || 'MEDIUM',
-      isActive: countryData.isActive !== undefined ? countryData.isActive : true
+      riskLevel: countryData.riskLevel || 'MEDIUM'
     };
     
     return this.http.put<any>(`${this.API_URL}/admin/countries/${code}`, payload, this.getHttpOptions()).pipe(
@@ -79,7 +82,8 @@ export class CountryService {
         return this.mapToCountry(responseData);
       }),
       catchError(error => {
-        throw error;
+        console.error('Country update failed:', error);
+        return throwError(() => error);
       })
     );
   }
@@ -115,16 +119,6 @@ export class CountryService {
 
   // Helper methods
   private getHttpOptions() {
-    const token = this.getToken();
-    return {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-      })
-    };
-  }
-
-  private getToken(): string | null {
-    return localStorage.getItem('token');
+    return this.authTokenService.getHttpOptions();
   }
 }
