@@ -9,8 +9,8 @@ import { DashboardStats, Transaction, Alert, CustomerProfile } from '../../../co
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css',
+  templateUrl: './dashboard-content.html',
+  styleUrl: './dashboard-content.css',
 })
 export class Dashboard implements OnInit {
   activeTab: string = 'dashboard';
@@ -76,6 +76,28 @@ export class Dashboard implements OnInit {
   setActiveTab(tab: string): void {
     this.activeTab = tab;
     console.log('Active tab:', tab);
+    
+    // Navigate to different routes based on tab
+    switch(tab) {
+      case 'dashboard':
+        this.router.navigate(['/customer/dashboard']);
+        break;
+      case 'accounts':
+        this.router.navigate(['/customer/accounts']);
+        break;
+      case 'kyc':
+        this.router.navigate(['/customer/kyc']);
+        break;
+      case 'transactions':
+        this.router.navigate(['/customer/transactions']);
+        break;
+      case 'alerts':
+        this.router.navigate(['/customer/alerts']);
+        break;
+      case 'profile':
+        this.router.navigate(['/customer/profile']);
+        break;
+    }
   }
 
   toggleUserMenu(): void {

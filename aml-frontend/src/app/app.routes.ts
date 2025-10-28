@@ -20,9 +20,45 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/verify-otp/verify-otp').then(m => m.VerifyOtp)
   },
   {
+    path: 'customer',
+    loadComponent: () => import('./features/customer/layout/customer-layout').then(m => m.CustomerLayout),
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/customer/dashboard/dashboard').then(m => m.Dashboard)
+      },
+      {
+        path: 'accounts',
+        loadComponent: () => import('./features/customer/account/account').then(m => m.Account)
+      },
+      {
+        path: 'transactions',
+        loadComponent: () => import('./features/customer/transactions/transactions').then(m => m.Transactions)
+      },
+      {
+        path: 'alerts',
+        loadComponent: () => import('./features/customer/alerts/alerts').then(m => m.Alerts)
+      },
+      {
+        path: 'kyc',
+        loadComponent: () => import('./features/customer/kyc/kyc').then(m => m.Kyc)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/customer/profile/profile').then(m => m.Profile)
+      },
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      }
+    ]
+  },
+  {
     path: 'dashboard',
-    loadComponent: () => import('./features/customer/dashboard/dashboard').then(m => m.Dashboard),
-    canActivate: [AuthGuard]
+    redirectTo: '/customer/dashboard',
+    pathMatch: 'full'
   },
   {
     path: 'admin/dashboard',
