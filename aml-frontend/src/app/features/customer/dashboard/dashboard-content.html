@@ -1,0 +1,154 @@
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-section">
+  <div class="loading-spinner"></div>
+  <p>Loading dashboard data...</p>
+</div>
+
+<!-- Error Message -->
+<div *ngIf="errorMessage && !isLoading" class="error-message">
+  {{ errorMessage }}
+  <button (click)="refreshDashboard()" class="refresh-btn">Try Again</button>
+</div>
+
+<!-- Welcome Section -->
+<div class="welcome-section" *ngIf="!isLoading">
+  <div class="welcome-header">
+    <div>
+      <h2 class="welcome-title">Welcome, {{ getUserDisplayName() }}!</h2>
+      <p class="welcome-subtitle" *ngIf="customerProfile">
+        Overview of your recent financial activity. Last login: {{ formatDate(customerProfile.lastLogin) }}.
+      </p>
+      <p class="welcome-subtitle" *ngIf="!customerProfile">
+        Loading your account information...
+      </p>
+    </div>
+    <button (click)="loadApiData()" class="api-test-btn" title="Refresh Data">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M20.49 9C19.9828 7.58885 19.1209 6.35872 17.9845 5.41604C16.8482 4.47337 15.4745 3.85313 14.0069 3.61947C12.5392 3.38581 11.0299 3.54842 9.63415 4.08906C8.23841 4.62971 7.00966 5.53026 6.08 6.68" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M3.51 15C4.01719 16.4111 4.87906 17.6413 6.01547 18.584C7.15189 19.5266 8.52547 20.1469 9.99307 20.3805C11.4607 20.6142 12.97 20.4516 14.3658 19.9109C15.7616 19.3703 16.9903 18.4697 17.92 17.32" stroke="currentColor" stroke-width="2" fill="none"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid" *ngIf="!isLoading">
+  <div class="stat-card transactions-card">
+    <div class="stat-header">
+      <svg class="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="#10B981" stroke-width="2" fill="none"/>
+      </svg>
+      <span class="stat-label">Total Transactions</span>
+    </div>
+    <div class="stat-value">{{ dashboardData.totalTransactions }}</div>
+  </div>
+
+  <div class="stat-card activity-card">
+    <div class="stat-header">
+      <svg class="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#3B82F6" stroke-width="2" fill="none"/>
+        <polyline points="12,6 12,12 16,14" stroke="#3B82F6" stroke-width="2" fill="none"/>
+      </svg>
+      <span class="stat-label">Last Login</span>
+    </div>
+    <div class="stat-value">{{ formatDate(dashboardData.lastLogin) || 'N/A' }}</div>
+  </div>
+
+  <div class="stat-card alerts-card">
+    <div class="stat-header">
+      <svg class="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#EF4444" stroke-width="2" fill="none"/>
+        <line x1="12" y1="9" x2="12" y2="13" stroke="#EF4444" stroke-width="2"/>
+        <line x1="12" y1="17" x2="12.01" y2="17" stroke="#EF4444" stroke-width="2"/>
+      </svg>
+      <span class="stat-label">New Alerts</span>
+    </div>
+    <div class="stat-value alert-value">{{ dashboardData.newAlerts }}</div>
+  </div>
+
+  <div class="stat-card pending-card">
+    <div class="stat-header">
+      <svg class="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#F59E0B" stroke-width="2" fill="none"/>
+        <polyline points="12,6 12,12 16,14" stroke="#F59E0B" stroke-width="2" fill="none"/>
+      </svg>
+      <span class="stat-label">Pending Transactions</span>
+    </div>
+    <div class="stat-value">{{ dashboardData.pendingTransactions }}</div>
+  </div>
+</div>
+
+<!-- Data Tables Section -->
+<div class="tables-section" *ngIf="!isLoading">
+  <!-- Recent Transactions Table -->
+  <div class="table-container">
+    <h3 class="table-title">Recent Transactions</h3>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <tbody>
+          <tr class="table-row" *ngFor="let transaction of recentTransactions">
+            <td class="transaction-name">{{ transaction.description || '-' }}</td>
+            <td class="transaction-type">{{ transaction.type }} • {{ formatDate(transaction.date) }}</td>
+            <td class="transaction-amount">{{ formatCurrency(transaction.amount) }}</td>
+            <td class="transaction-status" [ngClass]="getStatusClass(transaction.status)">{{ transaction.status }}</td>
+          </tr>
+          <tr *ngIf="recentTransactions.length === 0">
+            <td colspan="4" class="no-data">No recent transactions found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Alerts Table -->
+  <div class="table-container">
+    <h3 class="table-title">Recent Alerts</h3>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <tbody>
+          <tr class="table-row" *ngFor="let alert of recentAlerts">
+            <td class="alert-description">{{ alert.description }}</td>
+            <td class="alert-date">{{ formatDate(alert.date) }}</td>
+            <td class="alert-risk" [ngClass]="getRiskClass(alert.riskScore)">
+              Risk: {{ alert.riskScore }}<br>
+              <span class="risk-status" [ngClass]="getStatusClass(alert.status)">{{ alert.status }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="recentAlerts.length === 0">
+            <td colspan="3" class="no-data">No recent alerts found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Account Information Section -->
+<div class="account-info-section" *ngIf="!isLoading && customerProfile">
+  <h3 class="account-info-title">Account Information</h3>
+  <div class="account-info-grid">
+    <div class="info-item">
+      <span class="info-label">Full Name</span>
+      <span class="info-value">{{ customerProfile.firstName }} {{ customerProfile.lastName }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Email</span>
+      <span class="info-value">{{ customerProfile.email }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Phone Number</span>
+      <span class="info-value">{{ customerProfile.phoneNumber }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Address</span>
+      <span class="info-value">{{ customerProfile.address?.line1 || 'N/A' }}, {{ customerProfile.address?.city || 'N/A' }}, {{ customerProfile.address?.state || 'N/A' }} - {{ customerProfile.address?.postalCode || 'N/A' }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Last Login</span>
+      <span class="info-value">{{ formatDate(customerProfile.lastLogin) }}</span>
+    </div>
+  </div>
+</div>
