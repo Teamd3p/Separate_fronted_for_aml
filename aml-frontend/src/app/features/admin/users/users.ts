@@ -15,6 +15,14 @@ interface User {
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
+  // Address fields
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  nationality?: string;
+  dateOfBirth?: string;
 }
 
 interface ComplianceOfficer {
@@ -37,7 +45,7 @@ interface ComplianceOfficer {
   styleUrl: './users.css',
 })
 export class Users implements OnInit {
-  activeTab: string = 'customers';
+  activeTab: string = 'officers';
   customers: User[] = [];
   officers: ComplianceOfficer[] = [];
   filteredCustomers: User[] = [];
@@ -45,6 +53,12 @@ export class Users implements OnInit {
   
   customerSearchTerm: string = '';
   officerSearchTerm: string = '';
+  
+  // Filter states
+  customerStatusFilter: string = 'all';
+  officerStatusFilter: string = 'all';
+  customerDateFilter: string = 'all';
+  officerDateFilter: string = 'all';
   
   loading: boolean = false;
   showAddOfficerModal: boolean = false;
@@ -66,6 +80,10 @@ export class Users implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('Users component: Initializing...');
+    const token = localStorage.getItem('token');
+    console.log('Users component: Token exists:', !!token);
+    
     this.loadCustomers();
     this.loadOfficers();
   }
@@ -90,17 +108,28 @@ export class Users implements OnInit {
   }
 
   private tryLoadCustomersFromMultipleEndpoints(headers: HttpHeaders): void {
-    // First try the KYC compliance endpoint
-    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+    // First try the admin customers endpoint (has complete Customer entity data)
+    this.http.get<any[]>(`${this.apiUrl}/admin/customers`, { headers })
       .subscribe({
-        next: (response) => {
-          console.log('KYC Customers data received:', response);
-          this.processCustomersResponse(response);
+        next: (customers) => {
+          console.log('Admin customers endpoint data received:', customers);
+          this.processCustomersResponse(customers);
         },
         error: (error) => {
-          console.log('KYC endpoint failed, trying alternative endpoints:', error.status);
-          // Try alternative endpoints
-          this.tryAlternativeCustomerEndpoints(headers);
+          console.log('Admin customers endpoint failed, trying KYC endpoint:', error.status);
+          // Try KYC compliance endpoint
+          this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+            .subscribe({
+              next: (response) => {
+                console.log('KYC Customers data received:', response);
+                this.processCustomersResponse(response);
+              },
+              error: (error) => {
+                console.log('KYC endpoint failed, trying other endpoints:', error.status);
+                // Try other alternative endpoints
+                this.tryAlternativeCustomerEndpoints(headers);
+              }
+            });
         }
       });
   }
@@ -115,26 +144,17 @@ export class Users implements OnInit {
           this.processCustomersResponse(customers);
         },
         error: (error) => {
-          console.log('Users endpoint failed, trying admin customers endpoint:', error.status);
-          // Try admin customers endpoint
-          this.http.get<any[]>(`${this.apiUrl}/admin/customers`, { headers })
-            .subscribe({
-              next: (customers) => {
-                console.log('Admin customers endpoint data received:', customers);
-                this.processCustomersResponse(customers);
-              },
-              error: (error) => {
-                console.error('All customer endpoints failed:', error);
-                this.loading = false;
-                // Use mock data as last resort
-                this.loadMockCustomers();
-              }
-            });
+          console.error('All customer endpoints failed:', error);
+          this.loading = false;
+          // Use mock data as last resort
+          this.loadMockCustomers();
         }
       });
   }
 
   private processCustomersResponse(response: any): void {
+    console.log('Processing customer response:', response);
+    
     // Handle different response formats
     let customersData: any[] = [];
     if (Array.isArray(response)) {
@@ -143,6 +163,10 @@ export class Users implements OnInit {
       customersData = response.content;
     } else if (response && Array.isArray(response.data)) {
       customersData = response.data;
+    } else if (response && Array.isArray(response.customers)) {
+      customersData = response.customers;
+    } else if (response && Array.isArray(response.users)) {
+      customersData = response.users;
     } else if (response && typeof response === 'object') {
       const keys = Object.keys(response);
       for (const key of keys) {
@@ -153,22 +177,72 @@ export class Users implements OnInit {
       }
     }
     
-    this.customers = customersData.map(customer => ({
-      userId: customer.userId || customer.id || customer.customerId,
-      firstName: customer.firstName || customer.first_name || customer.name?.split(' ')[0] || 'Unknown',
-      lastName: customer.lastName || customer.last_name || customer.name?.split(' ').slice(1).join(' ') || 'User',
-      email: customer.email || customer.emailAddress || customer.userEmail || 'No email provided',
-      phone: customer.phone || customer.phoneNumber || customer.mobile || customer.contactNumber || 'No phone provided',
-      role: 'CUSTOMER',
-      status: customer.accountStatus || customer.status || customer.userStatus || 'ACTIVE',
-      isActive: customer.isActive !== false && customer.accountStatus !== 'SUSPENDED' && customer.status !== 'INACTIVE',
-      createdAt: customer.createdAt || customer.registrationDate || customer.dateCreated || new Date().toISOString(),
-      lastLogin: customer.lastLogin || customer.lastLoginDate
-    }));
+    console.log('Extracted customers data:', customersData);
+    
+    // Filter out invalid or incomplete records
+    const validCustomers = customersData.filter(customer => {
+      return customer && (customer.userId || customer.id || customer.customerId) &&
+             (customer.firstName || customer.first_name || customer.name || customer.customerName || customer.email || customer.emailAddress);
+    });
+    
+    this.customers = validCustomers.map(customer => {
+      // Extract name parts
+      let firstName = customer.firstName || customer.first_name || '';
+      let lastName = customer.lastName || customer.last_name || '';
+      
+      // If no firstName/lastName but has name field, split it
+      if (!firstName && !lastName && customer.name) {
+        const nameParts = customer.name.trim().split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+      
+      // If no firstName/lastName but has customerName field, split it
+      if (!firstName && !lastName && customer.customerName) {
+        const nameParts = customer.customerName.trim().split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+      
+      // If still no name, try to extract from email
+      if (!firstName && !lastName) {
+        const email = customer.email || customer.emailAddress || customer.userEmail || '';
+        if (email) {
+          const emailParts = email.split('@')[0].split('.');
+          firstName = emailParts[0] || 'User';
+          lastName = emailParts.slice(1).join(' ') || '';
+        }
+      }
+      
+      // Final fallback
+      if (!firstName) firstName = 'Customer';
+      if (!lastName) lastName = `#${customer.userId || customer.id || customer.customerId || 'Unknown'}`;
+      
+      return {
+        userId: customer.userId || customer.id || customer.customerId || Date.now(),
+        firstName: firstName,
+        lastName: lastName,
+        email: customer.email || customer.emailAddress || customer.userEmail || '',
+        phone: customer.contactNumber || customer.phone || customer.phoneNumber || customer.mobile || '',
+        role: 'CUSTOMER',
+        status: this.normalizeStatus(customer.accountStatus || customer.status || customer.userStatus || 'ACTIVE'),
+        isActive: this.determineActiveStatus(customer),
+        createdAt: customer.createdAt || customer.registrationDate || customer.dateCreated || new Date().toISOString(),
+        lastLogin: customer.lastLogin || customer.lastLoginDate,
+        // Address fields
+        street: customer.street || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        country: customer.country || '',
+        pincode: customer.pincode || '',
+        nationality: customer.nationality || '',
+        dateOfBirth: customer.dateOfBirth || ''
+      };
+    });
     
     this.filteredCustomers = [...this.customers];
     this.loading = false;
-    console.log('Processed customers:', this.customers);
+    console.log('Final processed customers:', this.customers);
   }
 
   loadOfficers(): void {
@@ -191,7 +265,7 @@ export class Users implements OnInit {
             phone: officer.phone || officer.phoneNumber || officer.mobile || 'No phone provided',
             employeeId: officer.employeeId || officer.employee_id || `EMP${officer.officerId || officer.id}`,
             department: officer.department || officer.dept || 'Compliance',
-            isActive: officer.isActive !== false && officer.status !== 'INACTIVE',
+            isActive: officer.isActive !== false && officer.status !== 'INACTIVE' && officer.status !== 'SUSPENDED',
             createdAt: officer.createdAt || officer.dateCreated || new Date().toISOString()
           }));
           this.filteredOfficers = [...this.officers];
@@ -262,44 +336,179 @@ export class Users implements OnInit {
     this.filteredOfficers = [...this.officers];
   }
 
-  // Search Methods
+  // Search and Filter Methods
   searchCustomers(): void {
-    if (!this.customerSearchTerm.trim()) {
-      this.filteredCustomers = [...this.customers];
-      return;
+    this.applyCustomerFilters();
+  }
+  
+  applyCustomerFilters(): void {
+    let filtered = [...this.customers];
+    
+    // Apply search filter
+    if (this.customerSearchTerm.trim()) {
+      const searchTerm = this.customerSearchTerm.toLowerCase();
+      filtered = filtered.filter(customer => 
+        customer.firstName.toLowerCase().includes(searchTerm) ||
+        customer.lastName.toLowerCase().includes(searchTerm) ||
+        customer.email.toLowerCase().includes(searchTerm) ||
+        customer.phone.includes(searchTerm) ||
+        customer.userId.toString().includes(searchTerm)
+      );
     }
     
-    const searchTerm = this.customerSearchTerm.toLowerCase();
-    this.filteredCustomers = this.customers.filter(customer => 
-      customer.firstName.toLowerCase().includes(searchTerm) ||
-      customer.lastName.toLowerCase().includes(searchTerm) ||
-      customer.email.toLowerCase().includes(searchTerm) ||
-      customer.phone.includes(searchTerm)
-    );
+    // Apply status filter
+    if (this.customerStatusFilter !== 'all') {
+      filtered = filtered.filter(customer => {
+        switch (this.customerStatusFilter) {
+          case 'active':
+            return customer.isActive;
+          case 'inactive':
+            return !customer.isActive || customer.status === 'SUSPENDED' || customer.status === 'INACTIVE';
+          case 'suspended':
+            return customer.status === 'SUSPENDED';
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply date filter
+    if (this.customerDateFilter !== 'all') {
+      const now = new Date();
+      filtered = filtered.filter(customer => {
+        const createdDate = new Date(customer.createdAt);
+        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        switch (this.customerDateFilter) {
+          case 'today':
+            return diffDays <= 1;
+          case 'week':
+            return diffDays <= 7;
+          case 'month':
+            return diffDays <= 30;
+          case 'year':
+            return diffDays <= 365;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    this.filteredCustomers = filtered;
+  }
+  
+  onCustomerStatusFilterChange(): void {
+    this.applyCustomerFilters();
+  }
+  
+  onCustomerDateFilterChange(): void {
+    this.applyCustomerFilters();
   }
 
   searchOfficers(): void {
-    if (!this.officerSearchTerm.trim()) {
-      this.filteredOfficers = [...this.officers];
-      return;
+    this.applyOfficerFilters();
+  }
+  
+  applyOfficerFilters(): void {
+    let filtered = [...this.officers];
+    
+    // Apply search filter
+    if (this.officerSearchTerm.trim()) {
+      const searchTerm = this.officerSearchTerm.toLowerCase();
+      filtered = filtered.filter(officer => 
+        officer.firstName.toLowerCase().includes(searchTerm) ||
+        officer.lastName.toLowerCase().includes(searchTerm) ||
+        officer.email.toLowerCase().includes(searchTerm) ||
+        officer.phone.includes(searchTerm) ||
+        officer.employeeId.toLowerCase().includes(searchTerm) ||
+        officer.department.toLowerCase().includes(searchTerm)
+      );
     }
     
-    const searchTerm = this.officerSearchTerm.toLowerCase();
-    this.filteredOfficers = this.officers.filter(officer => 
-      officer.firstName.toLowerCase().includes(searchTerm) ||
-      officer.lastName.toLowerCase().includes(searchTerm) ||
-      officer.email.toLowerCase().includes(searchTerm) ||
-      officer.phone.includes(searchTerm) ||
-      officer.employeeId.toLowerCase().includes(searchTerm)
-    );
+    // Apply status filter
+    if (this.officerStatusFilter !== 'all') {
+      filtered = filtered.filter(officer => {
+        switch (this.officerStatusFilter) {
+          case 'active':
+            return officer.isActive;
+          case 'inactive':
+            return !officer.isActive;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply date filter
+    if (this.officerDateFilter !== 'all') {
+      const now = new Date();
+      filtered = filtered.filter(officer => {
+        const createdDate = new Date(officer.createdAt);
+        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        switch (this.officerDateFilter) {
+          case 'today':
+            return diffDays <= 1;
+          case 'week':
+            return diffDays <= 7;
+          case 'month':
+            return diffDays <= 30;
+          case 'year':
+            return diffDays <= 365;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    this.filteredOfficers = filtered;
+  }
+  
+  onOfficerStatusFilterChange(): void {
+    this.applyOfficerFilters();
+  }
+  
+  onOfficerDateFilterChange(): void {
+    this.applyOfficerFilters();
+  }
+  
+  clearCustomerFilters(): void {
+    this.customerSearchTerm = '';
+    this.customerStatusFilter = 'all';
+    this.customerDateFilter = 'all';
+    this.applyCustomerFilters();
+  }
+  
+  clearOfficerFilters(): void {
+    this.officerSearchTerm = '';
+    this.officerStatusFilter = 'all';
+    this.officerDateFilter = 'all';
+    this.applyOfficerFilters();
   }
 
-  // User Actions
-  editUser(user: User): void {
-    console.log('Edit user:', user);
-    // TODO: Implement edit user modal/form
-    alert(`Edit functionality for ${user.firstName} ${user.lastName} will be implemented`);
+  // Modal states - Only view modals, no edit modals
+  showCustomerDetailsModal: boolean = false;
+  showOfficerDetailsModal: boolean = false;
+  
+  viewingCustomer: User | null = null;
+  viewingOfficer: ComplianceOfficer | null = null;
+
+  // User Actions - Removed edit functionality
+  // editUser method removed - only view and status change allowed
+  
+  viewCustomerDetails(user: User): void {
+    this.viewingCustomer = user;
+    this.showCustomerDetailsModal = true;
   }
+  
+  closeCustomerDetailsModal(): void {
+    this.showCustomerDetailsModal = false;
+    this.viewingCustomer = null;
+  }
+  
+  // All edit-related methods removed - only view and status change allowed
 
   toggleUserStatus(user: User): void {
     const token = localStorage.getItem('token');
@@ -312,81 +521,226 @@ export class Users implements OnInit {
     const action = user.isActive ? 'suspend' : 'activate';
 
     if (confirm(`Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`)) {
-      this.http.put(`${this.apiUrl}/admin/customers/${user.userId}/account-status`, 
-        { status: newStatus, reason: `${action.toUpperCase()} by admin` }, 
-        { headers }
-      ).subscribe({
-        next: (response) => {
-          console.log(`User ${action}d successfully:`, response);
-          user.isActive = !user.isActive;
-          user.status = newStatus;
-          alert(`User ${action}d successfully!`);
-        },
-        error: (error) => {
-          console.error(`Error ${action}ing user:`, error);
-          alert(`Failed to ${action} user: ${error.error?.message || error.message}`);
-        }
-      });
+      this.tryUpdateUserStatus(user, newStatus, action, headers);
+    }
+  }
+  
+  private tryUpdateUserStatus(user: User, newStatus: string, action: string, headers: HttpHeaders): void {
+    // Try multiple endpoints for updating user status
+    const endpoints = [
+      `${this.apiUrl}/admin/customers/${user.userId}/account-status`,
+      `${this.apiUrl}/admin/customers/${user.userId}/status`,
+      `${this.apiUrl}/admin/users/${user.userId}/status`,
+      `${this.apiUrl}/users/${user.userId}/status`,
+      `${this.apiUrl}/customers/${user.userId}/status`
+    ];
+    
+    const payloads = [
+      { status: newStatus, reason: `${action.toUpperCase()} by admin` },
+      { accountStatus: newStatus, reason: `${action.toUpperCase()} by admin` },
+      { isActive: newStatus === 'ACTIVE', status: newStatus },
+      { active: newStatus === 'ACTIVE' }
+    ];
+    
+    this.tryEndpointsSequentially(endpoints, payloads, user, newStatus, action, headers, 0);
+  }
+  
+  private tryEndpointsSequentially(endpoints: string[], payloads: any[], user: User, newStatus: string, action: string, headers: HttpHeaders, index: number): void {
+    if (index >= endpoints.length) {
+      // All endpoints failed, try PATCH method
+      this.tryPatchMethod(user, newStatus, action, headers);
+      return;
+    }
+    
+    const endpoint = endpoints[index];
+    const payload = payloads[Math.min(index, payloads.length - 1)];
+    
+    console.log(`Trying endpoint ${index + 1}/${endpoints.length}: ${endpoint}`, payload);
+    
+    this.http.put(endpoint, payload, { headers }).subscribe({
+      next: (response) => {
+        console.log(`User ${action}d successfully via ${endpoint}:`, response);
+        this.updateUserStatusLocally(user, newStatus);
+        alert(`User ${action}d successfully!`);
+      },
+      error: (error) => {
+        console.log(`Endpoint ${endpoint} failed:`, error.status, error.message);
+        // Try next endpoint
+        this.tryEndpointsSequentially(endpoints, payloads, user, newStatus, action, headers, index + 1);
+      }
+    });
+  }
+  
+  private tryPatchMethod(user: User, newStatus: string, action: string, headers: HttpHeaders): void {
+    const patchEndpoints = [
+      `${this.apiUrl}/admin/customers/${user.userId}`,
+      `${this.apiUrl}/admin/users/${user.userId}`,
+      `${this.apiUrl}/users/${user.userId}`
+    ];
+    
+    const patchPayload = {
+      status: newStatus,
+      isActive: newStatus === 'ACTIVE',
+      accountStatus: newStatus
+    };
+    
+    this.tryPatchEndpoints(patchEndpoints, patchPayload, user, newStatus, action, headers, 0);
+  }
+  
+  private tryPatchEndpoints(endpoints: string[], payload: any, user: User, newStatus: string, action: string, headers: HttpHeaders, index: number): void {
+    if (index >= endpoints.length) {
+      // All methods failed
+      console.error('All status update methods failed');
+      alert(`Failed to ${action} user. Please check your permissions or contact the administrator.`);
+      return;
+    }
+    
+    const endpoint = endpoints[index];
+    console.log(`Trying PATCH endpoint ${index + 1}/${endpoints.length}: ${endpoint}`, payload);
+    
+    this.http.patch(endpoint, payload, { headers }).subscribe({
+      next: (response) => {
+        console.log(`User ${action}d successfully via PATCH ${endpoint}:`, response);
+        this.updateUserStatusLocally(user, newStatus);
+        alert(`User ${action}d successfully!`);
+      },
+      error: (error) => {
+        console.log(`PATCH endpoint ${endpoint} failed:`, error.status, error.message);
+        // Try next endpoint
+        this.tryPatchEndpoints(endpoints, payload, user, newStatus, action, headers, index + 1);
+      }
+    });
+  }
+  
+  private updateUserStatusLocally(user: User, newStatus: string): void {
+    user.isActive = newStatus === 'ACTIVE';
+    user.status = newStatus;
+    
+    // Update in both arrays
+    const customerIndex = this.customers.findIndex(c => c.userId === user.userId);
+    if (customerIndex !== -1) {
+      this.customers[customerIndex] = { ...user };
+    }
+    
+    const filteredIndex = this.filteredCustomers.findIndex(c => c.userId === user.userId);
+    if (filteredIndex !== -1) {
+      this.filteredCustomers[filteredIndex] = { ...user };
     }
   }
 
-  deleteUser(user: User): void {
-    if (confirm(`Are you sure you want to delete ${user.firstName} ${user.lastName}? This action cannot be undone.`)) {
-      const token = localStorage.getItem('token');
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${token}`
-      });
+  // deleteUser method removed - only status change (soft delete) allowed
 
-      // Note: Implement actual delete endpoint when available
-      console.log('Delete user:', user);
-      alert('Delete functionality will be implemented when backend endpoint is available');
-    }
+  // Officer Actions - Removed edit functionality
+  // editOfficer method removed - only view and status change allowed
+  
+  viewOfficerDetails(officer: ComplianceOfficer): void {
+    this.viewingOfficer = officer;
+    this.showOfficerDetailsModal = true;
   }
-
-  // Officer Actions
-  editOfficer(officer: ComplianceOfficer): void {
-    console.log('Edit officer:', officer);
-    alert(`Edit functionality for ${officer.firstName} ${officer.lastName} will be implemented`);
+  
+  closeOfficerDetailsModal(): void {
+    this.showOfficerDetailsModal = false;
+    this.viewingOfficer = null;
   }
+  
+  // All officer edit-related methods removed - only view and status change allowed
 
   toggleOfficerStatus(officer: ComplianceOfficer): void {
     const action = officer.isActive ? 'deactivate' : 'activate';
     
     if (confirm(`Are you sure you want to ${action} ${officer.firstName} ${officer.lastName}?`)) {
-      // TODO: Implement officer status toggle API call
-      officer.isActive = !officer.isActive;
-      alert(`Officer ${action}d successfully!`);
-    }
-  }
-
-  deleteOfficer(officer: ComplianceOfficer): void {
-    if (confirm(`Are you sure you want to delete ${officer.firstName} ${officer.lastName}? This action cannot be undone.`)) {
       const token = localStorage.getItem('token');
       const headers = new HttpHeaders({
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       });
-
-      this.http.delete(`${this.apiUrl}/admin/officers/${officer.officerId}`, { headers })
-        .subscribe({
-          next: () => {
-            console.log('Officer deleted successfully');
-            this.officers = this.officers.filter(o => o.officerId !== officer.officerId);
-            this.filteredOfficers = this.filteredOfficers.filter(o => o.officerId !== officer.officerId);
-            alert('Officer deleted successfully!');
-          },
-          error: (error) => {
-            console.error('Error deleting officer:', error);
-            alert(`Failed to delete officer: ${error.error?.message || error.message}`);
-          }
-        });
+      
+      const newStatus = !officer.isActive;
+      const endpoints = [
+        `${this.apiUrl}/admin/officers/${officer.officerId}/status`,
+        `${this.apiUrl}/officers/${officer.officerId}/status`,
+        `${this.apiUrl}/admin/officers/${officer.officerId}`,
+        `${this.apiUrl}/officers/${officer.officerId}`
+      ];
+      
+      const statusString = newStatus ? 'ACTIVE' : 'INACTIVE';
+      const payloads = [
+        { status: statusString },
+        { isActive: newStatus },
+        { active: newStatus }
+      ];
+      
+      this.tryOfficerStatusUpdate(endpoints, payloads, officer, newStatus, action, headers, 0);
     }
   }
+  
+  private tryOfficerStatusUpdate(endpoints: string[], payloads: any[], officer: ComplianceOfficer, newStatus: boolean, action: string, headers: HttpHeaders, index: number): void {
+    if (index >= endpoints.length) {
+      // All endpoints failed - show error message
+      alert(`Failed to ${action} officer. Please check your connection and try again.`);
+      console.error('All officer status update endpoints failed');
+      return;
+    }
+    
+    const endpoint = endpoints[index];
+    const payload = payloads[Math.min(index, payloads.length - 1)];
+    
+    console.log(`Trying officer status endpoint ${index + 1}/${endpoints.length}: ${endpoint}`, payload);
+    
+    this.http.put(endpoint, payload, { headers }).subscribe({
+      next: (response) => {
+        console.log(`Officer ${action}d successfully via ${endpoint}:`, response);
+        
+        // Only update UI after successful database update
+        this.updateOfficerStatusLocally(officer, newStatus);
+        alert(`Officer ${action}d successfully!`);
+      },
+      error: (error) => {
+        console.log(`Officer status endpoint ${endpoint} failed:`, error.status, error.message);
+        // Try PATCH method
+        this.http.patch(endpoint, payload, { headers }).subscribe({
+          next: (response) => {
+            console.log(`Officer ${action}d successfully via PATCH ${endpoint}:`, response);
+            
+            // Only update UI after successful database update
+            this.updateOfficerStatusLocally(officer, newStatus);
+            alert(`Officer ${action}d successfully!`);
+          },
+          error: (patchError) => {
+            console.log(`PATCH officer status endpoint ${endpoint} failed:`, patchError.status, patchError.message);
+            // Try next endpoint
+            this.tryOfficerStatusUpdate(endpoints, payloads, officer, newStatus, action, headers, index + 1);
+          }
+        });
+      }
+    });
+  }
+
+  private updateOfficerStatusLocally(officer: ComplianceOfficer, newStatus: boolean): void {
+    officer.isActive = newStatus;
+    
+    // Update in arrays
+    const officerIndex = this.officers.findIndex(o => o.officerId === officer.officerId);
+    if (officerIndex !== -1) {
+      this.officers[officerIndex] = { ...officer };
+    }
+    
+    const filteredIndex = this.filteredOfficers.findIndex(o => o.officerId === officer.officerId);
+    if (filteredIndex !== -1) {
+      this.filteredOfficers[filteredIndex] = { ...officer };
+    }
+  }
+
+  // deleteOfficer method removed - only status change (soft delete) via toggleOfficerStatus allowed
 
   // Navigation
   navigateToTab(tab: string): void {
     switch(tab) {
       case 'dashboard':
         this.router.navigate(['/admin/dashboard']);
+        break;
+      case 'users':
+        this.router.navigate(['/admin/users']);
         break;
       case 'kyc':
         this.router.navigate(['/admin/kyc-review']);
@@ -414,6 +768,29 @@ export class Users implements OnInit {
     localStorage.removeItem('role');
     localStorage.removeItem('email');
     this.router.navigate(['/auth/login']);
+  }
+
+  // Helper methods for data processing
+  private normalizeStatus(status: string): string {
+    if (!status) return 'ACTIVE';
+    const upperStatus = status.toUpperCase();
+    if (['SUSPENDED', 'INACTIVE', 'BLOCKED', 'DISABLED'].includes(upperStatus)) {
+      return upperStatus;
+    }
+    return 'ACTIVE';
+  }
+  
+  private determineActiveStatus(customer: any): boolean {
+    // Check multiple possible active status indicators
+    if (customer.isActive === false) return false;
+    if (customer.active === false) return false;
+    
+    const status = (customer.accountStatus || customer.status || customer.userStatus || '').toUpperCase();
+    if (['SUSPENDED', 'INACTIVE', 'BLOCKED', 'DISABLED', 'DEACTIVATED'].includes(status)) {
+      return false;
+    }
+    
+    return true;
   }
 
   // Utility Methods

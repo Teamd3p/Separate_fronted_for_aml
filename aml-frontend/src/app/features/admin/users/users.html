@@ -26,7 +26,7 @@
           Admin Dashboard
         </a>
 
-        <a href="#" class="nav-item active">
+        <a href="#" class="nav-item active" (click)="navigateToTab('users')">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" stroke-width="2"/>
             <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -139,7 +139,7 @@
           Customers ({{getCustomerCount()}})
         </button>
         <button class="tab-btn" [class.active]="activeTab === 'officers'" (click)="switchTab('officers')">
-          Compliance Officers ({{getOfficerCount()}})
+          Officers ({{getOfficerCount()}})
         </button>
       </div>
 
@@ -150,13 +150,39 @@
           <div class="users-section">
             <div class="users-header">
               <h2 class="section-title">Customer Management</h2>
-              <div class="search-users">
-                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2" fill="none"/>
-                  <path d="M21 21L16.65 16.65" stroke="#9CA3AF" stroke-width="2"/>
-                </svg>
-                <input type="text" placeholder="Search Customers..." class="search-users-input" 
-                       [(ngModel)]="customerSearchTerm" (input)="searchCustomers()">
+              <div class="header-controls">
+                <div class="filter-controls">
+                  <select class="filter-select" [(ngModel)]="customerStatusFilter" (change)="onCustomerStatusFilterChange()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                  
+                  <select class="filter-select" [(ngModel)]="customerDateFilter" (change)="onCustomerDateFilterChange()">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                  </select>
+                  
+                  <button class="clear-filters-btn" (click)="clearCustomerFilters()" title="Clear Filters">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                      <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+                
+                <div class="search-users">
+                  <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+                    <path d="M21 21L16.65 16.65" stroke="#9CA3AF" stroke-width="2"/>
+                  </svg>
+                  <input type="text" placeholder="Search Customers..." class="search-users-input" 
+                         [(ngModel)]="customerSearchTerm" (input)="searchCustomers()">
+                </div>
               </div>
             </div>
 
@@ -174,18 +200,18 @@
                 <tbody>
                   <tr class="table-row" *ngFor="let customer of filteredCustomers">
                     <td class="user-name">{{customer.firstName}} {{customer.lastName}}</td>
-                    <td class="user-email">{{customer.email}}</td>
-                    <td class="user-phone">{{customer.phone}}</td>
+                    <td class="user-email">{{customer.email || 'No email'}}</td>
+                    <td class="user-phone">{{customer.phone || 'No phone'}}</td>
                     <td class="user-status">
                       <span class="status-badge" [class]="getStatusClass(customer.status, customer.isActive)">
                         {{getStatusText(customer.status, customer.isActive)}}
                       </span>
                     </td>
                     <td class="user-actions">
-                      <button class="action-btn edit-btn" (click)="editUser(customer)" title="Edit User">
+                      <button class="action-btn view-btn" (click)="viewCustomerDetails(customer)" title="View Details">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2"/>
-                          <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89783 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2"/>
+                          <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
                         </svg>
                       </button>
                       <button class="action-btn" 
@@ -201,16 +227,10 @@
                           <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke="currentColor" stroke-width="2"/>
                         </svg>
                       </button>
-                      <button class="action-btn delete-btn" (click)="deleteUser(customer)" title="Delete User">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2"/>
-                          <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                      </button>
                     </td>
                   </tr>
                   <tr *ngIf="filteredCustomers.length === 0" class="no-data-row">
-                    <td colspan="5" class="no-data-message">
+                    <td colspan="6" class="no-data-message">
                       <div class="no-data-content">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" class="no-data-icon">
                           <circle cx="12" cy="12" r="10" stroke="#9CA3AF" stroke-width="2"/>
@@ -231,7 +251,7 @@
         <div id="officers-tab" class="tab-panel" [class.active]="activeTab === 'officers'">
           <div class="users-section">
             <div class="users-header">
-              <h2 class="section-title">Compliance Officers Management</h2>
+              <h2 class="section-title">Officers Management</h2>
               <div class="header-actions">
                 <button class="add-officer-btn" (click)="openAddOfficerModal()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -240,6 +260,30 @@
                   </svg>
                   Add Officer
                 </button>
+                
+                <div class="filter-controls">
+                  <select class="filter-select" [(ngModel)]="officerStatusFilter" (change)="onOfficerStatusFilterChange()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  
+                  <select class="filter-select" [(ngModel)]="officerDateFilter" (change)="onOfficerDateFilterChange()">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                  </select>
+                  
+                  <button class="clear-filters-btn" (click)="clearOfficerFilters()" title="Clear Filters">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                      <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+                
                 <div class="search-users">
                   <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2" fill="none"/>
@@ -273,10 +317,10 @@
                       </span>
                     </td>
                     <td class="user-actions">
-                      <button class="action-btn edit-btn" (click)="editOfficer(officer)" title="Edit Officer">
+                      <button class="action-btn view-btn" (click)="viewOfficerDetails(officer)" title="View Details">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2"/>
-                          <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89783 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2"/>
+                          <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
                         </svg>
                       </button>
                       <button class="action-btn" 
@@ -290,12 +334,6 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" *ngIf="officer.isActive">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
                           <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                      </button>
-                      <button class="action-btn delete-btn" (click)="deleteOfficer(officer)" title="Delete Officer">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                          <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2"/>
-                          <path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2"/>
                         </svg>
                       </button>
                     </td>
@@ -326,7 +364,7 @@
 <div class="modal-overlay" *ngIf="showAddOfficerModal" (click)="closeAddOfficerModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3 class="modal-title">Add New Compliance Officer</h3>
+      <h3 class="modal-title">Add New Officer</h3>
       <button class="modal-close-btn" (click)="closeAddOfficerModal()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -429,6 +467,165 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Details Modal -->
+<div class="modal-overlay" *ngIf="showCustomerDetailsModal" (click)="closeCustomerDetailsModal()">
+  <div class="modal-content details-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Customer Details</h3>
+      <button class="modal-close-btn" (click)="closeCustomerDetailsModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body" *ngIf="viewingCustomer">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label class="detail-label">Customer ID</label>
+          <span class="detail-value">{{viewingCustomer.userId}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Full Name</label>
+          <span class="detail-value">{{viewingCustomer.firstName}} {{viewingCustomer.lastName}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Email Address</label>
+          <span class="detail-value">{{viewingCustomer.email || 'No email provided'}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Phone Number</label>
+          <span class="detail-value">{{viewingCustomer.phone || 'No phone provided'}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.nationality">
+          <label class="detail-label">Nationality</label>
+          <span class="detail-value">{{viewingCustomer.nationality}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.dateOfBirth">
+          <label class="detail-label">Date of Birth</label>
+          <span class="detail-value">{{formatDate(viewingCustomer.dateOfBirth)}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.street">
+          <label class="detail-label">Street Address</label>
+          <span class="detail-value">{{viewingCustomer.street}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.city">
+          <label class="detail-label">City</label>
+          <span class="detail-value">{{viewingCustomer.city}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.state">
+          <label class="detail-label">State</label>
+          <span class="detail-value">{{viewingCustomer.state}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.country">
+          <label class="detail-label">Country</label>
+          <span class="detail-value">{{viewingCustomer.country}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.pincode">
+          <label class="detail-label">Postal Code</label>
+          <span class="detail-value">{{viewingCustomer.pincode}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Account Status</label>
+          <span class="detail-value status-badge" [class]="getStatusClass(viewingCustomer.status, viewingCustomer.isActive)">
+            {{getStatusText(viewingCustomer.status, viewingCustomer.isActive)}}
+          </span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Role</label>
+          <span class="detail-value">{{viewingCustomer.role}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Registration Date</label>
+          <span class="detail-value">{{formatDate(viewingCustomer.createdAt)}}</span>
+        </div>
+        
+        <div class="detail-item" *ngIf="viewingCustomer.lastLogin">
+          <label class="detail-label">Last Login</label>
+          <span class="detail-value">{{formatDate(viewingCustomer.lastLogin)}}</span>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeCustomerDetailsModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Officer Details Modal -->
+<div class="modal-overlay" *ngIf="showOfficerDetailsModal" (click)="closeOfficerDetailsModal()">
+  <div class="modal-content details-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Officer Details</h3>
+      <button class="modal-close-btn" (click)="closeOfficerDetailsModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body" *ngIf="viewingOfficer">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label class="detail-label">Officer ID</label>
+          <span class="detail-value">{{viewingOfficer.officerId}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Full Name</label>
+          <span class="detail-value">{{viewingOfficer.firstName}} {{viewingOfficer.lastName}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Email Address</label>
+          <span class="detail-value">{{viewingOfficer.email}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Phone Number</label>
+          <span class="detail-value">{{viewingOfficer.phone}}</span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Status</label>
+          <span class="detail-value status-badge" [class.active]="viewingOfficer.isActive" [class.inactive]="!viewingOfficer.isActive">
+            {{viewingOfficer.isActive ? 'ACTIVE' : 'INACTIVE'}}
+          </span>
+        </div>
+        
+        <div class="detail-item">
+          <label class="detail-label">Created Date</label>
+          <span class="detail-value">{{formatDate(viewingOfficer.createdAt)}}</span>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeOfficerDetailsModal()">
+          Close
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -267,12 +267,19 @@ export class Dashboard implements OnInit {
       });
   }
 
-  setActiveTab(tab: string): void {
+  setActiveTab(tab: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    
+    console.log('Dashboard: Navigating to tab:', tab);
+    
     switch(tab) {
       case 'dashboard':
         // Already on dashboard
         break;
       case 'users':
+        console.log('Dashboard: Navigating to /admin/users');
         this.router.navigate(['/admin/users']);
         break;
       case 'kyc':
