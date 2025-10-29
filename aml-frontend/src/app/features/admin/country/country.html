@@ -47,7 +47,7 @@
           KYC Review
         </a>
 
-        <a href="#" class="nav-item">
+        <a (click)="navigateTo('/admin/rules')" class="nav-item">
           <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
             <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" fill="none"/>
@@ -158,30 +158,6 @@
             <div class="stats-label">Total Countries</div>
           </div>
         </div>
-        
-        <div class="stats-card active">
-          <div class="stats-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2" fill="none"/>
-            </svg>
-          </div>
-          <div class="stats-content">
-            <div class="stats-number">{{ activeCountries }}</div>
-            <div class="stats-label">Active Countries</div>
-          </div>
-        </div>
-        
-        <div class="stats-card inactive">
-          <div class="stats-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </div>
-          <div class="stats-content">
-            <div class="stats-number">{{ inactiveCountries }}</div>
-            <div class="stats-label">Inactive Countries</div>
-          </div>
-        </div>
       </div>
 
       <!-- Countries Section -->
@@ -205,6 +181,20 @@
               </svg>
               New Country
             </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+          <div class="filter-group">
+            <label for="riskFilter">Risk Level:</label>
+            <select id="riskFilter" [(ngModel)]="riskFilter" (change)="onFilterChange()">
+              <option value="all">All Risk Levels</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
           </div>
         </div>
 
@@ -245,14 +235,6 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/>
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" fill="none"/>
-                        </svg>
-                      </button>
-                      <button class="action-btn status-btn" (click)="toggleCountryStatus(country)" [title]="country.isActive ? 'Deactivate' : 'Activate'">
-                        <svg *ngIf="country.isActive" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        <svg *ngIf="!country.isActive" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2" fill="none"/>
                         </svg>
                       </button>
                       <button class="action-btn delete-btn" (click)="openDeleteModal(country)" title="Delete Country">
@@ -386,15 +368,6 @@
           <div *ngIf="formErrors.riskLevel" class="error-message">{{ formErrors.riskLevel }}</div>
         </div>
         
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              [(ngModel)]="editCountry.isActive" 
-              name="editIsActive">
-            Active
-          </label>
-        </div>
         
         <div class="modal-actions">
           <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
@@ -428,12 +401,6 @@
           <label>Risk Level:</label>
           <span [class]="getRiskBadgeClass(selectedCountry.riskLevel)">{{ selectedCountry.riskLevel }}</span>
         </div>
-        <div class="detail-item">
-          <label>Status:</label>
-          <span class="status-badge" [class.active]="selectedCountry.isActive" [class.inactive]="!selectedCountry.isActive">
-            {{ selectedCountry.isActive ? 'Active' : 'Inactive' }}
-          </span>
-        </div>
         <div class="detail-item" *ngIf="selectedCountry.createdAt">
           <label>Created:</label>
           <span>{{ selectedCountry.createdAt | date:'medium' }}</span>
@@ -445,7 +412,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" (click)="closeModals()">Close</button>
-        <button type="button" class="btn-primary" (click)="openEditModal(selectedCountry!)">Edit Country</button>
+        <button type="button" class="btn-primary" (click)="openEditFromView(selectedCountry!)">Edit Country</button>
       </div>
     </div>
   </div>

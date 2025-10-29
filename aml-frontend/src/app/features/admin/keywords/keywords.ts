@@ -158,6 +158,15 @@ export class Keywords implements OnInit {
     this.showEditModal = true;
   }
 
+  openEditFromView(keyword: Keyword): void {
+    // Close view modal first
+    this.showViewModal = false;
+    // Small delay to ensure smooth transition
+    setTimeout(() => {
+      this.openEditModal(keyword);
+    }, 100);
+  }
+
   openViewModal(keyword: Keyword): void {
     this.selectedKeyword = keyword;
     this.showViewModal = true;

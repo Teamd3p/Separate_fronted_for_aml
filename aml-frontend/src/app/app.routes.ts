@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { RoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -22,7 +23,8 @@ export const routes: Routes = [
   {
     path: 'customer',
     loadComponent: () => import('./features/customer/layout/customer-layout').then(m => m.CustomerLayout),
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['CUSTOMER'] },
     children: [
       {
         path: 'dashboard',
@@ -63,37 +65,44 @@ export const routes: Routes = [
   {
     path: 'admin/dashboard',
     loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: 'admin/kyc-review',
     loadComponent: () => import('./features/admin/kyc-review/kyc-review').then(m => m.KycReview),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN', 'COMPLIANCE_OFFICER'] }
   },
   {
     path: 'admin/users',
     loadComponent: () => import('./features/admin/users/users').then(m => m.Users),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: 'admin/rules',
     loadComponent: () => import('./features/admin/rules/rules').then(m => m.Rules),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: 'admin/audit',
     loadComponent: () => import('./features/admin/audit/audit').then(m => m.Audit),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: 'admin/keywords',
     loadComponent: () => import('./features/admin/keywords/keywords').then(m => m.Keywords),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: 'admin/countries',
     loadComponent: () => import('./features/admin/country/country').then(m => m.Country),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN'] }
   },
   {
     path: '**',

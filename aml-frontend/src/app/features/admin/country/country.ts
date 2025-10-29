@@ -20,8 +20,9 @@ export class Country implements OnInit {
   
   // Statistics
   totalCountries: number = 0;
-  activeCountries: number = 0;
-  inactiveCountries: number = 0;
+  
+  // Filter states
+  riskFilter: string = 'all';
   
   // Modal states
   showAddModal: boolean = false;
@@ -58,13 +59,30 @@ export class Country implements OnInit {
     this.countryService.getCountries().subscribe({
       next: (countries) => {
         this.countries = countries;
-        this.filteredCountries = [...countries];
         this.updateStatistics();
+        this.applyFilters();
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading countries:', error);
         this.loading = false;
+        this.countries = [];
+        this.filteredCountries = [];
+        
+        let errorMessage = 'Failed to load countries. ';
+        if (error.status === 0) {
+          errorMessage += 'Please check if the backend server is running.';
+        } else if (error.status === 401) {
+          errorMessage += 'Please login again.';
+        } else if (error.status === 403) {
+          errorMessage += 'You do not have permission to view countries.';
+        } else if (error.status === 404) {
+          errorMessage += 'Countries endpoint not found.';
+        } else {
+          errorMessage += `Server error: ${error.status}`;
+        }
+        
+        this.showErrorMessage(errorMessage);
       }
     });
   }
@@ -72,22 +90,36 @@ export class Country implements OnInit {
   // Update statistics
   updateStatistics(): void {
     this.totalCountries = this.countries.length;
-    this.activeCountries = this.countries.filter(c => c.isActive).length;
-    this.inactiveCountries = this.countries.filter(c => !c.isActive).length;
   }
 
-  // Search functionality
+  // Search and filter functionality
   onSearchChange(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredCountries = [...this.countries];
-      return;
+    this.applyFilters();
+  }
+  
+  onFilterChange(): void {
+    this.applyFilters();
+  }
+  
+  applyFilters(): void {
+    let filtered = [...this.countries];
+    
+    // Search filter
+    if (this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(country =>
+        country.name.toLowerCase().includes(searchLower) ||
+        country.code.toLowerCase().includes(searchLower)
+      );
     }
-
-    const searchLower = this.searchTerm.toLowerCase();
-    this.filteredCountries = this.countries.filter(country =>
-      country.name.toLowerCase().includes(searchLower) ||
-      country.code.toLowerCase().includes(searchLower)
-    );
+    
+    // Risk level filter
+    if (this.riskFilter !== 'all') {
+      filtered = filtered.filter(country => country.riskLevel === this.riskFilter);
+    }
+    
+    
+    this.filteredCountries = filtered;
   }
 
   // Modal management
@@ -106,11 +138,19 @@ export class Country implements OnInit {
     this.editCountry = {
       code: country.code,
       name: country.name,
-      riskLevel: country.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
-      isActive: country.isActive
+      riskLevel: country.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
     };
     this.formErrors = {};
     this.showEditModal = true;
+  }
+
+  openEditFromView(country: CountryModel): void {
+    // Close view modal first
+    this.showViewModal = false;
+    // Small delay to ensure smooth transition
+    setTimeout(() => {
+      this.openEditModal(country);
+    }, 100);
   }
 
   openViewModal(country: CountryModel): void {
@@ -135,6 +175,10 @@ export class Country implements OnInit {
 
   // CRUD Operations
   createCountry(): void {
+    // Clean and validate the data
+    this.newCountry.code = this.newCountry.code?.trim().toUpperCase() || '';
+    this.newCountry.name = this.newCountry.name?.trim() || '';
+    
     if (!this.validateCountryForm(this.newCountry)) {
       return;
     }
@@ -143,21 +187,30 @@ export class Country implements OnInit {
     this.countryService.createCountry(this.newCountry).subscribe({
       next: (country) => {
         this.countries.push(country);
-        this.filteredCountries = [...this.countries];
         this.updateStatistics();
+        this.applyFilters();
         this.closeModals();
         this.showSuccessMessage('Country created successfully');
       },
       error: (error) => {
         console.error('Error creating country:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to create country');
+        const errorMsg = error.error?.message || error.message || 'Unknown error';
+        this.showErrorMessage(`Failed to create country: ${errorMsg}`);
       }
     });
   }
 
   updateCountry(): void {
-    if (!this.selectedCountry || !this.validateCountryForm(this.editCountry)) {
+    if (!this.selectedCountry) {
+      return;
+    }
+    
+    // Clean and validate the data
+    this.editCountry.code = this.editCountry.code?.trim().toUpperCase() || '';
+    this.editCountry.name = this.editCountry.name?.trim() || '';
+    
+    if (!this.validateCountryForm(this.editCountry)) {
       return;
     }
 
@@ -167,16 +220,17 @@ export class Country implements OnInit {
         const index = this.countries.findIndex(c => c.code === updatedCountry.code);
         if (index !== -1) {
           this.countries[index] = updatedCountry;
-          this.filteredCountries = [...this.countries];
         }
         this.updateStatistics();
+        this.applyFilters();
         this.closeModals();
         this.showSuccessMessage('Country updated successfully');
       },
       error: (error) => {
         console.error('Error updating country:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to update country');
+        const errorMsg = error.error?.message || error.message || 'Unknown error';
+        this.showErrorMessage(`Failed to update country: ${errorMsg}`);
       }
     });
   }
@@ -188,38 +242,20 @@ export class Country implements OnInit {
     this.countryService.deleteCountry(this.selectedCountry.code).subscribe({
       next: () => {
         this.countries = this.countries.filter(c => c.code !== this.selectedCountry!.code);
-        this.filteredCountries = [...this.countries];
         this.updateStatistics();
+        this.applyFilters();
         this.closeModals();
         this.showSuccessMessage('Country deleted successfully');
       },
       error: (error) => {
         console.error('Error deleting country:', error);
         this.isSubmitting = false;
-        this.showErrorMessage('Failed to delete country');
+        const errorMsg = error.error?.message || error.message || 'Unknown error';
+        this.showErrorMessage(`Failed to delete country: ${errorMsg}`);
       }
     });
   }
 
-  toggleCountryStatus(country: CountryModel): void {
-    
-    const newStatus = !country.isActive;
-    this.countryService.toggleCountryStatus(country.code, newStatus).subscribe({
-      next: (updatedCountry) => {
-        const index = this.countries.findIndex(c => c.code === updatedCountry.code);
-        if (index !== -1) {
-          this.countries[index] = updatedCountry;
-          this.filteredCountries = [...this.countries];
-        }
-        this.updateStatistics();
-        this.showSuccessMessage(`Country ${newStatus ? 'activated' : 'deactivated'} successfully`);
-      },
-      error: (error) => {
-        console.error('Error updating country status:', error);
-        this.showErrorMessage('Failed to update country status');
-      }
-    });
-  }
 
   // Form validation
   validateCountryForm(country: any): boolean {

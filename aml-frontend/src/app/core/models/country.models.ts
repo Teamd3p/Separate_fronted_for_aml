@@ -2,7 +2,6 @@ export interface Country {
   code: string; // Primary key
   name: string;
   riskLevel: string;
-  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -17,5 +16,4 @@ export interface CountryUpdateRequest {
   code?: string;
   name?: string;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  isActive?: boolean;
 }

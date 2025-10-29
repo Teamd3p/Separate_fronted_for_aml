@@ -83,10 +83,18 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clear all stored user data
     localStorage.removeItem('token');
     localStorage.removeItem('email');
     localStorage.removeItem('role');
+    localStorage.removeItem('firstName');
+    localStorage.removeItem('lastName');
+    localStorage.removeItem('contactNumber');
+    
+    // Clear current user subject
     this.currentUserSubject.next(null);
+    
+    console.log('AuthService: User logged out, all data cleared');
   }
 
   isLoggedIn(): boolean {

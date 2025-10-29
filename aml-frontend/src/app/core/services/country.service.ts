@@ -51,8 +51,8 @@ export class CountryService {
   // Create new country
   createCountry(countryData: CountryCreateRequest): Observable<Country> {
     const payload = {
-      code: countryData.code?.toUpperCase(),
-      name: countryData.name,
+      countryCode: countryData.code?.toUpperCase(),
+      countryName: countryData.name,
       riskLevel: countryData.riskLevel || 'MEDIUM'
     };
     
@@ -71,8 +71,8 @@ export class CountryService {
   // Update country
   updateCountry(code: string, countryData: CountryUpdateRequest): Observable<Country> {
     const payload = {
-      code: countryData.code?.toUpperCase(),
-      name: countryData.name,
+      countryCode: countryData.code?.toUpperCase(),
+      countryName: countryData.name,
       riskLevel: countryData.riskLevel || 'MEDIUM'
     };
     
@@ -88,20 +88,9 @@ export class CountryService {
     );
   }
 
-  // Delete country (soft delete by setting isActive to false)
+  // Delete country
   deleteCountry(code: string): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/admin/countries/${code}`, this.getHttpOptions());
-  }
-
-  // Toggle country status
-  toggleCountryStatus(code: string, isActive: boolean): Observable<Country> {
-    return this.http.patch<any>(`${this.API_URL}/admin/countries/${code}/status`, 
-      { isActive }, this.getHttpOptions()).pipe(
-      map((response: any) => {
-        const countryData = response.data || response;
-        return this.mapToCountry(countryData);
-      })
-    );
   }
 
   // Helper method to map API response to Country interface
@@ -110,7 +99,6 @@ export class CountryService {
       code: data.code || data.countryCode || '',
       name: data.name || data.countryName || '',
       riskLevel: data.riskLevel || data.risk || data.riskCategory || 'MEDIUM',
-      isActive: data.isActive !== false && data.status !== 'INACTIVE',
       createdAt: data.createdAt || data.dateCreated,
       updatedAt: data.updatedAt || data.dateUpdated
     };

@@ -146,8 +146,9 @@ export class Users implements OnInit {
         error: (error) => {
           console.error('All customer endpoints failed:', error);
           this.loading = false;
-          // Use mock data as last resort
-          this.loadMockCustomers();
+          this.customers = [];
+          this.filteredCustomers = [];
+          alert('Failed to load customers. Please check your connection and try again.');
         }
       });
   }
@@ -273,68 +274,14 @@ export class Users implements OnInit {
         },
         error: (error) => {
           console.error('Error loading officers:', error.status, error.message);
-          // Fallback to mock data
-          this.loadMockOfficers();
+          this.officers = [];
+          this.filteredOfficers = [];
+          alert('Failed to load officers. Please check your connection and try again.');
         }
       });
   }
 
-  // Mock data for fallback
-  loadMockCustomers(): void {
-    this.customers = [
-      {
-        userId: 1,
-        firstName: 'Deep',
-        lastName: 'Ratanpara',
-        email: 'ratanparadeep3108@gmail.com',
-        phone: '9876543210',
-        role: 'CUSTOMER',
-        status: 'INACTIVE',
-        isActive: false,
-        createdAt: '2024-01-15T10:30:00Z'
-      },
-      {
-        userId: 2,
-        firstName: 'Deep',
-        lastName: 'Ratanpara',
-        email: 'deep.ratanpara12016@marwadiuniversity.ac.in',
-        phone: '9876543210',
-        role: 'CUSTOMER',
-        status: 'ACTIVE',
-        isActive: true,
-        createdAt: '2024-02-10T14:20:00Z'
-      },
-      {
-        userId: 3,
-        firstName: 'Harshad',
-        lastName: 'Panchani',
-        email: 'cedop53335@dropeso.com',
-        phone: '9876543210',
-        role: 'CUSTOMER',
-        status: 'ACTIVE',
-        isActive: true,
-        createdAt: '2024-03-05T09:15:00Z'
-      }
-    ];
-    this.filteredCustomers = [...this.customers];
-  }
-
-  loadMockOfficers(): void {
-    this.officers = [
-      {
-        officerId: 1,
-        firstName: 'Compliance',
-        lastName: 'Officer',
-        email: 'officer@aml-admin.com',
-        phone: '9876543210',
-        employeeId: 'EMP001',
-        department: 'Compliance',
-        isActive: true,
-        createdAt: '2024-01-01T08:00:00Z'
-      }
-    ];
-    this.filteredOfficers = [...this.officers];
-  }
+  // Mock data methods removed - no fallback to mock data
 
   // Search and Filter Methods
   searchCustomers(): void {
@@ -680,24 +627,22 @@ export class Users implements OnInit {
   }
   
   private tryOfficerStatusUpdate(endpoint: string, payload: any, officer: ComplianceOfficer, newStatus: boolean, action: string, headers: HttpHeaders): void {
-    // Try PUT first as per backend controller
-    this.http.put(endpoint, payload, { headers }).subscribe({
+    console.log(`Updating officer status via ${endpoint}`, payload);
+    
+    // Use PUT as per backend controller, expect text response (same as customer status)
+    this.http.put(endpoint, payload, { headers, responseType: 'text' }).subscribe({
       next: (response) => {
+        console.log(`Officer ${action}d successfully:`, response);
         this.updateOfficerStatusLocally(officer, newStatus);
-        // No alert - status updated successfully
+        alert(`Officer ${action}d successfully!`);
+        // Reload officers to ensure data is fresh
+        this.loadOfficers();
       },
       error: (error) => {
-        // Try PATCH as fallback
-        this.http.patch(endpoint, payload, { headers }).subscribe({
-          next: (response) => {
-            this.updateOfficerStatusLocally(officer, newStatus);
-            // No alert - status updated successfully
-          },
-          error: (patchError) => {
-            console.error(`Officer status update failed:`, patchError);
-            alert(`Failed to ${action} officer. Please try again.`);
-          }
-        });
+        console.error(`Officer status update failed:`, error);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.error?.message || error.message);
+        alert(`Failed to ${action} officer: ${error.error?.message || error.message || 'Unknown error'}`);
       }
     });
   }
