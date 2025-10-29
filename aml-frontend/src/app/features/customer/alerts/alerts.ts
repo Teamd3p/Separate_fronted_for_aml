@@ -143,14 +143,14 @@ export class Alerts implements OnInit {
     }
 
     this.sendingMessage = true;
-    this.alertService.contactSupport(this.selectedAlert.id, this.contactMessage).subscribe({
+    this.alertService.contactSupport(this.selectedAlert.id, this.contactMessage, this.selectedAlert).subscribe({
       next: () => {
-        alert('Your message has been sent to support. We will contact you soon.');
+        alert('Your inquiry has been submitted to our compliance team. You will receive a response within 24-48 hours explaining the alert details.');
         this.closeModals();
       },
       error: (error) => {
         console.error('Error contacting support:', error);
-        alert('Failed to send message. Please try again.');
+        alert('Failed to send inquiry. Please try again.');
         this.sendingMessage = false;
       }
     });

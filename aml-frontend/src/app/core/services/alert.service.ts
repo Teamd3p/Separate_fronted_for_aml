@@ -163,11 +163,14 @@ export class AlertService {
   }
 
   // Contact support about an alert - using helpdesk endpoint
-  contactSupport(alertId: number, message: string): Observable<any> {
+  contactSupport(alertId: number, message: string, alert?: AlertNotification): Observable<any> {
     const ticketRequest = {
-      subject: `Alert Support Request - Alert ID: ${alertId}`,
-      description: message,
-      priority: 'MEDIUM'
+      subject: `Alert Inquiry - Transaction ${alert?.transactionId || 'ID: ' + alertId}`,
+      description: this.buildAlertTicketDescription(alert, message),
+      priority: this.determineTicketPriority(alert?.severity),
+      category: 'ALERT_INQUIRY', // Help compliance officers categorize
+      alertId: alertId, // Reference to the alert
+      transactionId: alert?.transactionId
     };
     
     return this.http.post<any>(
@@ -175,6 +178,48 @@ export class AlertService {
       ticketRequest,
       this.getHttpOptions()
     );
+  }
+
+  // Build detailed ticket description for compliance officers
+  private buildAlertTicketDescription(alert: AlertNotification | undefined, customerMessage: string): string {
+    if (!alert) {
+      return `Customer Inquiry:\n${customerMessage}`;
+    }
+
+    return `ALERT INQUIRY - Customer needs clarification
+
+ALERT DETAILS:
+- Alert ID: ${alert.id}
+- Transaction ID: ${alert.transactionId}
+- Amount: ${this.formatCurrency(alert.amount)}
+- Status: ${alert.status}
+- Reason: ${alert.reason}
+- Severity: ${alert.severity}
+- Date: ${alert.date}
+
+CUSTOMER MESSAGE:
+${customerMessage}
+
+ACTION REQUIRED:
+Please review the alert and provide explanation to the customer about why this transaction was flagged/blocked.`;
+  }
+
+  // Determine ticket priority based on alert severity
+  private determineTicketPriority(severity?: string): string {
+    switch (severity) {
+      case 'HIGH': return 'HIGH';
+      case 'MEDIUM': return 'MEDIUM';
+      case 'LOW': return 'LOW';
+      default: return 'MEDIUM';
+    }
+  }
+
+  // Format currency for ticket description
+  private formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
   }
 
   // Helper method to map API response to AlertNotification interface

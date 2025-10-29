@@ -38,8 +38,8 @@ export class Dashboard implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    console.log('🚀 Loading dashboard data...');
-    console.log('🔑 JWT Token:', localStorage.getItem('token'));
+    console.log('Loading dashboard data...');
+    console.log('JWT Token:', localStorage.getItem('token'));
 
     // Load data from API only - no fallback data
     Promise.all([
@@ -48,10 +48,10 @@ export class Dashboard implements OnInit {
       this.dashboardService.getRecentAlerts(5).toPromise(),
       this.dashboardService.getCustomerProfile().toPromise()
     ]).then(([stats, transactions, alerts, profile]) => {
-      console.log('📊 Dashboard Stats:', stats);
-      console.log('💳 Recent Transactions:', transactions);
-      console.log('🚨 Recent Alerts:', alerts);
-      console.log('👤 Customer Profile:', profile);
+      console.log('Dashboard Stats:', stats);
+      console.log('Recent Transactions:', transactions);
+      console.log('Recent Alerts:', alerts);
+      console.log('Customer Profile:', profile);
 
       this.dashboardData = stats || this.dashboardData;
       this.recentTransactions = transactions || [];
@@ -59,16 +59,16 @@ export class Dashboard implements OnInit {
       this.customerProfile = profile || null;
       this.isLoading = false;
       
-      console.log('✅ Successfully loaded data from API');
+      console.log('Successfully loaded data from API');
       
       // Log the display name being used
-      console.log('🏷️ Display Name:', this.getUserDisplayName());
+      console.log('Display Name:', this.getUserDisplayName());
     }).catch(error => {
       this.isLoading = false;
       this.errorMessage = 'Unable to load dashboard data. Please check the backend APIs.';
-      console.error('❌ API Error Details:', error);
-      console.error('❌ Error Status:', error.status);
-      console.error('❌ Error Message:', error.message);
+      console.error('API Error Details:', error);
+      console.error('Error Status:', error.status);
+      console.error('Error Message:', error.message);
     });
   }
 
