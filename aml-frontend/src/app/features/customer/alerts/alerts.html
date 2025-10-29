@@ -1,1 +1,157 @@
-<p>alerts works!</p>
+<div class="alerts-page">
+  <div class="alerts-container">
+    <!-- Page Title -->
+    <div class="page-title-section">
+      <h1 class="page-title">Your Transaction Notifications</h1>
+      <p class="page-subtitle">Your recent compliance notifications.</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card" [class.active]="activeTab === 'pending'" (click)="switchTab('pending')">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value">{{ stats.pending }}</div>
+      </div>
+      <div class="stat-card" [class.active]="activeTab === 'resolved'" (click)="switchTab('resolved')">
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value">{{ stats.resolved }}</div>
+      </div>
+    </div>
+
+    <!-- Recent Notifications Section -->
+    <div class="notifications-section">
+      <h2 class="section-title">Recent Notifications</h2>
+
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading alerts...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && filteredAlerts.length === 0" class="empty-state">
+        <div class="empty-icon">🔔</div>
+        <h3>No Alerts Found</h3>
+        <p>You don't have any {{ activeTab === 'all' ? '' : activeTab }} alerts at the moment.</p>
+      </div>
+
+      <!-- Alert Cards -->
+      <div *ngIf="!loading && filteredAlerts.length > 0" class="alerts-list">
+        <div *ngFor="let alert of filteredAlerts" class="alert-card" [class]="getAlertIconClass(alert)">
+          <div class="alert-icon">
+            <span *ngIf="alert.type === 'FLAGGED'">⚠️</span>
+            <span *ngIf="alert.type === 'CANCELED'">🚫</span>
+            <span *ngIf="alert.type === 'SUSPICIOUS'">⚠️</span>
+          </div>
+          <div class="alert-content">
+            <div class="alert-header">
+              <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
+              <span class="alert-amount">Amount: {{ formatCurrency(alert.amount) }}</span>
+            </div>
+            <div class="alert-details">
+              <div class="alert-meta">
+                <span class="meta-item">
+                  <strong>Transaction ID:</strong> {{ alert.transactionId }}
+                </span>
+                <span class="meta-item">
+                  <strong>Date:</strong> {{ formatDate(alert.date) }}
+                </span>
+              </div>
+              <p class="alert-reason"><strong>Reason:</strong> {{ alert.reason }}</p>
+            </div>
+            <div class="alert-actions">
+              <button class="btn-secondary" (click)="viewDetails(alert)">
+                👁️ View Details
+              </button>
+              <button class="btn-primary" (click)="openContactModal(alert)">
+                📧 Contact Support
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Alert Details</h3>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedAlert">
+      <div class="detail-row">
+        <span class="detail-label">Transaction ID:</span>
+        <span class="detail-value">{{ selectedAlert.transactionId }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Amount:</span>
+        <span class="detail-value">{{ formatCurrency(selectedAlert.amount) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Date:</span>
+        <span class="detail-value">{{ formatDate(selectedAlert.date) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Type:</span>
+        <span class="detail-value">{{ getAlertTypeLabel(selectedAlert) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Status:</span>
+        <span class="detail-value status-badge" [class]="selectedAlert.status.toLowerCase()">{{ selectedAlert.status }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Severity:</span>
+        <span class="detail-value severity-badge" [class]="selectedAlert.severity.toLowerCase()">{{ selectedAlert.severity }}</span>
+      </div>
+      <div class="detail-row full-width">
+        <span class="detail-label">Reason:</span>
+        <p class="detail-description">{{ selectedAlert.reason }}</p>
+      </div>
+      <div class="detail-row full-width" *ngIf="selectedAlert.description">
+        <span class="detail-label">Additional Details:</span>
+        <p class="detail-description">{{ selectedAlert.description }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModals()">Close</button>
+      <button class="btn-primary" (click)="openContactModal(selectedAlert!); showDetailsModal = false">Contact Support</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Support Modal -->
+<div *ngIf="showContactModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Contact Support</h3>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedAlert">
+      <p class="modal-description">Send a message to our support team regarding this alert.</p>
+      <div class="alert-summary">
+        <strong>Transaction ID:</strong> {{ selectedAlert.transactionId }}<br>
+        <strong>Amount:</strong> {{ formatCurrency(selectedAlert.amount) }}
+      </div>
+      <div class="form-group">
+        <label for="contactMessage">Your Message *</label>
+        <textarea 
+          id="contactMessage"
+          [(ngModel)]="contactMessage"
+          placeholder="Please describe your concern or question..."
+          rows="5"
+          [disabled]="sendingMessage"
+          required>
+        </textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModals()" [disabled]="sendingMessage">Cancel</button>
+      <button class="btn-primary" (click)="contactSupport()" [disabled]="!contactMessage.trim() || sendingMessage">
+        {{ sendingMessage ? 'Sending...' : 'Send Message' }}
+      </button>
+    </div>
+  </div>
+</div>
