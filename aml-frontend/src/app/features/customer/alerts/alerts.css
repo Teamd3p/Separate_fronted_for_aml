@@ -1,8 +1,13 @@
+/* Import Professional Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Nunito+Sans:wght@300;400;500;600;700;800&display=swap');
+
 /* Alerts Page Styles */
 .alerts-page {
   min-height: 100vh;
-  background: #f9fafb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f8fafc;
+  font-family: 'Nunito Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .alerts-container {
@@ -16,15 +21,19 @@
 }
 
 .page-title {
+  font-family: 'Poppins', system-ui, sans-serif;
   font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
   margin: 0 0 0.5rem 0;
 }
 
 .page-subtitle {
-  color: #6b7280;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  color: #64748b;
   font-size: 0.875rem;
+  font-weight: 400;
   margin: 0;
 }
 
@@ -37,16 +46,19 @@
 
 .stat-card {
   background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .stat-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-color: #007AFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .stat-card.active {

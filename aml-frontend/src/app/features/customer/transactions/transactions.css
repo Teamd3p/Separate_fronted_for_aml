@@ -1,3 +1,6 @@
+/* Import Professional Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Nunito+Sans:wght@300;400;500;600;700;800&display=swap');
+
 /* Loading State */
 .loading-section {
   display: flex;
@@ -34,9 +37,11 @@
 }
 
 .page-title {
+  font-family: 'Poppins', system-ui, sans-serif;
   font-size: 1.875rem;
   font-weight: 700;
   color: #0f172a;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
