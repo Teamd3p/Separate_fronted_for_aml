@@ -66,14 +66,24 @@
                 </div>
 
                 <div class="captcha-section">
-                    <div class="recaptcha-wrapper">
-                        <label class="checkbox-container captcha-checkbox">
-                            <input type="checkbox" id="captcha" name="captcha" [(ngModel)]="captchaChecked" required>
-                            <span class="checkmark"></span>
-                            <span class="checkbox-text">I'm not a robot</span>
-                        </label>
-                        <div class="recaptcha-logo">
-                            <span class="recaptcha-text">reCAPTCHA</span>
+                    <div class="math-captcha-wrapper">
+                        <h3 class="captcha-title">CAPTCHA</h3>
+                        <div class="math-question">
+                          
+                            <div class="math-problem">
+                                <span class="math-expression">{{ captchaNum1 }} + {{ captchaNum2 }} =</span>
+                                <input 
+                                    type="text" 
+                                    id="captchaAnswer" 
+                                    name="captchaAnswer" 
+                                    [(ngModel)]="captchaAnswer" 
+                                    class="captcha-input"
+                                    placeholder="?"
+                                    required
+                                    maxlength="3"
+                                >
+                            </div>
+                            <p class="captcha-hint">Solve this math problem and enter the result. E.g. for 1+3, enter 4.</p>
                         </div>
                     </div>
                 </div>

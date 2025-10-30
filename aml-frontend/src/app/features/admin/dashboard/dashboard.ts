@@ -292,7 +292,8 @@ export class Dashboard implements OnInit {
         this.router.navigate(['/admin/audit']);
         break;
       case 'reports':
-        this.router.navigate(['/admin/reports']);
+        // this.router.navigate(['/admin/reports']); // Route doesn't exist yet
+        console.log('Reports page not implemented yet');
         break;
       case 'keywords':
         this.router.navigate(['/admin/keywords']);

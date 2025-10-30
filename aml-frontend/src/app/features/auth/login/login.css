@@ -222,29 +222,80 @@ body {
 
 /* Captcha Section */
 .captcha-section {
-    margin: 0.75rem 0 1rem 0;
+    margin: 1rem 0 1.5rem 0;
 }
 
-.recaptcha-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.625rem 0.75rem;
+.math-captcha-wrapper {
+    padding: 1.25rem;
     border: 1px solid #e5e7eb;
-    border-radius: 4px;
+    border-radius: 8px;
     background-color: #f9fafb;
-    min-height: 40px;
 }
 
-.captcha-checkbox .checkbox-text {
-    color: #374151;
+.captcha-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+}
+
+.captcha-description {
     font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
 }
 
-.recaptcha-logo {
+.math-question {
+    margin-top: 1rem;
+}
+
+.captcha-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.captcha-label .required {
+    color: #ef4444;
+}
+
+.math-problem {
     display: flex;
-    flex-direction: column;
     align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.math-expression {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.captcha-input {
+    width: 80px;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 1rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.captcha-input:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.captcha-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+    line-height: 1.4;
 }
 
 .recaptcha-text {

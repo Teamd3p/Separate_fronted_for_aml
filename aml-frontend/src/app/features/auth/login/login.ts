@@ -16,9 +16,14 @@ import { LoginRequest } from '../../../core/models/auth.models';
 export class Login {
   showPassword: boolean = false;
   rememberMe: boolean = false;
-  captchaChecked: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
+  
+  // Math CAPTCHA
+  captchaNum1: number = 0;
+  captchaNum2: number = 0;
+  captchaAnswer: string = '';
+  captchaCorrect: number = 0;
   
   loginData: LoginRequest = {
     email: '',
@@ -28,15 +33,29 @@ export class Login {
   constructor(
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) {
+    this.generateCaptcha();
+  }
+
+  generateCaptcha(): void {
+    this.captchaNum1 = Math.floor(Math.random() * 10) + 1;
+    this.captchaNum2 = Math.floor(Math.random() * 10) + 1;
+    this.captchaCorrect = this.captchaNum1 + this.captchaNum2;
+    this.captchaAnswer = '';
+  }
+
+  validateCaptcha(): boolean {
+    return parseInt(this.captchaAnswer) === this.captchaCorrect;
+  }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
   onLogin(): void {
-    if (!this.captchaChecked) {
-      this.errorMessage = 'Please complete the captcha';
+    if (!this.validateCaptcha()) {
+      this.errorMessage = 'Please solve the math problem correctly';
+      this.generateCaptcha(); // Generate new captcha
       this.scrollToTop();
       return;
     }

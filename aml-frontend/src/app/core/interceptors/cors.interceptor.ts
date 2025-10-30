@@ -24,21 +24,41 @@ export class AuthInterceptor implements HttpInterceptor {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log('AuthInterceptor: Added token to request:', req.url);
+    } else {
+      console.warn('AuthInterceptor: No token available for request:', req.url);
     }
 
     return next.handle(authRequest).pipe(
       catchError((error: HttpErrorResponse) => {
+        console.error('AuthInterceptor: HTTP Error:', {
+          status: error.status,
+          url: req.url,
+          message: error.message,
+          error: error.error
+        });
+
         // Handle 401 Unauthorized - token expired or invalid
         if (error.status === 401) {
-          console.log('AuthInterceptor: 401 Unauthorized, redirecting to login');
-          this.authService.logout();
-          this.router.navigate(['/auth/login']);
+          console.error('AuthInterceptor: ❌ 401 Unauthorized');
+          console.error('  URL:', req.url);
+          console.error('  This will redirect to login in 2 seconds...');
+          console.error('  Check if your backend endpoint requires authentication');
+          
+          // Delay redirect slightly to see the error
+          setTimeout(() => {
+            this.authService.logout();
+            this.router.navigate(['/auth/login']);
+          }, 2000);
+          
           return throwError(() => error);
         }
         
         // Handle 403 Forbidden - insufficient permissions
         if (error.status === 403) {
-          console.log('AuthInterceptor: 403 Forbidden, insufficient permissions');
+          console.error('AuthInterceptor: ❌ 403 Forbidden');
+          console.error('  URL:', req.url);
+          console.error('  You do not have permission to access this resource');
           alert('You do not have permission to access this resource.');
           return throwError(() => error);
         }

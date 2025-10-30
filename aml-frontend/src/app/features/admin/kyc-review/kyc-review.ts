@@ -69,7 +69,11 @@ export class KycReview implements OnInit {
       });
   }
 
-  setActiveTab(tab: string): void {
+  setActiveTab(tab: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    
     switch(tab) {
       case 'dashboard':
         this.router.navigate(['/admin/dashboard']);
@@ -87,7 +91,8 @@ export class KycReview implements OnInit {
         this.router.navigate(['/admin/audit']);
         break;
       case 'reports':
-        this.router.navigate(['/admin/reports']);
+        // this.router.navigate(['/admin/reports']); // Route doesn't exist yet
+        console.log('Reports page not implemented yet');
         break;
       case 'keywords':
         this.router.navigate(['/admin/keywords']);

@@ -144,23 +144,56 @@ export class AuthService {
 
   getUserRoleFromToken(): string | null {
     const token = this.getToken();
-    console.log('Getting role from token:', token ? 'Token exists' : 'No token');
+    console.log('AuthService: Getting role from token:', token ? 'Token exists' : 'No token');
     
-    if (!token) return null;
+    if (!token) {
+      // Fallback to localStorage
+      const storedRole = localStorage.getItem('role');
+      console.log('AuthService: No token, checking localStorage:', storedRole);
+      return storedRole;
+    }
 
     try {
       // Decode JWT token (split by '.' and decode the payload)
       const payload = token.split('.')[1];
       const decodedPayload = JSON.parse(atob(payload));
-      console.log('Decoded token payload:', decodedPayload);
+      console.log('AuthService: Decoded token payload:', decodedPayload);
       
-      // Extract role from token payload
-      const role = decodedPayload.role || decodedPayload.authorities?.[0] || null;
-      console.log('Extracted role from token:', role);
+      // Extract role from token payload - try multiple possible field names
+      let role = decodedPayload.role || 
+                 decodedPayload.Role || 
+                 decodedPayload.ROLE ||
+                 decodedPayload.authorities?.[0] ||
+                 decodedPayload.authority ||
+                 decodedPayload.roles?.[0] ||
+                 null;
+      
+      // If role is an object with authority field (Spring Security format)
+      if (role && typeof role === 'object' && role.authority) {
+        role = role.authority;
+      }
+      
+      // Remove ROLE_ prefix if present (Spring Security convention)
+      if (role && typeof role === 'string' && role.startsWith('ROLE_')) {
+        role = role.substring(5);
+      }
+      
+      console.log('AuthService: Extracted role from token:', role);
+      
+      // If no role in token, fallback to localStorage
+      if (!role) {
+        const storedRole = localStorage.getItem('role');
+        console.log('AuthService: No role in token, using localStorage:', storedRole);
+        return storedRole;
+      }
+      
       return role;
     } catch (error) {
-      console.error('Error decoding token:', error);
-      return null;
+      console.error('AuthService: Error decoding token:', error);
+      // Fallback to localStorage on error
+      const storedRole = localStorage.getItem('role');
+      console.log('AuthService: Error decoding, using localStorage:', storedRole);
+      return storedRole;
     }
   }
 
