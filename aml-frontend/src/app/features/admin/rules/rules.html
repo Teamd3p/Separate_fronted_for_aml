@@ -320,6 +320,7 @@
             id="ruleType" 
             [(ngModel)]="newRule.type" 
             name="ruleType"
+            (change)="onRuleTypeChange(false)"
             [class.error]="formErrors.type"
             required>
             <option value="THRESHOLD">Threshold</option>
@@ -337,6 +338,9 @@
             <option value="FUNNEL_ACCOUNT">Funnel Account</option>
           </select>
           <div *ngIf="formErrors.type" class="error-message">{{ formErrors.type }}</div>
+          <div *ngIf="getRuleTypeConfig(newRule.type)" class="help-text" style="margin-top: 8px;">
+            <strong>{{ getRuleTypeConfig(newRule.type)!.description }}</strong>
+          </div>
         </div>
         
         <div class="form-group">
@@ -365,52 +369,67 @@
           </textarea>
         </div>
         
-        <div class="form-group">
-          <label for="ruleCondition">Condition</label>
-          <textarea 
-            id="ruleCondition" 
-            [(ngModel)]="newRule.condition" 
-            name="ruleCondition"
-            placeholder="JSON format: regex, sourceTable, or field condition"
-            [class.error]="formErrors.condition"
-            (input)="onConditionChange()"
-            rows="4">
-          </textarea>
-          <div *ngIf="formErrors.condition" class="error-message">{{ formErrors.condition }}</div>
+        <!-- Dynamic Rule Condition Fields -->
+        <div *ngIf="getRuleTypeConfig(newRule.type) && getRuleTypeConfig(newRule.type)!.fields.length > 0" class="dynamic-fields-section">
+          <h4 style="margin: 20px 0 10px 0; font-size: 16px; color: #333;">Rule Conditions</h4>
           
-          <!-- JSON Preview -->
-          <div *ngIf="newRule.condition && newRule.condition.trim()" class="json-preview">
-            <label>Preview:</label>
-            <div class="condition-json">
-              <pre>{{ formatJsonCondition(newRule.condition) }}</pre>
-            </div>
+          <div *ngFor="let field of getRuleTypeConfig(newRule.type)!.fields" class="form-group">
+            <label [attr.for]="'field_' + field.name">
+              {{ field.label }} {{ field.required ? '*' : '' }}
+            </label>
+            
+            <!-- Number Input -->
+            <input 
+              *ngIf="field.type === 'number'"
+              type="number"
+              [id]="'field_' + field.name"
+              [(ngModel)]="dynamicFormFields[field.name]"
+              [name]="'field_' + field.name"
+              [placeholder]="field.placeholder || ''"
+              [attr.min]="field.min ?? null"
+              [attr.max]="field.max ?? null"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+            
+            <!-- Text Input -->
+            <input 
+              *ngIf="field.type === 'text'"
+              type="text"
+              [id]="'field_' + field.name"
+              [(ngModel)]="dynamicFormFields[field.name]"
+              [name]="'field_' + field.name"
+              [placeholder]="field.placeholder || ''"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+            
+            <!-- Select Input -->
+            <select 
+              *ngIf="field.type === 'select'"
+              [id]="'field_' + field.name"
+              [(ngModel)]="dynamicFormFields[field.name]"
+              [name]="'field_' + field.name"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+              <option *ngFor="let option of field.options" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            
+            <div *ngIf="formErrors[field.name]" class="error-message">{{ formErrors[field.name] }}</div>
+            <div *ngIf="field.description" class="help-text">{{ field.description }}</div>
           </div>
-          
-          <div class="help-text">
-            <strong>Rule Type Specifications:</strong><br><br>
-            
-            <strong>THRESHOLD Rules:</strong><br>
-            • {{ '{' }}"amountThreshold": 50000, "currency": "USD"{{ '}' }}<br>
-            • {{ '{' }}"minAmount": 9000, "maxAmount": 10000, "currency": "ANY"{{ '}' }}<br>
-            • {{ '{' }}"amountThreshold": 100000, "transactionType": "TRANSFER"{{ '}' }}<br><br>
-            
-            <strong>GEOGRAPHIC Rules:</strong><br>
-            • {{ '{' }}"highRiskAmountThreshold": 25000, "mediumRiskAmountThreshold": 250000{{ '}' }}<br><br>
-            
-            <strong>FREQUENCY Rules:</strong><br>
-            • {{ '{' }}"maxTransactions": 5, "timeWindowMinutes": 60{{ '}' }}<br><br>
-            
-            <strong>VELOCITY Rules:</strong><br>
-            • {{ '{' }}"timeWindowMinutes": 30, "minAmount": 1000, "maxTransactions": 3{{ '}' }}<br><br>
-            
-            <strong>PATTERN Rules:</strong><br>
-            • {{ '{' }}"regex": "cash.*deposit", "field": "description"{{ '}' }}<br><br>
-            
-            <strong>FUNNEL_ACCOUNT Rules:</strong><br>
-            • {{ '{' }}"minSenders": 5, "timeWindowMinutes": 60{{ '}' }}<br><br>
-            
-            <strong>KEYWORD/KYC Rules:</strong><br>
-            • {{ '{' }}{{ '}' }} <em>(empty object)</em>
+        </div>
+        
+        <!-- Info for KEYWORD/KYC rules -->
+        <div *ngIf="getRuleTypeConfig(newRule.type) && getRuleTypeConfig(newRule.type)!.fields.length === 0" class="info-message" style="padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; margin: 15px 0;">
+          <strong>Note:</strong> This rule type uses data from the database and doesn't require additional condition fields.
+        </div>
+        
+        <!-- JSON Preview -->
+        <div class="json-preview" style="margin-top: 20px;">
+          <label style="font-weight: 600; margin-bottom: 8px; display: block;">Generated JSON Condition:</label>
+          <div class="condition-json" style="background: #f5f5f5; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">
+            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">{{ getGeneratedConditionPreview(newRule.type, dynamicFormFields) }}</pre>
           </div>
         </div>
         
@@ -452,6 +471,7 @@
             id="editRuleType" 
             [(ngModel)]="editRule.type" 
             name="editRuleType"
+            (change)="onRuleTypeChange(true)"
             [class.error]="formErrors.type"
             required>
             <option value="THRESHOLD">Threshold</option>
@@ -469,6 +489,9 @@
             <option value="FUNNEL_ACCOUNT">Funnel Account</option>
           </select>
           <div *ngIf="formErrors.type" class="error-message">{{ formErrors.type }}</div>
+          <div *ngIf="getRuleTypeConfig(editRule.type!)" class="help-text" style="margin-top: 8px;">
+            <strong>{{ getRuleTypeConfig(editRule.type!)!.description }}</strong>
+          </div>
         </div>
         
         <div class="form-group">
@@ -495,53 +518,67 @@
           </textarea>
         </div>
         
-        <div class="form-group">
-          <label for="editRuleCondition">Condition</label>
-          <textarea 
-            #editConditionTextarea
-            id="editRuleCondition" 
-            [(ngModel)]="editRule.condition" 
-            name="editRuleCondition"
-            placeholder="JSON format: regex, sourceTable, or field condition"
-            [class.error]="formErrors.condition"
-            (input)="onConditionChange()"
-            rows="4">
-          </textarea>
-          <div *ngIf="formErrors.condition" class="error-message">{{ formErrors.condition }}</div>
+        <!-- Dynamic Rule Condition Fields -->
+        <div *ngIf="getRuleTypeConfig(editRule.type!) && getRuleTypeConfig(editRule.type!)!.fields.length > 0" class="dynamic-fields-section">
+          <h4 style="margin: 20px 0 10px 0; font-size: 16px; color: #333;">Rule Conditions</h4>
           
-          <!-- JSON Preview -->
-          <div *ngIf="editRule.condition && editRule.condition.trim()" class="json-preview">
-            <label>Preview:</label>
-            <div class="condition-json">
-              <pre>{{ formatJsonCondition(editRule.condition) }}</pre>
-            </div>
+          <div *ngFor="let field of getRuleTypeConfig(editRule.type!)!.fields" class="form-group">
+            <label [attr.for]="'edit_field_' + field.name">
+              {{ field.label }} {{ field.required ? '*' : '' }}
+            </label>
+            
+            <!-- Number Input -->
+            <input 
+              *ngIf="field.type === 'number'"
+              type="number"
+              [id]="'edit_field_' + field.name"
+              [(ngModel)]="editDynamicFormFields[field.name]"
+              [name]="'edit_field_' + field.name"
+              [placeholder]="field.placeholder || ''"
+              [attr.min]="field.min ?? null"
+              [attr.max]="field.max ?? null"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+            
+            <!-- Text Input -->
+            <input 
+              *ngIf="field.type === 'text'"
+              type="text"
+              [id]="'edit_field_' + field.name"
+              [(ngModel)]="editDynamicFormFields[field.name]"
+              [name]="'edit_field_' + field.name"
+              [placeholder]="field.placeholder || ''"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+            
+            <!-- Select Input -->
+            <select 
+              *ngIf="field.type === 'select'"
+              [id]="'edit_field_' + field.name"
+              [(ngModel)]="editDynamicFormFields[field.name]"
+              [name]="'edit_field_' + field.name"
+              [class.error]="formErrors[field.name]"
+              [required]="field.required">
+              <option *ngFor="let option of field.options" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            
+            <div *ngIf="formErrors[field.name]" class="error-message">{{ formErrors[field.name] }}</div>
+            <div *ngIf="field.description" class="help-text">{{ field.description }}</div>
           </div>
-          
-          <div class="help-text">
-            <strong>Rule Type Specifications:</strong><br><br>
-            
-            <strong>THRESHOLD Rules:</strong><br>
-            • {{ '{' }}"amountThreshold": 50000, "currency": "USD"{{ '}' }}<br>
-            • {{ '{' }}"minAmount": 9000, "maxAmount": 10000, "currency": "ANY"{{ '}' }}<br>
-            • {{ '{' }}"amountThreshold": 100000, "transactionType": "TRANSFER"{{ '}' }}<br><br>
-            
-            <strong>GEOGRAPHIC Rules:</strong><br>
-            • {{ '{' }}"highRiskAmountThreshold": 25000, "mediumRiskAmountThreshold": 250000{{ '}' }}<br><br>
-            
-            <strong>FREQUENCY Rules:</strong><br>
-            • {{ '{' }}"maxTransactions": 5, "timeWindowMinutes": 60{{ '}' }}<br><br>
-            
-            <strong>VELOCITY Rules:</strong><br>
-            • {{ '{' }}"timeWindowMinutes": 30, "minAmount": 1000, "maxTransactions": 3{{ '}' }}<br><br>
-            
-            <strong>PATTERN Rules:</strong><br>
-            • {{ '{' }}"regex": "cash.*deposit", "field": "description"{{ '}' }}<br><br>
-            
-            <strong>FUNNEL_ACCOUNT Rules:</strong><br>
-            • {{ '{' }}"minSenders": 5, "timeWindowMinutes": 60{{ '}' }}<br><br>
-            
-            <strong>KEYWORD/KYC Rules:</strong><br>
-            • {{ '{' }}{{ '}' }} <em>(empty object)</em>
+        </div>
+        
+        <!-- Info for KEYWORD/KYC rules -->
+        <div *ngIf="getRuleTypeConfig(editRule.type!) && getRuleTypeConfig(editRule.type!)!.fields.length === 0" class="info-message" style="padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; margin: 15px 0;">
+          <strong>Note:</strong> This rule type uses data from the database and doesn't require additional condition fields.
+        </div>
+        
+        <!-- JSON Preview -->
+        <div class="json-preview" style="margin-top: 20px;">
+          <label style="font-weight: 600; margin-bottom: 8px; display: block;">Generated JSON Condition:</label>
+          <div class="condition-json" style="background: #f5f5f5; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">
+            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">{{ getGeneratedConditionPreview(editRule.type!, editDynamicFormFields) }}</pre>
           </div>
         </div>
         

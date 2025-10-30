@@ -5,6 +5,24 @@ import { Router } from '@angular/router';
 import { RuleService } from '../../../core/services/rule.service';
 import { Rule, RuleCreateRequest, RuleUpdateRequest } from '../../../core/models/rule.models';
 
+// Field configuration interfaces
+interface RuleFieldConfig {
+  name: string;
+  label: string;
+  type: 'number' | 'text' | 'select';
+  required: boolean;
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  min?: number;
+  max?: number;
+  description?: string;
+}
+
+interface RuleTypeConfig {
+  fields: RuleFieldConfig[];
+  description: string;
+}
+
 @Component({
   selector: 'app-rules',
   standalone: true,
@@ -48,8 +66,199 @@ export class Rules implements OnInit {
   // Form validation
   formErrors: any = {};
   isSubmitting: boolean = false;
-
-  @ViewChild('editConditionTextarea') editConditionTextarea!: ElementRef<HTMLTextAreaElement>;
+  
+  // Dynamic form fields
+  dynamicFormFields: any = {};
+  editDynamicFormFields: any = {};
+  
+  // Rule type configurations
+  ruleTypeConfigs: { [key: string]: RuleTypeConfig } = {
+    'THRESHOLD': {
+      description: 'Detects large or specific type transactions exceeding set threshold(s)',
+      fields: [
+        {
+          name: 'amountThreshold',
+          label: 'Amount Threshold',
+          type: 'number',
+          required: false,
+          placeholder: '100000',
+          description: 'Minimum transaction amount that triggers the rule (use this OR min/max amount)'
+        },
+        {
+          name: 'minAmount',
+          label: 'Minimum Amount',
+          type: 'number',
+          required: false,
+          placeholder: '50000',
+          description: 'Minimum amount for range-based checks'
+        },
+        {
+          name: 'maxAmount',
+          label: 'Maximum Amount',
+          type: 'number',
+          required: false,
+          placeholder: '200000',
+          description: 'Maximum amount for range-based checks'
+        },
+        {
+          name: 'currency',
+          label: 'Currency',
+          type: 'select',
+          required: false,
+          options: [
+            { value: '', label: 'Select Currency' },
+            { value: 'ANY', label: 'ANY (All Currencies)' },
+            { value: 'INR', label: 'INR' },
+            { value: 'USD', label: 'USD' },
+            { value: 'EUR', label: 'EUR' },
+            { value: 'GBP', label: 'GBP' }
+          ],
+          description: 'Currency to which rule applies'
+        },
+        {
+          name: 'transactionType',
+          label: 'Transaction Type',
+          type: 'select',
+          required: false,
+          options: [
+            { value: '', label: 'Select Type' },
+            { value: 'CREDIT', label: 'CREDIT' },
+            { value: 'DEBIT', label: 'DEBIT' },
+            { value: 'TRANSFER', label: 'TRANSFER' },
+            { value: 'DEPOSIT', label: 'DEPOSIT' }
+          ],
+          description: 'Restricts rule to a particular transaction type'
+        }
+      ]
+    },
+    'FREQUENCY': {
+      description: 'Detects multiple transactions by same customer in short time (burst activity)',
+      fields: [
+        {
+          name: 'maxTransactions',
+          label: 'Max Transactions',
+          type: 'number',
+          required: true,
+          placeholder: '5',
+          min: 1,
+          description: 'Maximum number of allowed transactions in the time window'
+        },
+        {
+          name: 'timeWindowMinutes',
+          label: 'Time Window (Minutes)',
+          type: 'number',
+          required: true,
+          placeholder: '60',
+          min: 1,
+          description: 'Time window in minutes to check transaction frequency'
+        }
+      ]
+    },
+    'VELOCITY': {
+      description: 'Detects fast-moving (high frequency + amount) transactions above a limit',
+      fields: [
+        {
+          name: 'minAmount',
+          label: 'Minimum Amount',
+          type: 'number',
+          required: true,
+          placeholder: '10000',
+          description: 'Minimum amount to consider for velocity checks'
+        },
+        {
+          name: 'maxTransactions',
+          label: 'Max Transactions',
+          type: 'number',
+          required: true,
+          placeholder: '3',
+          min: 1,
+          description: 'Maximum number of transactions allowed'
+        },
+        {
+          name: 'timeWindowMinutes',
+          label: 'Time Window (Minutes)',
+          type: 'number',
+          required: true,
+          placeholder: '120',
+          min: 1,
+          description: 'Time window in minutes for velocity analysis'
+        }
+      ]
+    },
+    'FUNNEL_ACCOUNT': {
+      description: 'Detects many senders funneling to one receiver (typical of money laundering)',
+      fields: [
+        {
+          name: 'minSenders',
+          label: 'Minimum Senders',
+          type: 'number',
+          required: true,
+          placeholder: '5',
+          min: 1,
+          description: 'Minimum number of unique senders sending to the same receiver'
+        },
+        {
+          name: 'timeWindowMinutes',
+          label: 'Time Window (Minutes)',
+          type: 'number',
+          required: true,
+          placeholder: '60',
+          min: 1,
+          description: 'Time window in minutes for funnel detection'
+        }
+      ]
+    },
+    'GEOGRAPHIC': {
+      description: 'Detects transactions involving risky countries (based on country risk level DB)',
+      fields: [
+        {
+          name: 'highRiskAmountThreshold',
+          label: 'High Risk Amount Threshold',
+          type: 'number',
+          required: false,
+          placeholder: '50000',
+          description: 'Amount threshold for high-risk countries'
+        },
+        {
+          name: 'mediumRiskAmountThreshold',
+          label: 'Medium Risk Amount Threshold',
+          type: 'number',
+          required: false,
+          placeholder: '500000',
+          description: 'Amount threshold for medium-risk countries'
+        }
+      ]
+    },
+    'KEYWORD': {
+      description: 'Detects suspicious words/phrases in transaction descriptions (uses keywords from DB)',
+      fields: []
+    },
+    'PATTERN': {
+      description: 'Detects patterns using regex in transaction fields',
+      fields: [
+        {
+          name: 'regex',
+          label: 'Regular Expression',
+          type: 'text',
+          required: true,
+          placeholder: '(?i)bribe|illegal|smurf',
+          description: 'Regex pattern to match in transaction field'
+        },
+        {
+          name: 'field',
+          label: 'Field to Match',
+          type: 'select',
+          required: false,
+          options: [
+            { value: '', label: 'Default (description)' },
+            { value: 'description', label: 'Description' },
+            { value: 'amount', label: 'Amount' }
+          ],
+          description: 'Transaction field where regex will be applied'
+        }
+      ]
+    }
+  };
 
   constructor(
     private ruleService: RuleService,
@@ -197,6 +406,7 @@ export class Rules implements OnInit {
       description: '',
       condition: ''
     };
+    this.dynamicFormFields = {};
     this.formErrors = {};
     this.showAddModal = true;
   }
@@ -217,19 +427,20 @@ export class Rules implements OnInit {
       description: description,
       condition: condition
     };
-    this.formErrors = {};
     
-    this.showEditModal = true;
-    
-    // Ensure textarea value is set after modal is rendered
-    setTimeout(() => {
-      if (this.editConditionTextarea && this.editConditionTextarea.nativeElement) {
-        this.editConditionTextarea.nativeElement.value = condition;
-        // Trigger input event to update ngModel
-        const event = new Event('input', { bubbles: true });
-        this.editConditionTextarea.nativeElement.dispatchEvent(event);
+    // Parse existing condition to populate dynamic form fields
+    this.editDynamicFormFields = {};
+    if (condition && condition.trim()) {
+      try {
+        const parsed = JSON.parse(condition);
+        this.editDynamicFormFields = { ...parsed };
+      } catch (e) {
+        console.error('Failed to parse condition:', e);
       }
-    }, 100);
+    }
+    
+    this.formErrors = {};
+    this.showEditModal = true;
   }
 
   openViewModal(rule: Rule): void {
@@ -248,12 +459,17 @@ export class Rules implements OnInit {
     this.showDeleteModal = false;
     this.showViewModal = false;
     this.selectedRule = null;
+    this.dynamicFormFields = {};
+    this.editDynamicFormFields = {};
     this.formErrors = {};
     this.isSubmitting = false;
   }
 
   // CRUD Operations
   createRule(): void {
+    // Generate JSON condition from dynamic form fields
+    this.newRule.condition = this.generateConditionJson(this.newRule.type, this.dynamicFormFields);
+    
     if (!this.validateRuleForm(this.newRule)) {
       return;
     }
@@ -280,6 +496,9 @@ export class Rules implements OnInit {
     if (!this.selectedRule) {
       return;
     }
+    
+    // Generate JSON condition from dynamic form fields
+    this.editRule.condition = this.generateConditionJson(this.editRule.type!, this.editDynamicFormFields);
     
     if (!this.validateRuleForm(this.editRule)) {
       return;
@@ -388,6 +607,12 @@ export class Rules implements OnInit {
         this.formErrors.condition = 'Invalid condition format. Use JSON format like: {"regex": "pattern", "field": "fieldName"}';
         isValid = false;
       }
+    }
+    
+    // Validate dynamic fields (for add/edit forms)
+    const formFields = this.showAddModal ? this.dynamicFormFields : this.editDynamicFormFields;
+    if (!this.validateDynamicFields(rule.type, formFields)) {
+      isValid = false;
     }
 
     return isValid;
@@ -590,6 +815,95 @@ export class Rules implements OnInit {
   showErrorMessage(message: string): void {
     console.error('Error:', message);
     alert(message); // Temporary solution
+  }
+  
+  // Dynamic form field methods
+  getRuleTypeConfig(ruleType: string): RuleTypeConfig | null {
+    return this.ruleTypeConfigs[ruleType] || null;
+  }
+  
+  onRuleTypeChange(isEditMode: boolean = false): void {
+    // Clear dynamic form fields when rule type changes
+    if (isEditMode) {
+      this.editDynamicFormFields = {};
+    } else {
+      this.dynamicFormFields = {};
+    }
+  }
+  
+  generateConditionJson(ruleType: string, formFields: any): string {
+    const config = this.getRuleTypeConfig(ruleType);
+    
+    // For KEYWORD and KYC rules, return empty object
+    if (!config || config.fields.length === 0) {
+      return '{}';
+    }
+    
+    const condition: any = {};
+    
+    // Build condition object from form fields
+    config.fields.forEach(field => {
+      const value = formFields[field.name];
+      
+      // Only include non-empty values
+      if (value !== undefined && value !== null && value !== '') {
+        if (field.type === 'number') {
+          condition[field.name] = Number(value);
+        } else {
+          condition[field.name] = value;
+        }
+      }
+    });
+    
+    return JSON.stringify(condition);
+  }
+  
+  getGeneratedConditionPreview(ruleType: string, formFields: any): string {
+    try {
+      const json = this.generateConditionJson(ruleType, formFields);
+      const parsed = JSON.parse(json);
+      return JSON.stringify(parsed, null, 2);
+    } catch (e) {
+      return '{}';
+    }
+  }
+  
+  validateDynamicFields(ruleType: string, formFields: any): boolean {
+    const config = this.getRuleTypeConfig(ruleType);
+    if (!config) return true;
+    
+    let isValid = true;
+    
+    // Check required fields
+    config.fields.forEach(field => {
+      if (field.required) {
+        const value = formFields[field.name];
+        if (value === undefined || value === null || value === '') {
+          this.formErrors[field.name] = `${field.label} is required`;
+          isValid = false;
+        }
+      }
+    });
+    
+    // Special validation for THRESHOLD rule
+    if (ruleType === 'THRESHOLD') {
+      const hasAmountThreshold = formFields['amountThreshold'] !== undefined && 
+                                 formFields['amountThreshold'] !== null && 
+                                 formFields['amountThreshold'] !== '';
+      const hasMinAmount = formFields['minAmount'] !== undefined && 
+                          formFields['minAmount'] !== null && 
+                          formFields['minAmount'] !== '';
+      const hasMaxAmount = formFields['maxAmount'] !== undefined && 
+                          formFields['maxAmount'] !== null && 
+                          formFields['maxAmount'] !== '';
+      
+      if (!hasAmountThreshold && !hasMinAmount && !hasMaxAmount) {
+        this.formErrors['amountThreshold'] = 'At least one of Amount Threshold, Min Amount, or Max Amount is required';
+        isValid = false;
+      }
+    }
+    
+    return isValid;
   }
 
   // Navigation methods

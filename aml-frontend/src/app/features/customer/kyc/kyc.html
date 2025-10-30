@@ -314,35 +314,35 @@
           </div>
           <div class="detail-row" *ngIf="selectedDocument?.documentNumber">
             <span class="detail-label">Document Number</span>
-            <span class="detail-value">{{ selectedDocument?.documentNumber }}</span>
+            <span class="detail-value">{{ selectedDocument.documentNumber }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Upload Date</span>
-            <span class="detail-value">{{ formatDate(selectedDocument?.uploadTimestamp!) }}</span>
+            <span class="detail-value">{{ formatDate(selectedDocument.uploadTimestamp!) }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Status</span>
-            <span class="status-badge" [ngClass]="getStatusClass(selectedDocument?.status!)">
-              {{ getStatusDisplay(selectedDocument?.status!) }}
+            <span class="status-badge" [ngClass]="getStatusClass(selectedDocument.status!)">
+              {{ getStatusDisplay(selectedDocument.status!) }}
             </span>
           </div>
           <div class="detail-row" *ngIf="selectedDocument?.riskScore">
             <span class="detail-label">Risk Score</span>
-            <span class="risk-badge" [ngClass]="getRiskScoreClass(selectedDocument?.riskScore)">
-              {{ selectedDocument?.riskScore }}%
+            <span class="risk-badge" [ngClass]="getRiskScoreClass(selectedDocument.riskScore)">
+              {{ selectedDocument.riskScore }}%
             </span>
           </div>
           <div class="detail-row" *ngIf="selectedDocument?.verificationTimestamp">
             <span class="detail-label">Verification Date</span>
-            <span class="detail-value">{{ formatDate(selectedDocument?.verificationTimestamp!) }}</span>
+            <span class="detail-value">{{ formatDate(selectedDocument.verificationTimestamp!) }}</span>
           </div>
           <div class="detail-row" *ngIf="selectedDocument?.verifiedByName">
             <span class="detail-label">Verified By</span>
-            <span class="detail-value">{{ selectedDocument?.verifiedByName }}</span>
+            <span class="detail-value">{{ selectedDocument.verifiedByName }}</span>
           </div>
           <div class="detail-row" *ngIf="selectedDocument?.verificationNotes">
             <span class="detail-label">Verification Notes</span>
-            <span class="detail-value notes">{{ selectedDocument?.verificationNotes }}</span>
+            <span class="detail-value notes">{{ selectedDocument.verificationNotes }}</span>
           </div>
         </div>
       </div>
