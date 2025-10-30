@@ -29,6 +29,10 @@ export class Dashboard implements OnInit {
   recentTransactions: Transaction[] = [];
   recentAlerts: Alert[] = [];
   customerProfile: CustomerProfile | null = null;
+  
+  // Modal state
+  showTransactionModal: boolean = false;
+  selectedTransaction: Transaction | null = null;
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -212,7 +216,31 @@ export class Dashboard implements OnInit {
   }
 
   formatDate(dateString: string): string {
+    if (!dateString) return 'Invalid Date';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+  }
+  
+  // Modal methods
+  openTransactionModal(transaction: Transaction): void {
+    this.selectedTransaction = transaction;
+    this.showTransactionModal = true;
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  }
+  
+  closeTransactionModal(): void {
+    this.showTransactionModal = false;
+    this.selectedTransaction = null;
+    document.body.style.overflow = 'auto'; // Restore scrolling
+  }
+  
+  // TrackBy functions for better performance
+  trackByTransactionId(index: number, transaction: Transaction): any {
+    return transaction.id || index;
+  }
+  
+  trackByAlertId(index: number, alert: Alert): any {
+    return alert.id || index;
   }
 }

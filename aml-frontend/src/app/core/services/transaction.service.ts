@@ -43,6 +43,55 @@ export class TransactionService {
     );
   }
 
+  // Create deposit transaction - Use dedicated deposit endpoint
+  createDeposit(depositData: any): Observable<Transaction> {
+    const depositPayload = {
+      accountNumber: depositData.accountNumber,
+      amount: depositData.amount,
+      description: depositData.description || depositData.source || 'External deposit'
+    };
+    
+    return this.http.post<any>(`${this.API_URL}/transactions/deposit`, depositPayload, this.getHttpOptions()).pipe(
+      map((response: any) => response.data || response)
+    );
+  }
+
+  // Create withdrawal transaction - Use dedicated withdrawal endpoint
+  createWithdrawal(withdrawalData: any): Observable<Transaction> {
+    const withdrawalPayload = {
+      accountNumber: withdrawalData.accountNumber,
+      amount: withdrawalData.amount,
+      description: withdrawalData.description || withdrawalData.purpose || 'Cash withdrawal'
+    };
+    
+    return this.http.post<any>(`${this.API_URL}/transactions/withdraw`, withdrawalPayload, this.getHttpOptions()).pipe(
+      map((response: any) => response.data || response)
+    );
+  }
+
+  // Alternative: Use the transfer endpoint for deposits and withdrawals
+  createDepositViaTransfer(depositData: any): Observable<Transaction> {
+    const transferData = {
+      senderAccountNumber: 'EXTERNAL',
+      receiverAccountNumber: depositData.accountNumber,
+      amount: depositData.amount,
+      description: `Deposit: ${depositData.source || 'External deposit'}`
+    };
+    
+    return this.createTransaction(transferData);
+  }
+
+  createWithdrawalViaTransfer(withdrawalData: any): Observable<Transaction> {
+    const transferData = {
+      senderAccountNumber: withdrawalData.accountNumber,
+      receiverAccountNumber: 'EXTERNAL',
+      amount: withdrawalData.amount,
+      description: `Withdrawal: ${withdrawalData.purpose || 'Cash withdrawal'}`
+    };
+    
+    return this.createTransaction(transferData);
+  }
+
   // Search transactions by receiver or description
   searchTransactions(searchTerm: string): Observable<Transaction[]> {
     return this.http.get<any>(`${this.API_URL}/customers/transactions/search?q=${searchTerm}`, this.getHttpOptions()).pipe(

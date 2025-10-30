@@ -27,6 +27,8 @@ export interface AuthResponse {
   role?: string;
   user?: {
     id?: number;
+    userId?: number;
+    customerId?: number;
     email?: string;
     firstName?: string;
     lastName?: string;

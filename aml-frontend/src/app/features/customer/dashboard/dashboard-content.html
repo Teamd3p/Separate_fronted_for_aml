@@ -88,15 +88,37 @@
     <h3 class="table-title">Recent Transactions</h3>
     <div class="table-wrapper">
       <table class="data-table">
+        <thead>
+          <tr class="table-header">
+            <th>Description</th>
+            <th>Sender Account</th>
+            <th>Receiver Name</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr class="table-row" *ngFor="let transaction of recentTransactions">
-            <td class="transaction-name">{{ transaction.description || '-' }}</td>
-            <td class="transaction-type">{{ transaction.type }} • {{ formatDate(transaction.date) }}</td>
+          <tr class="table-row" *ngFor="let transaction of recentTransactions; trackBy: trackByTransactionId">
+            <td class="transaction-description">{{ transaction.description || '-' }}</td>
+            <td class="transaction-sender">{{ transaction.senderAccountNumber || 'N/A' }}</td>
+            <td class="transaction-receiver">{{ transaction.receiverName || 'N/A' }}</td>
             <td class="transaction-amount">{{ formatCurrency(transaction.amount) }}</td>
+            <td class="transaction-date">{{ formatDate(transaction.date) }}</td>
             <td class="transaction-status" [ngClass]="getStatusClass(transaction.status)">{{ transaction.status }}</td>
+            <td class="transaction-actions">
+              <button class="view-details-btn" (click)="openTransactionModal(transaction)" title="View Details">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" fill="none"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                View Details
+              </button>
+            </td>
           </tr>
           <tr *ngIf="recentTransactions.length === 0">
-            <td colspan="4" class="no-data">No recent transactions found</td>
+            <td colspan="7" class="no-data">No recent transactions found</td>
           </tr>
         </tbody>
       </table>
@@ -108,17 +130,27 @@
     <h3 class="table-title">Recent Alerts</h3>
     <div class="table-wrapper">
       <table class="data-table">
+        <thead>
+          <tr class="table-header">
+            <th>Alert Description</th>
+            <th>Date</th>
+            <th>Risk Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr class="table-row" *ngFor="let alert of recentAlerts">
-            <td class="alert-description">{{ alert.description }}</td>
-            <td class="alert-date">{{ formatDate(alert.date) }}</td>
+          <tr class="table-row" *ngFor="let alert of recentAlerts; trackBy: trackByAlertId">
+            <td class="alert-description">{{ alert.description || 'Alert Description' }}</td>
+            <td class="alert-date">{{ formatDate(alert.date) || (alert.createdAt ? formatDate(alert.createdAt) : 'Invalid Date') }}</td>
             <td class="alert-risk" [ngClass]="getRiskClass(alert.riskScore)">
-              Risk: {{ alert.riskScore }}<br>
-              <span class="risk-status" [ngClass]="getStatusClass(alert.status)">{{ alert.status }}</span>
+              Risk: {{ alert.riskScore || 0 }}
+            </td>
+            <td class="alert-status">
+              <span class="risk-status" [ngClass]="getStatusClass(alert.status)">{{ alert.status || 'OPEN' }}</span>
             </td>
           </tr>
           <tr *ngIf="recentAlerts.length === 0">
-            <td colspan="3" class="no-data">No recent alerts found</td>
+            <td colspan="4" class="no-data">No recent alerts found</td>
           </tr>
         </tbody>
       </table>
@@ -144,11 +176,70 @@
     </div>
     <div class="info-item">
       <span class="info-label">Address</span>
-      <span class="info-value">{{ customerProfile.address?.line1 || 'N/A' }}, {{ customerProfile.address?.city || 'N/A' }}, {{ customerProfile.address?.state || 'N/A' }} - {{ customerProfile.address?.postalCode || 'N/A' }}</span>
+      <span class="info-value">{{ customerProfile.address.line1 || 'N/A' }}, {{ customerProfile.address.city || 'N/A' }}, {{ customerProfile.address.state || 'N/A' }} - {{ customerProfile.address.postalCode || 'N/A' }}</span>
     </div>
     <div class="info-item">
       <span class="info-label">Last Login</span>
       <span class="info-value">{{ formatDate(customerProfile.lastLogin) }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction Details Modal -->
+<div class="modal-overlay" *ngIf="showTransactionModal" (click)="closeTransactionModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Transaction Details</h3>
+      <button class="modal-close-btn" (click)="closeTransactionModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body" *ngIf="selectedTransaction">
+      <div class="modal-info-grid">
+        <div class="modal-info-item">
+          <span class="modal-info-label">Transaction ID</span>
+          <span class="modal-info-value">{{ selectedTransaction.id || 'N/A' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Date</span>
+          <span class="modal-info-value">{{ formatDate(selectedTransaction.date) || 'Invalid Date' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Amount</span>
+          <span class="modal-info-value amount-highlight">{{ formatCurrency(selectedTransaction.amount) }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Sender Account Number</span>
+          <span class="modal-info-value">{{ selectedTransaction.senderAccountNumber || 'N/A' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Receiver Name</span>
+          <span class="modal-info-value">{{ selectedTransaction.receiverName || 'N/A' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Receiver Account</span>
+          <span class="modal-info-value">{{ selectedTransaction.receiverAccountNumber || 'N/A' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Country</span>
+          <span class="modal-info-value">{{ selectedTransaction.country || 'N/A' }}</span>
+        </div>
+        <div class="modal-info-item">
+          <span class="modal-info-label">Status</span>
+          <span class="modal-info-value">
+            <span class="transaction-status" [ngClass]="getStatusClass(selectedTransaction.status)">
+              {{ selectedTransaction.status }}
+            </span>
+          </span>
+        </div>
+        <div class="modal-info-item full-width">
+          <span class="modal-info-label">Description</span>
+          <span class="modal-info-value">{{ selectedTransaction.description || 'No description available' }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

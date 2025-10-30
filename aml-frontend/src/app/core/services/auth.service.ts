@@ -34,6 +34,21 @@ export class AuthService {
             
             // Store additional user info if available in response
             if (response.user) {
+              // Store both userId and customerId if available
+              if (response.user.userId) {
+                localStorage.setItem('userId', response.user.userId.toString());
+                console.log('Stored user ID:', response.user.userId);
+              } else if (response.user.id) {
+                localStorage.setItem('userId', response.user.id.toString());
+                console.log('Stored user ID:', response.user.id);
+              }
+              
+              // Store customerId separately for KYC operations
+              if (response.user.customerId) {
+                localStorage.setItem('customerId', response.user.customerId.toString());
+                console.log('Stored customer ID:', response.user.customerId);
+              }
+              
               if (response.user.firstName) localStorage.setItem('firstName', response.user.firstName);
               if (response.user.lastName) localStorage.setItem('lastName', response.user.lastName);
               if (response.user.contactNumber) localStorage.setItem('contactNumber', response.user.contactNumber);
@@ -72,6 +87,22 @@ export class AuthService {
             localStorage.setItem('token', response.token);
             localStorage.setItem('email', response.email || '');
             localStorage.setItem('role', response.role || '');
+            
+            if (response.user) {
+              if (response.user.userId) {
+                localStorage.setItem('userId', response.user.userId.toString());
+                console.log('Stored user ID from OTP:', response.user.userId);
+              } else if (response.user.id) {
+                localStorage.setItem('userId', response.user.id.toString());
+                console.log('Stored user ID from OTP:', response.user.id);
+              }
+              
+              if (response.user.customerId) {
+                localStorage.setItem('customerId', response.user.customerId.toString());
+                console.log('Stored customer ID from OTP:', response.user.customerId);
+              }
+            }
+            
             this.currentUserSubject.next(response);
           }
         })
@@ -87,6 +118,8 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
     localStorage.removeItem('role');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('customerId');
     localStorage.removeItem('firstName');
     localStorage.removeItem('lastName');
     localStorage.removeItem('contactNumber');

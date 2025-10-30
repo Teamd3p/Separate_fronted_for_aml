@@ -142,7 +142,18 @@ export class Account implements OnInit {
       },
       error: (error) => {
         console.error('Error creating account:', error);
-        this.errorMessage = 'Failed to create account. Please try again.';
+        
+        // Handle KYC verification error
+        if (error.status === 403 && error.error?.error === 'KYC Not Verified') {
+          this.errorMessage = `
+            <strong>KYC Verification Required</strong><br><br>
+            ${error.error.message || 'You must have at least one verified KYC document before creating an account.'}<br><br>
+            <a href="/customer/kyc" style="color: #007AFF; text-decoration: underline;">Go to KYC Page</a> to upload and verify your documents.
+          `;
+        } else {
+          this.errorMessage = error.error?.message || 'Failed to create account. Please try again.';
+        }
+        
         this.isCreating = false;
       }
     });

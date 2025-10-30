@@ -11,12 +11,27 @@ export interface Transaction {
   type: string;
   date: string;
   amount: number;
-  status: 'COMPLETED' | 'BLOCKED' | 'PENDING';
+  status: 'COMPLETED' | 'BLOCKED' | 'PENDING' | 'FLAGGED';
   fromAccount?: string;
   toAccount?: string;
   receiver?: string;
+  receiverName?: string;
+  receiverAccountNumber?: string;
+  senderAccountNumber?: string;
   country?: string;
   transactionId?: string;
+  
+  // Additional fields from API response
+  timestamp?: string;
+  counterpartyName?: string;
+  counterpartyAccount?: string;
+  countryCode?: string;
+  transactionType?: 'TRANSFER' | 'CREDIT' | 'DEBIT';
+  currency?: string;
+  customerId?: number;
+  customerName?: string;
+  customerEmail?: string;
+  riskScore?: number;
 }
 
 export interface TransactionCreateRequest {
@@ -31,6 +46,7 @@ export interface Alert {
   id: number;
   description: string;
   date: string;
+  createdAt?: string;
   riskScore: number;
   status: 'OPEN' | 'TRUE POSITIVE' | 'FALSE POSITIVE' | 'RESOLVED';
   transactionId?: number;

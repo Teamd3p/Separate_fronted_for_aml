@@ -6,7 +6,7 @@
 
 <!-- Error Message -->
 <div *ngIf="errorMessage && !isLoading" class="error-message">
-  {{ errorMessage }}
+  <div [innerHTML]="errorMessage"></div>
   <button (click)="loadAccounts()" class="refresh-btn">Try Again</button>
 </div>
 
