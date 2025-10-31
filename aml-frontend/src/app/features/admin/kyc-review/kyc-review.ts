@@ -2,21 +2,23 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-
-interface KycDocument {
-  id: number;
-  customerName: string;
-  type: string;
-  fileName: string;
-  uploadedDate: string;
-  risk?: string;
-  status: string;
-}
+import { KycService } from '../../../core/services/kyc.service';
+import { 
+  KycDocument, 
+  KycStatus, 
+  KycDocumentVerificationRequest,
+  DocumentType 
+} from '../../../core/models/kyc.models';
 
 interface ReviewData {
-  officerId: string;
   verificationNotes: string;
+}
+
+interface FilterOptions {
+  status: string;
+  documentType: string;
+  customerSearch: string;
+  riskLevel: string;
 }
 
 @Component({
@@ -28,45 +30,113 @@ interface ReviewData {
 })
 export class KycReview implements OnInit {
   kycDocuments: KycDocument[] = [];
+  filteredDocuments: KycDocument[] = [];
   reviewData: ReviewData = {
-    officerId: '',
     verificationNotes: ''
   };
-  private apiUrl = 'http://localhost:8080/api';
+  
+  filterOptions: FilterOptions = {
+    status: 'ALL',
+    documentType: 'ALL',
+    customerSearch: '',
+    riskLevel: 'ALL'
+  };
+
+  kycStatuses = Object.values(KycStatus);
+  documentTypes = Object.values(DocumentType);
+  loading = false;
+  selectedDocuments: number[] = [];
 
   constructor(
     private router: Router,
-    private http: HttpClient
+    private kycService: KycService
   ) {}
 
   ngOnInit(): void {
-    this.loadPendingDocuments();
+    this.loadAllDocuments();
   }
 
-  loadPendingDocuments(): void {
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`
+  loadAllDocuments(): void {
+    this.loading = true;
+    this.kycService.getPendingDocuments().subscribe({
+      next: (documents) => {
+        this.kycDocuments = documents;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading KYC documents:', error);
+        alert('Failed to load KYC documents. Please try again.');
+        this.loading = false;
+      }
     });
+  }
 
-    this.http.get<any[]>(`${this.apiUrl}/kyc/pending`, { headers })
-      .subscribe({
-        next: (response) => {
-          this.kycDocuments = response.map(doc => ({
-            id: doc.id,
-            customerName: `${doc.customer?.firstName || ''} ${doc.customer?.lastName || ''}`.trim() || 'N/A',
-            type: doc.documentType || 'N/A',
-            fileName: doc.documentName || 'N/A',
-            uploadedDate: doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString() : 'N/A',
-            risk: doc.riskScore ? `${doc.riskScore}%` : '-',
-            status: doc.status || 'PENDING'
-          }));
-        },
-        error: (error) => {
-          console.error('Error loading pending documents:', error);
-          alert('Failed to load pending KYC documents. Please try again.');
+  loadDocumentsByStatus(status: KycStatus): void {
+    this.loading = true;
+    this.kycService.getDocumentsByStatus(status).subscribe({
+      next: (documents) => {
+        this.kycDocuments = documents;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading documents by status:', error);
+        alert('Failed to load documents. Please try again.');
+        this.loading = false;
+      }
+    });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.kycDocuments];
+
+    // Filter by status
+    if (this.filterOptions.status !== 'ALL') {
+      filtered = filtered.filter(doc => doc.status === this.filterOptions.status);
+    }
+
+    // Filter by document type
+    if (this.filterOptions.documentType !== 'ALL') {
+      filtered = filtered.filter(doc => doc.documentType === this.filterOptions.documentType);
+    }
+
+    // Filter by customer search
+    if (this.filterOptions.customerSearch.trim()) {
+      const searchTerm = this.filterOptions.customerSearch.toLowerCase();
+      filtered = filtered.filter(doc => 
+        doc.customerName.toLowerCase().includes(searchTerm) ||
+        doc.fileName.toLowerCase().includes(searchTerm) ||
+        doc.id.toString().includes(searchTerm)
+      );
+    }
+
+    // Filter by risk level
+    if (this.filterOptions.riskLevel !== 'ALL') {
+      filtered = filtered.filter(doc => {
+        const riskScore = doc.riskScore || 0;
+        switch (this.filterOptions.riskLevel) {
+          case 'HIGH': return riskScore >= 70;
+          case 'MEDIUM': return riskScore >= 40 && riskScore < 70;
+          case 'LOW': return riskScore < 40;
+          default: return true;
         }
       });
+    }
+
+    this.filteredDocuments = filtered;
+  }
+
+  onFilterChange(): void {
+    this.applyFilters();
+  }
+
+  onStatusFilterChange(): void {
+    if (this.filterOptions.status === 'ALL') {
+      this.loadAllDocuments();
+    } else {
+      this.loadDocumentsByStatus(this.filterOptions.status as KycStatus);
+    }
   }
 
   setActiveTab(tab: string, event?: Event): void {
@@ -104,74 +174,142 @@ export class KycReview implements OnInit {
   }
 
   verifyDocument(doc: KycDocument): void {
-    if (!this.reviewData.officerId) {
-      alert('Please enter your Officer User ID before verifying.');
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
-
-    const verifyPayload = {
-      documentId: doc.id,
-      officerId: parseInt(this.reviewData.officerId),
-      status: 'VERIFIED',
-      verificationNotes: this.reviewData.verificationNotes || 'Document verified successfully'
-    };
-
-    this.http.post(`${this.apiUrl}/kyc/verify`, verifyPayload, { headers })
-      .subscribe({
-        next: () => {
-          alert(`Document #${doc.id} has been verified successfully.`);
-          this.loadPendingDocuments();
-          this.reviewData.verificationNotes = '';
-        },
-        error: (error) => {
-          console.error('Error verifying document:', error);
-          alert('Failed to verify document. Please check your Officer ID and try again.');
-        }
-      });
+    this.updateDocumentStatus(doc, KycStatus.VERIFIED, 'Document verified successfully');
   }
 
   rejectDocument(doc: KycDocument): void {
-    if (!this.reviewData.officerId) {
-      alert('Please enter your Officer User ID before rejecting.');
-      return;
-    }
-
-    if (!this.reviewData.verificationNotes) {
+    if (!this.reviewData.verificationNotes.trim()) {
       alert('Please provide verification notes explaining the reason for rejection.');
       return;
     }
+    this.updateDocumentStatus(doc, KycStatus.REJECTED, this.reviewData.verificationNotes);
+  }
 
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
+  markForManualReview(doc: KycDocument): void {
+    this.updateDocumentStatus(doc, KycStatus.MANUAL_REVIEW, 'Marked for manual review');
+  }
 
-    const rejectPayload = {
+  markAsExpired(doc: KycDocument): void {
+    this.updateDocumentStatus(doc, KycStatus.EXPIRED, 'Document marked as expired');
+  }
+
+  updateDocumentStatus(doc: KycDocument, status: KycStatus, defaultNotes: string): void {
+    const request: KycDocumentVerificationRequest = {
       documentId: doc.id,
-      officerId: parseInt(this.reviewData.officerId),
-      status: 'REJECTED',
-      verificationNotes: this.reviewData.verificationNotes
+      status: status,
+      verificationNotes: this.reviewData.verificationNotes || defaultNotes
     };
 
-    this.http.post(`${this.apiUrl}/kyc/verify`, rejectPayload, { headers })
-      .subscribe({
-        next: () => {
-          alert(`Document #${doc.id} has been rejected.`);
-          this.loadPendingDocuments();
-          this.reviewData.verificationNotes = '';
-        },
-        error: (error) => {
-          console.error('Error rejecting document:', error);
-          alert('Failed to reject document. Please check your Officer ID and try again.');
-        }
-      });
+    this.kycService.verifyDocument(request).subscribe({
+      next: () => {
+        alert(`Document #${doc.id} has been ${status.toLowerCase()} successfully.`);
+        this.loadAllDocuments();
+        this.reviewData.verificationNotes = '';
+      },
+      error: (error) => {
+        console.error('Error updating document status:', error);
+        alert('Failed to update document status. Please try again.');
+      }
+    });
+  }
+
+  // Bulk operations
+  toggleDocumentSelection(docId: number): void {
+    const index = this.selectedDocuments.indexOf(docId);
+    if (index > -1) {
+      this.selectedDocuments.splice(index, 1);
+    } else {
+      this.selectedDocuments.push(docId);
+    }
+  }
+
+  selectAllDocuments(): void {
+    if (this.selectedDocuments.length === this.filteredDocuments.length) {
+      this.selectedDocuments = [];
+    } else {
+      this.selectedDocuments = this.filteredDocuments.map(doc => doc.id);
+    }
+  }
+
+  bulkVerifyDocuments(): void {
+    if (this.selectedDocuments.length === 0) {
+      alert('Please select documents to verify.');
+      return;
+    }
+    this.processBulkAction(KycStatus.VERIFIED, 'Bulk verification completed');
+  }
+
+  bulkRejectDocuments(): void {
+    if (this.selectedDocuments.length === 0) {
+      alert('Please select documents to reject.');
+      return;
+    }
+    if (!this.reviewData.verificationNotes.trim()) {
+      alert('Please provide verification notes for bulk rejection.');
+      return;
+    }
+    this.processBulkAction(KycStatus.REJECTED, this.reviewData.verificationNotes);
+  }
+
+  processBulkAction(status: KycStatus, notes: string): void {
+    const promises = this.selectedDocuments.map(docId => {
+      const request: KycDocumentVerificationRequest = {
+        documentId: docId,
+        status: status,
+        verificationNotes: notes
+      };
+      return this.kycService.verifyDocument(request).toPromise();
+    });
+
+    Promise.all(promises).then(() => {
+      alert(`${this.selectedDocuments.length} documents have been ${status.toLowerCase()} successfully.`);
+      this.selectedDocuments = [];
+      this.loadAllDocuments();
+      this.reviewData.verificationNotes = '';
+    }).catch(error => {
+      console.error('Error in bulk operation:', error);
+      alert('Some documents failed to update. Please try again.');
+    });
+  }
+
+  // Utility methods
+  getStatusDisplay(status: KycStatus): string {
+    return this.kycService.getStatusDisplay(status);
+  }
+
+  getStatusClass(status: KycStatus): string {
+    return this.kycService.getStatusClass(status);
+  }
+
+  getRiskScoreClass(riskScore?: number): string {
+    return this.kycService.getRiskScoreClass(riskScore);
+  }
+
+  getDocumentTypeDisplay(type: DocumentType): string {
+    return this.kycService.getDocumentTypeDisplay(type);
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString();
+  }
+
+  canPerformAction(doc: KycDocument, action: string): boolean {
+    switch (action) {
+      case 'verify':
+        return doc.status === KycStatus.PENDING || doc.status === KycStatus.MANUAL_REVIEW;
+      case 'reject':
+        return doc.status === KycStatus.PENDING || doc.status === KycStatus.MANUAL_REVIEW;
+      case 'manual_review':
+        return doc.status === KycStatus.PENDING;
+      case 'expire':
+        return doc.status !== KycStatus.EXPIRED;
+      default:
+        return false;
+    }
+  }
+
+  trackByDocId(index: number, doc: KycDocument): number {
+    return doc.id;
   }
 
   logout(): void {

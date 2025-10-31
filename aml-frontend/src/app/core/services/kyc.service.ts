@@ -84,6 +84,20 @@ export class KycService {
     );
   }
 
+  // Get all documents (for admin review)
+  getAllDocuments(): Observable<KycDocument[]> {
+    return this.http.get<ApiResponse<KycDocument[]>>(`${this.API_URL}/all`, this.getHttpOptions()).pipe(
+      map((response: ApiResponse<KycDocument[]>) => response.data || [])
+    );
+  }
+
+  // Get documents by status
+  getDocumentsByStatus(status: KycStatus): Observable<KycDocument[]> {
+    return this.http.get<ApiResponse<KycDocument[]>>(`${this.API_URL}/status/${status}`, this.getHttpOptions()).pipe(
+      map((response: ApiResponse<KycDocument[]>) => response.data || [])
+    );
+  }
+
   // Get documents requiring manual review
   getDocumentsRequiringManualReview(): Observable<KycDocument[]> {
     return this.http.get<ApiResponse<KycDocument[]>>(`${this.API_URL}/manual-review`, this.getHttpOptions()).pipe(
@@ -166,6 +180,7 @@ export class KycService {
       case KycStatus.REJECTED: return 'Rejected';
       case KycStatus.EXPIRED: return 'Expired';
       case KycStatus.UNDER_REVIEW: return 'Under Review';
+      case KycStatus.MANUAL_REVIEW: return 'Manual Review';
       default: return status;
     }
   }
@@ -177,6 +192,7 @@ export class KycService {
       case KycStatus.REJECTED: return 'status-rejected';
       case KycStatus.EXPIRED: return 'status-expired';
       case KycStatus.UNDER_REVIEW: return 'status-under-review';
+      case KycStatus.MANUAL_REVIEW: return 'status-manual-review';
       default: return 'status-unknown';
     }
   }

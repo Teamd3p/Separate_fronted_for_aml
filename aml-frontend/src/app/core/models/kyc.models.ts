@@ -46,7 +46,6 @@ export interface KycDocumentUploadRequest {
 
 export interface KycDocumentVerificationRequest {
   documentId: number;
-  officerId: number;
   status: KycStatus;
   verificationNotes?: string;
 }
@@ -64,7 +63,8 @@ export enum KycStatus {
   VERIFIED = 'VERIFIED',
   REJECTED = 'REJECTED',
   EXPIRED = 'EXPIRED',
-  UNDER_REVIEW = 'UNDER_REVIEW'
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  MANUAL_REVIEW = 'MANUAL_REVIEW'
 }
 
 export interface ApiResponse<T> {

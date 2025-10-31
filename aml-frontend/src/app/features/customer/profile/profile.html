@@ -39,13 +39,13 @@
 
       <div class="profile-actions">
         <button *ngIf="!isEditMode" class="btn-primary" (click)="toggleEditMode()">
-          ✏️ Edit Profile
+          Edit Profile
         </button>
         <button *ngIf="isEditMode" class="btn-success" (click)="saveProfile()" [disabled]="saving || profileForm.invalid">
-          {{ saving ? 'Saving...' : '💾 Save Changes' }}
+          {{ saving ? 'Saving...' : 'Save Changes' }}
         </button>
         <button *ngIf="isEditMode" class="btn-secondary" (click)="toggleEditMode()">
-          ❌ Cancel
+          Cancel
         </button>
       </div>
     </div>

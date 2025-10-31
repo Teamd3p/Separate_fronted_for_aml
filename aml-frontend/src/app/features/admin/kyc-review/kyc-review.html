@@ -145,72 +145,176 @@
 
     <!-- KYC Review Content -->
     <div class="kyc-review-content">
-      <!-- Pending KYC Documents Section -->
+      <!-- KYC Documents Management Section -->
       <div class="kyc-section">
-        <h2 class="section-title">Pending KYC Documents</h2>
+        <div class="section-header">
+          <h2 class="section-title">KYC Documents Management</h2>
+          <div class="section-actions">
+            <button class="refresh-btn" (click)="loadAllDocuments()" [disabled]="loading">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C9.61386 21 7.5008 19.9616 6.12132 18.364" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 16L6.12132 18.364L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              {{loading ? 'Loading...' : 'Refresh'}}
+            </button>
+          </div>
+        </div>
         
-        <!-- Officer ID and Verification Notes -->
+        <!-- Verification Notes -->
         <div class="review-form">
           <div class="form-row">
-            <div class="form-group">
-              <label for="officerId" class="form-label">Officer User ID <span class="required">*</span></label>
-              <input 
-                type="text" 
-                id="officerId" 
-                name="officerId" 
-                class="form-input" 
-                placeholder="Enter your officer userId"
-                [(ngModel)]="reviewData.officerId"
-                required>
-            </div>
             <div class="form-group verification-notes">
-              <label for="verificationNotes" class="form-label">Verification Notes (Optional)</label>
+              <label for="verificationNotes" class="form-label">Verification Notes</label>
               <textarea 
                 id="verificationNotes" 
                 name="verificationNotes" 
                 class="form-textarea" 
-                placeholder="Add notes for verification or rejection"
+                placeholder="Add notes for verification, rejection, or other actions"
                 [(ngModel)]="reviewData.verificationNotes"
-                rows="4"></textarea>
+                rows="3"></textarea>
+              <small class="form-help">Add optional notes for document verification, rejection, or other actions.</small>
             </div>
+          </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions" *ngIf="selectedDocuments.length > 0">
+          <div class="bulk-info">
+            <span class="selected-count">{{selectedDocuments.length}} document(s) selected</span>
+          </div>
+          <div class="bulk-buttons">
+            <button class="bulk-btn verify-bulk" (click)="bulkVerifyDocuments()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Bulk Verify
+            </button>
+            <button class="bulk-btn reject-bulk" (click)="bulkRejectDocuments()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Bulk Reject
+            </button>
+            <button class="bulk-btn clear-selection" (click)="selectedDocuments = []">
+              Clear Selection
+            </button>
           </div>
         </div>
 
         <!-- KYC Documents Table -->
         <div class="kyc-table-container">
-          <div class="table-wrapper">
+          <div class="table-info">
+            <span class="document-count">Showing {{filteredDocuments.length}} of {{kycDocuments.length}} documents</span>
+          </div>
+          
+          <div class="table-wrapper" *ngIf="!loading; else loadingTemplate">
             <table class="kyc-table">
               <thead>
                 <tr>
-                  <th>Document ID</th>
                   <th>Customer</th>
                   <th>Type</th>
                   <th>File</th>
                   <th>Uploaded</th>
-                  <th>Risk</th>
                   <th>Status</th>
+                  <th>Verified By</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="table-row" *ngFor="let doc of kycDocuments">
+                <tr class="table-row" *ngFor="let doc of filteredDocuments; trackBy: trackByDocId">
+                  <td class="checkbox-col">
+                    <input 
+                      type="checkbox" 
+                      class="row-checkbox"
+                      [checked]="selectedDocuments.includes(doc.id)"
+                      (change)="toggleDocumentSelection(doc.id)">
+                  </td>
                   <td class="document-id">#{{doc.id}}</td>
                   <td class="customer-name">{{doc.customerName}}</td>
-                  <td class="document-type">{{doc.type}}</td>
-                  <td class="file-name">{{doc.fileName}}</td>
-                  <td class="upload-date">{{doc.uploadedDate}}</td>
-                  <td class="risk-level">{{doc.risk || '-'}}</td>
-                  <td class="document-status">
-                    <span class="status-badge" [ngClass]="doc.status.toLowerCase()">{{doc.status}}</span>
+                  <td class="document-type">{{getDocumentTypeDisplay(doc.documentType)}}</td>
+                  <td class="file-name" [title]="doc.fileName">{{doc.fileName}}</td>
+                  <td class="upload-date">{{formatDate(doc.uploadTimestamp)}}</td>
+                  <td class="risk-level">
+                    <span class="risk-score" [ngClass]="getRiskScoreClass(doc.riskScore)">
+                      {{doc.riskScore ? doc.riskScore + '%' : 'N/A'}}
+                    </span>
                   </td>
+                  <td class="document-status">
+                    <span class="status-badge" [ngClass]="getStatusClass(doc.status)">
+                      {{getStatusDisplay(doc.status)}}
+                    </span>
+                  </td>
+                  <td class="verified-by">{{doc.verifiedByName || '-'}}</td>
                   <td class="actions">
-                    <button class="action-btn verify-btn" (click)="verifyDocument(doc)">Verify</button>
-                    <button class="action-btn reject-btn" (click)="rejectDocument(doc)">Reject</button>
+                    <div class="action-buttons">
+                      <button 
+                        class="action-btn verify-btn" 
+                        (click)="verifyDocument(doc)"
+                        [disabled]="!canPerformAction(doc, 'verify')"
+                        title="Verify Document">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      
+                      <button 
+                        class="action-btn reject-btn" 
+                        (click)="rejectDocument(doc)"
+                        [disabled]="!canPerformAction(doc, 'reject')"
+                        title="Reject Document">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </button>
+                      
+                      <button 
+                        class="action-btn manual-review-btn" 
+                        (click)="markForManualReview(doc)"
+                        [disabled]="!canPerformAction(doc, 'manual_review')"
+                        title="Mark for Manual Review">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
+                          <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </button>
+                      
+                      <button 
+                        class="action-btn expire-btn" 
+                        (click)="markAsExpired(doc)"
+                        [disabled]="!canPerformAction(doc, 'expire')"
+                        title="Mark as Expired">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                          <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
             </table>
+            
+            <div class="empty-state" *ngIf="filteredDocuments.length === 0">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+                  <path d="M14 2V8H20" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+                </svg>
+              </div>
+              <h3 class="empty-title">No documents found</h3>
+              <p class="empty-message">No KYC documents match your current filters. Try adjusting your search criteria.</p>
+            </div>
           </div>
+          
+          <ng-template #loadingTemplate>
+            <div class="loading-state">
+              <div class="loading-spinner"></div>
+              <p>Loading KYC documents...</p>
+            </div>
+          </ng-template>
         </div>
       </div>
     </div>
