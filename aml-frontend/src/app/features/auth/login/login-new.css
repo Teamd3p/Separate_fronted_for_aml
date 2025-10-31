@@ -33,14 +33,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-}
-
-.logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #5B21B6;
-  letter-spacing: -0.02em;
 }
 
 /* Welcome Section */

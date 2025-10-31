@@ -197,6 +197,14 @@ export class AuthService {
     }
   }
 
+  forgotPassword(data: { email: string }): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API_URL}/forgot-password`, data, this.getHttpOptions());
+  }
+
+  resetPassword(data: { email: string; otp: string; newPassword: string; confirmPassword: string }): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API_URL}/reset-password`, data, this.getHttpOptions());
+  }
+
   private getHttpOptions() {
     const token = this.getToken();
     return {

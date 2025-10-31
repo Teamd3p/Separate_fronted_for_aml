@@ -15,7 +15,6 @@ import { LoginRequest } from '../../../core/models/auth.models';
 })
 export class Login {
   showPassword: boolean = false;
-  rememberMe: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
   
@@ -42,6 +41,10 @@ export class Login {
     this.captchaNum2 = Math.floor(Math.random() * 10) + 1;
     this.captchaCorrect = this.captchaNum1 + this.captchaNum2;
     this.captchaAnswer = '';
+  }
+
+  refreshCaptcha(): void {
+    this.generateCaptcha();
   }
 
   validateCaptcha(): boolean {
