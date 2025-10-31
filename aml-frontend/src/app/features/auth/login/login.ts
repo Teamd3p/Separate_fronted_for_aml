@@ -11,7 +11,7 @@ import { LoginRequest } from '../../../core/models/auth.models';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
-  styleUrls: ['./login-new.css']
+  styleUrls: ['./login.css']
 })
 export class Login {
   showPassword: boolean = false;

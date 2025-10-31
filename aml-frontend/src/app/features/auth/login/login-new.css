@@ -8,14 +8,15 @@
 
 /* Left Side - Form */
 .login-left {
-  flex: 0 0 45%;
+  flex: 1.2;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem;
   background: #ffffff;
   position: relative;
   z-index: 1;
+  overflow-y: auto;
 }
 
 .login-form-wrapper {
@@ -432,7 +433,7 @@
 
 /* Right Side - Decorative */
 .login-right {
-  flex: 1;
+  flex: 0.8;
   background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
   position: relative;
   overflow: hidden;

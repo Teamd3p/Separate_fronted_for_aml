@@ -10,7 +10,7 @@ import { RegisterRequest } from '../../../core/models/auth.models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
   templateUrl: './register.html',
-  styleUrls: ['../login/login-new.css']
+  styleUrls: ['../login/login.css']
 })
 export class RegisterComponent implements OnInit {
   registrationForm!: FormGroup;
