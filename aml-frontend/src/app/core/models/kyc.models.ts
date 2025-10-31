@@ -6,14 +6,29 @@ export interface KycDocument {
   status: KycStatus;
   fileName: string;
   filePath?: string;
+  fileUrl?: string;
   fileSize: number;
   documentNumber?: string;
   verificationNotes?: string;
   verifiedByName?: string;
   uploadTimestamp: string;
   verificationTimestamp?: string;
-  riskScore?: number;
   validated: boolean;
+  // Customer details
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  email?: string;
+  contactNumber?: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  customerKycStatus?: string;
+  customerStatus?: string;
 }
 
 export interface KycDocumentSummary {
@@ -23,7 +38,6 @@ export interface KycDocumentSummary {
   fileName: string;
   filePath?: string;
   uploadTimestamp: string;
-  riskScore?: number;
 }
 
 export interface KycStatusSummary {

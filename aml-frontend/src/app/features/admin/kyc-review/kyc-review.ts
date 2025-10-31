@@ -18,7 +18,20 @@ interface FilterOptions {
   status: string;
   documentType: string;
   customerSearch: string;
-  riskLevel: string;
+  uploadDate: string;
+}
+
+interface ActionModalData {
+  isOpen: boolean;
+  action: 'approve' | 'reject' | 'bulk-approve' | 'bulk-reject' | null;
+  documentId?: number;
+  notes: string;
+}
+
+interface DocumentDetailsModal {
+  isOpen: boolean;
+  document: KycDocument | null;
+  customerDetails: any | null;
 }
 
 @Component({
@@ -29,17 +42,32 @@ interface FilterOptions {
   styleUrl: './kyc-review.css',
 })
 export class KycReview implements OnInit {
+  // Tab management
+  activeTab: 'pending' | 'all' = 'pending';
+  
+  // Data
   kycDocuments: KycDocument[] = [];
   filteredDocuments: KycDocument[] = [];
-  reviewData: ReviewData = {
-    verificationNotes: ''
-  };
   
+  // Filter options
   filterOptions: FilterOptions = {
     status: 'ALL',
     documentType: 'ALL',
     customerSearch: '',
-    riskLevel: 'ALL'
+    uploadDate: ''
+  };
+
+  // Modals
+  actionModal: ActionModalData = {
+    isOpen: false,
+    action: null,
+    notes: ''
+  };
+  
+  documentDetailsModal: DocumentDetailsModal = {
+    isOpen: false,
+    document: null,
+    customerDetails: null
   };
 
   kycStatuses = Object.values(KycStatus);
@@ -53,12 +81,46 @@ export class KycReview implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadAllDocuments();
+    this.loadPendingDocuments();
+  }
+
+  // Tab switching
+  switchTab(tab: 'pending' | 'all'): void {
+    this.activeTab = tab;
+    this.selectedDocuments = [];
+    this.filterOptions = {
+      status: 'ALL',
+      documentType: 'ALL',
+      customerSearch: '',
+      uploadDate: ''
+    };
+    
+    if (tab === 'pending') {
+      this.loadPendingDocuments();
+    } else {
+      this.loadAllDocuments();
+    }
+  }
+
+  loadPendingDocuments(): void {
+    this.loading = true;
+    this.kycService.getPendingDocuments().subscribe({
+      next: (documents) => {
+        this.kycDocuments = documents;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading pending documents:', error);
+        alert('Failed to load pending documents. Please try again.');
+        this.loading = false;
+      }
+    });
   }
 
   loadAllDocuments(): void {
     this.loading = true;
-    this.kycService.getPendingDocuments().subscribe({
+    this.kycService.getAllDocuments().subscribe({
       next: (documents) => {
         this.kycDocuments = documents;
         this.applyFilters();
@@ -70,6 +132,14 @@ export class KycReview implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  refreshData(): void {
+    if (this.activeTab === 'pending') {
+      this.loadPendingDocuments();
+    } else {
+      this.loadAllDocuments();
+    }
   }
 
   loadDocumentsByStatus(status: KycStatus): void {
@@ -111,16 +181,14 @@ export class KycReview implements OnInit {
       );
     }
 
-    // Filter by risk level
-    if (this.filterOptions.riskLevel !== 'ALL') {
+    // Filter by upload date (for pending tab)
+    if (this.filterOptions.uploadDate && this.activeTab === 'pending') {
+      const selectedDate = new Date(this.filterOptions.uploadDate);
+      selectedDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter(doc => {
-        const riskScore = doc.riskScore || 0;
-        switch (this.filterOptions.riskLevel) {
-          case 'HIGH': return riskScore >= 70;
-          case 'MEDIUM': return riskScore >= 40 && riskScore < 70;
-          case 'LOW': return riskScore < 40;
-          default: return true;
-        }
+        const uploadDate = new Date(doc.uploadTimestamp);
+        uploadDate.setHours(0, 0, 0, 0);
+        return uploadDate.getTime() === selectedDate.getTime();
       });
     }
 
@@ -173,16 +241,67 @@ export class KycReview implements OnInit {
     }
   }
 
-  verifyDocument(doc: KycDocument): void {
-    this.updateDocumentStatus(doc, KycStatus.VERIFIED, 'Document verified successfully');
+  // Open action modal
+  openActionModal(action: 'approve' | 'reject', documentId: number): void {
+    this.actionModal = {
+      isOpen: true,
+      action: action,
+      documentId: documentId,
+      notes: ''
+    };
   }
 
-  rejectDocument(doc: KycDocument): void {
-    if (!this.reviewData.verificationNotes.trim()) {
-      alert('Please provide verification notes explaining the reason for rejection.');
+  openBulkActionModal(action: 'bulk-approve' | 'bulk-reject'): void {
+    if (this.selectedDocuments.length === 0) {
+      alert('Please select documents first.');
       return;
     }
-    this.updateDocumentStatus(doc, KycStatus.REJECTED, this.reviewData.verificationNotes);
+    this.actionModal = {
+      isOpen: true,
+      action: action,
+      notes: ''
+    };
+  }
+
+  closeActionModal(): void {
+    this.actionModal = {
+      isOpen: false,
+      action: null,
+      notes: ''
+    };
+  }
+
+  // Execute action from modal
+  executeAction(): void {
+    const { action, documentId, notes } = this.actionModal;
+    
+    if (action === 'approve' && documentId) {
+      this.updateDocumentStatus(
+        this.kycDocuments.find(d => d.id === documentId)!,
+        KycStatus.VERIFIED,
+        notes || 'Document verified successfully'
+      );
+    } else if (action === 'reject' && documentId) {
+      if (!notes.trim()) {
+        alert('Please provide notes for rejection.');
+        return;
+      }
+      this.updateDocumentStatus(
+        this.kycDocuments.find(d => d.id === documentId)!,
+        KycStatus.REJECTED,
+        notes
+      );
+    } else if (action === 'bulk-approve') {
+      this.processBulkAction(KycStatus.VERIFIED, notes || 'Bulk verification completed');
+    } else if (action === 'bulk-reject') {
+      if (!notes.trim()) {
+        alert('Please provide notes for bulk rejection.');
+        return;
+      }
+      this.processBulkAction(KycStatus.REJECTED, notes);
+    }
+    
+    this.closeActionModal();
   }
 
   markForManualReview(doc: KycDocument): void {
@@ -193,18 +312,17 @@ export class KycReview implements OnInit {
     this.updateDocumentStatus(doc, KycStatus.EXPIRED, 'Document marked as expired');
   }
 
-  updateDocumentStatus(doc: KycDocument, status: KycStatus, defaultNotes: string): void {
+  updateDocumentStatus(doc: KycDocument, status: KycStatus, notes: string): void {
     const request: KycDocumentVerificationRequest = {
       documentId: doc.id,
       status: status,
-      verificationNotes: this.reviewData.verificationNotes || defaultNotes
+      verificationNotes: notes
     };
 
     this.kycService.verifyDocument(request).subscribe({
       next: () => {
         alert(`Document #${doc.id} has been ${status.toLowerCase()} successfully.`);
-        this.loadAllDocuments();
-        this.reviewData.verificationNotes = '';
+        this.refreshData();
       },
       error: (error) => {
         console.error('Error updating document status:', error);
@@ -231,24 +349,37 @@ export class KycReview implements OnInit {
     }
   }
 
-  bulkVerifyDocuments(): void {
-    if (this.selectedDocuments.length === 0) {
-      alert('Please select documents to verify.');
-      return;
-    }
-    this.processBulkAction(KycStatus.VERIFIED, 'Bulk verification completed');
+  // Document details modal
+  openDocumentDetailsModal(doc: KycDocument): void {
+    this.documentDetailsModal = {
+      isOpen: true,
+      document: doc,
+      customerDetails: {
+        customerId: doc.customerId,
+        customerName: doc.customerName,
+        email: doc.email || 'N/A',
+        phone: doc.contactNumber || 'N/A',
+        kycStatus: doc.status
+      }
+    };
   }
 
-  bulkRejectDocuments(): void {
-    if (this.selectedDocuments.length === 0) {
-      alert('Please select documents to reject.');
-      return;
-    }
-    if (!this.reviewData.verificationNotes.trim()) {
-      alert('Please provide verification notes for bulk rejection.');
-      return;
-    }
-    this.processBulkAction(KycStatus.REJECTED, this.reviewData.verificationNotes);
+  closeDocumentDetailsModal(): void {
+    this.documentDetailsModal = {
+      isOpen: false,
+      document: null,
+      customerDetails: null
+    };
+  }
+
+  // Open document link in new tab
+  openDocumentLink(filePath: string): void {
+    window.open(filePath, '_blank');
+  }
+
+  // Get document URL (prefer fileUrl over filePath)
+  getDocumentUrl(doc: KycDocument): string | null {
+    return doc.fileUrl || doc.filePath || null;
   }
 
   processBulkAction(status: KycStatus, notes: string): void {
@@ -264,12 +395,22 @@ export class KycReview implements OnInit {
     Promise.all(promises).then(() => {
       alert(`${this.selectedDocuments.length} documents have been ${status.toLowerCase()} successfully.`);
       this.selectedDocuments = [];
-      this.loadAllDocuments();
-      this.reviewData.verificationNotes = '';
+      this.refreshData();
     }).catch(error => {
       console.error('Error in bulk operation:', error);
       alert('Some documents failed to update. Please try again.');
     });
+  }
+
+  // Clear all filters
+  clearFilters(): void {
+    this.filterOptions = {
+      status: 'ALL',
+      documentType: 'ALL',
+      customerSearch: '',
+      uploadDate: ''
+    };
+    this.applyFilters();
   }
 
   // Utility methods
@@ -281,9 +422,6 @@ export class KycReview implements OnInit {
     return this.kycService.getStatusClass(status);
   }
 
-  getRiskScoreClass(riskScore?: number): string {
-    return this.kycService.getRiskScoreClass(riskScore);
-  }
 
   getDocumentTypeDisplay(type: DocumentType): string {
     return this.kycService.getDocumentTypeDisplay(type);
