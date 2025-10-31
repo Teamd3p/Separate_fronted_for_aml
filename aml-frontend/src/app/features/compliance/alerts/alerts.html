@@ -1,1 +1,308 @@
-<p>alerts works!</p>
+<div class="alerts-container">
+  <div class="page-header">
+    <h1>Alert Management</h1>
+    <p class="subtitle">Monitor and investigate suspicious activity alerts</p>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="success-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="error-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'all'"
+      (click)="switchTab('all')">
+      All Open Alerts
+      <span class="badge">{{ allAlerts.length }}</span>
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'assigned'"
+      (click)="switchTab('assigned')">
+      My Assigned Alerts
+      <span class="badge">{{ assignedAlerts.length }}</span>
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input 
+        type="text" 
+        placeholder="Search by customer name, alert ID, or rule..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="applyFilters()">
+    </div>
+
+    <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()" class="filter-select">
+      <option value="all">All Status</option>
+      <option value="OPEN">Open</option>
+      <option value="INVESTIGATING">Investigating</option>
+      <option value="TRUE_POSITIVE">True Positive</option>
+      <option value="FALSE_POSITIVE">False Positive</option>
+      <option value="ESCALATED">Escalated</option>
+    </select>
+
+    <select [(ngModel)]="filterRiskLevel" (ngModelChange)="applyFilters()" class="filter-select">
+      <option value="all">All Risk Levels</option>
+      <option value="high">High Risk (70+)</option>
+      <option value="medium">Medium Risk (40-69)</option>
+      <option value="low">Low Risk (<40)</option>
+    </select>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading alerts...</p>
+  </div>
+
+  <!-- Alerts Table -->
+  <div *ngIf="!isLoading" class="alerts-table-container">
+    <div *ngIf="filteredAlerts.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h3>No alerts found</h3>
+      <p>There are no alerts matching your criteria</p>
+    </div>
+
+    <table *ngIf="filteredAlerts.length > 0" class="alerts-table">
+      <thead>
+        <tr>
+          <th>Alert ID</th>
+          <th>Customer</th>
+          <th>Transaction ID</th>
+          <th>Rule Triggered</th>
+          <th>Risk Score</th>
+          <th>Status</th>
+          <th>Assigned To</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alert of filteredAlerts">
+          <td><span class="alert-id">#{{ alert.alertId }}</span></td>
+          <td>
+            <div class="customer-info">
+              <div class="customer-name">{{ alert.customerName }}</div>
+              <div class="customer-id">ID: {{ alert.customerId }}</div>
+            </div>
+          </td>
+          <td>
+            <span *ngIf="alert.transactionId" class="transaction-id">#{{ alert.transactionId }}</span>
+            <span *ngIf="!alert.transactionId" class="text-muted">N/A</span>
+          </td>
+          <td>
+            <div class="rule-info">{{ alert.ruleTriggered }}</div>
+          </td>
+          <td>
+            <span class="risk-badge" [class]="getRiskClass(alert.riskScore)">
+              {{ alert.riskScore }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(alert.status)">
+              {{ alert.status }}
+            </span>
+          </td>
+          <td>
+            <span *ngIf="alert.assignedOfficerName" class="assigned-officer">
+              {{ alert.assignedOfficerName }}
+            </span>
+            <span *ngIf="!alert.assignedOfficerName" class="unassigned">Unassigned</span>
+          </td>
+          <td>{{ alert.createdAt | date:'short' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                *ngIf="!alert.assignedOfficerName && activeTab === 'all'" 
+                class="btn-assign"
+                (click)="assignToMe(alert, $event)"
+                title="Assign to me">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="8.5" cy="7" r="4"/>
+                  <line x1="20" y1="8" x2="20" y2="14"/>
+                  <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                Assign
+              </button>
+              <button 
+                class="btn-investigate"
+                (click)="openInvestigation(alert.alertId)"
+                title="Investigate">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Investigate
+              </button>
+              <button 
+                class="btn-sar"
+                (click)="navigateToSAR(alert)"
+                title="File SAR">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                SAR
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Investigation Modal -->
+<div class="modal-overlay" *ngIf="showInvestigationModal" (click)="closeInvestigationModal()">
+  <div class="modal-content investigation-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Investigation: Alert #{{ selectedAlert?.alertId }}</h2>
+      <button class="close-button" (click)="closeInvestigationModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedAlert">
+      <!-- Alert Details -->
+      <div class="investigation-section">
+        <h3>Alert Details</h3>
+        <div class="details-grid">
+          <div class="detail-item">
+            <label>Customer:</label>
+            <span>{{ selectedAlert.customerName }} (ID: {{ selectedAlert.customerId }})</span>
+          </div>
+          <div class="detail-item">
+            <label>Rule Triggered:</label>
+            <span>{{ selectedAlert.ruleTriggered }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Risk Score:</label>
+            <span class="risk-badge" [class]="getRiskClass(selectedAlert.riskScore)">
+              {{ selectedAlert.riskScore }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <label>Status:</label>
+            <span class="status-badge" [class]="getStatusClass(selectedAlert.status)">
+              {{ selectedAlert.status }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <label>Created:</label>
+            <span>{{ selectedAlert.createdAt | date:'medium' }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Transaction ID:</label>
+            <span *ngIf="selectedAlert.transactionId">#{{ selectedAlert.transactionId }}</span>
+            <span *ngIf="!selectedAlert.transactionId" class="text-muted">N/A</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Recent Transactions -->
+      <div class="investigation-section">
+        <h3>Customer Recent Transactions</h3>
+        
+        <div *ngIf="loadingTransactions" class="loading-state-small">
+          <div class="spinner-small"></div>
+          <p>Loading transactions...</p>
+        </div>
+
+        <div *ngIf="!loadingTransactions && customerTransactions.length === 0" class="empty-state-small">
+          <p>No recent transactions found</p>
+        </div>
+
+        <div *ngIf="!loadingTransactions && customerTransactions.length > 0" class="transactions-list">
+          <table class="transactions-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Counterparty</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let txn of customerTransactions.slice(0, 10)">
+                <td>#{{ txn.transactionId }}</td>
+                <td>{{ txn.transactionType }}</td>
+                <td>{{ txn.amount | currency:txn.currency }}</td>
+                <td>
+                  <div>{{ txn.counterpartyName || 'N/A' }}</div>
+                  <div class="text-small">{{ txn.counterpartyAccount }}</div>
+                </td>
+                <td>{{ txn.timestamp | date:'short' }}</td>
+                <td>
+                  <span class="status-badge" [class.status-completed]="txn.status === 'COMPLETED'">
+                    {{ txn.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Investigation Action -->
+      <div class="investigation-section">
+        <h3>Take Action</h3>
+        <div class="form-group">
+          <label>Action:</label>
+          <select [(ngModel)]="investigationAction" class="form-control">
+            <option value="INVESTIGATING">Continue Investigation</option>
+            <option value="TRUE_POSITIVE">Mark as True Positive</option>
+            <option value="FALSE_POSITIVE">Mark as False Positive</option>
+            <option value="ESCALATED">Escalate</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Investigation Notes: *</label>
+          <textarea 
+            [(ngModel)]="investigationNotes"
+            class="form-control"
+            rows="5"
+            placeholder="Enter your investigation findings, observations, and reasoning for the action taken..."
+            required></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeInvestigationModal()">Cancel</button>
+          <button class="btn-primary" (click)="submitInvestigation()">Submit Investigation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

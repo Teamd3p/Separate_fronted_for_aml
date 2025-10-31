@@ -120,11 +120,16 @@ export class Login {
     
     switch (normalizedRole) {
       case 'ADMIN':
-      case 'COMPLIANCE_OFFICER':
-      case 'OFFICER':
         console.log('Redirecting to admin dashboard...');
         this.router.navigate(['/admin/dashboard']).then(success => {
           console.log('Navigation to admin dashboard:', success ? 'SUCCESS' : 'FAILED');
+        });
+        break;
+      case 'COMPLIANCE_OFFICER':
+      case 'OFFICER':
+        console.log('Redirecting to compliance dashboard...');
+        this.router.navigate(['/compliance/dashboard']).then(success => {
+          console.log('Navigation to compliance dashboard:', success ? 'SUCCESS' : 'FAILED');
         });
         break;
       case 'CUSTOMER':

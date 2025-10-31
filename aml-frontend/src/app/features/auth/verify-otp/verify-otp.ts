@@ -126,9 +126,11 @@ export class VerifyOtp implements OnInit {
     
     switch (normalizedRole) {
       case 'ADMIN':
+        this.router.navigate(['/admin/dashboard']);
+        break;
       case 'COMPLIANCE_OFFICER':
       case 'OFFICER':
-        this.router.navigate(['/admin/dashboard']);
+        this.router.navigate(['/compliance/dashboard']);
         break;
       case 'CUSTOMER':
       case 'USER':

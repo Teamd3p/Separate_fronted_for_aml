@@ -105,6 +105,43 @@ export const routes: Routes = [
     data: { roles: ['ADMIN'] }
   },
   {
+    path: 'compliance',
+    loadComponent: () => import('./features/compliance/layout/compliance-layout').then(m => m.ComplianceLayout),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['COMPLIANCE_OFFICER', 'ADMIN'] },
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/compliance/dashboard/dashboard').then(m => m.Dashboard)
+      },
+      {
+        path: 'alerts',
+        loadComponent: () => import('./features/compliance/alerts/alerts').then(m => m.Alerts)
+      },
+      {
+        path: 'alerts/:id',
+        loadComponent: () => import('./features/compliance/alerts/alerts').then(m => m.Alerts)
+      },
+      {
+        path: 'transactions',
+        loadComponent: () => import('./features/compliance/transactions/transactions').then(m => m.Transactions)
+      },
+      {
+        path: 'sar',
+        loadComponent: () => import('./features/compliance/sar/sar').then(m => m.Sar)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/compliance/profile/profile').then(m => m.Profile)
+      },
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      }
+    ]
+  },
+  {
     path: '**',
     redirectTo: '/auth/login'
   }

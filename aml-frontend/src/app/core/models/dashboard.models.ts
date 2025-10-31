@@ -31,7 +31,7 @@ export interface Transaction {
   customerId?: number;
   customerName?: string;
   customerEmail?: string;
-  riskScore?: number;
+  riskScore: number;
 }
 
 export interface TransactionCreateRequest {

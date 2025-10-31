@@ -74,6 +74,8 @@ export class RoleGuard implements CanActivate {
     
     if (upperRole.includes('ADMIN')) {
       this.router.navigate(['/admin/dashboard']);
+    } else if (upperRole.includes('COMPLIANCE') || upperRole.includes('OFFICER')) {
+      this.router.navigate(['/compliance/dashboard']);
     } else if (upperRole.includes('CUSTOMER')) {
       this.router.navigate(['/customer/dashboard']);
     } else {
