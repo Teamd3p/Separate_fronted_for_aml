@@ -21,6 +21,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/verify-otp/verify-otp').then(m => m.VerifyOtp)
   },
   {
+    path: 'auth/forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password/forgot-password').then(m => m.ForgotPassword)
+  },
+  {
+    path: 'auth/reset-password',
+    loadComponent: () => import('./features/auth/reset-password/reset-password').then(m => m.ResetPassword)
+  },
+  {
     path: 'customer',
     loadComponent: () => import('./features/customer/layout/customer-layout').then(m => m.CustomerLayout),
     canActivate: [AuthGuard, RoleGuard],
