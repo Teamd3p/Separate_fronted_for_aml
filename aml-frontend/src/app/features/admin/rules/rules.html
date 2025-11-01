@@ -1,202 +1,3 @@
-<div class="admin-layout">
-  <!-- Sidebar Navigation -->
-  <aside class="admin-sidebar">
-    <div class="sidebar-header">
-      <div class="logo">
-        <div class="logo-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"
-              stroke="#007AFF"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-        </div>
-        <span class="logo-text">AML Admin Panel</span>
-      </div>
-    </div>
-
-    <nav class="sidebar-nav">
-      <div class="nav-section">
-        <span class="nav-section-title">ADMIN NAVIGATION</span>
-
-        <a (click)="navigateTo('/admin/dashboard')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <rect
-              x="3"
-              y="3"
-              width="7"
-              height="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <rect
-              x="14"
-              y="3"
-              width="7"
-              height="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <rect
-              x="14"
-              y="14"
-              width="7"
-              height="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <rect
-              x="3"
-              y="14"
-              width="7"
-              height="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-          Admin Dashboard
-        </a>
-
-        <a (click)="navigateTo('/admin/users')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" />
-          </svg>
-          User Management
-        </a>
-
-        <a (click)="navigateTo('/admin/kyc-review')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-          KYC Review
-        </a>
-
-        <a (click)="navigateTo('/admin/rules')" class="nav-item active">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 2L2 7L12 12L22 7L12 2Z"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" fill="none" />
-          </svg>
-          Rule Management
-        </a>
-
-        <a (click)="navigateTo('/admin/audit')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-          Audit Logs
-        </a>
-
-        <a (click)="navigateTo('/admin/reports')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <polyline
-              points="22,12 18,12 15,21 9,3 6,12 2,12"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-          Reports & Analytics
-        </a>
-
-        <a (click)="navigateTo('/admin/keywords')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none" />
-            <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" />
-          </svg>
-          Suspicious Keywords
-        </a>
-
-        <a (click)="navigateTo('/admin/countries')" class="nav-item">
-          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-          </svg>
-          Risky Countries
-        </a>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="logout-btn" (click)="logout()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2" />
-          <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" />
-        </svg>
-        Logout
-      </button>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="admin-main-content">
-    <!-- Top Header -->
-    <header class="admin-top-header">
-      <div class="header-left">
-        <h1 class="page-title">Rule Management</h1>
-      </div>
-      <div class="header-right">
-        <div class="search-bar">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2" fill="none" />
-            <path d="M21 21L16.65 16.65" stroke="#9CA3AF" stroke-width="2" />
-          </svg>
-          <input type="text" placeholder="Search" class="search-input" />
-          <kbd class="search-shortcut">⌘</kbd>
-        </div>
-        <div class="header-actions">
-          <button class="header-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" />
-            </svg>
-          </button>
-          <button class="header-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-            </svg>
-          </button>
-          <button class="header-btn profile-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
 
     <!-- Rules Content -->
     <div class="rules-content">
@@ -386,23 +187,17 @@
                         </svg>
                       </button>
                       <button
-                        class="action-btn delete-btn"
-                        (click)="openDeleteModal(rule)"
-                        title="Delete Rule"
+                        class="action-btn toggle-btn"
+                        (click)="toggleRuleStatus(rule)"
+                        [title]="rule.isActive ? 'Deactivate Rule' : 'Activate Rule'"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <polyline
-                            points="3,6 5,6 21,6"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            fill="none"
-                          />
-                          <path
-                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            fill="none"
-                          />
+                        <svg *ngIf="rule.isActive" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <svg *ngIf="!rule.isActive" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
+                          <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
                         </svg>
                       </button>
                     </div>
@@ -414,8 +209,7 @@
         </div>
       </div>
     </div>
-  </main>
-</div>
+ 
 
 <!-- Add Rule Modal -->
 <div *ngIf="showAddModal" class="modal-overlay" (click)="closeModals()">
@@ -572,31 +366,13 @@
         </div>
 
         <!-- JSON Preview -->
-<div style="margin-top: 20px;">
-  <label style="font-weight: 600; margin-bottom: 8px; display: block;">Generated JSON Condition:</label>
-
-  <div style="background: #f8f9fa; padding: 14px; border-radius: 6px; border: 1px solid #d1d1d1;">
-    
-    <div style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 4px;">
-      JSON
-    </div>
-
-    <pre style="
-        margin: 0;
-        padding: 10px;
-        background: #ffffff;
-        border-radius: 4px;
-        border: 1px solid #e0e0e0;
-        font-family: 'Courier New', monospace;
-        font-size: 14px;
-        white-space: pre-wrap;
-        color: #000;
-      ">
-{{ getGeneratedConditionPreview(newRule.type, dynamicFormFields) }}
-    </pre>
-
-  </div>
-</div>
+        <div class="json-preview-section">
+          <label class="json-preview-label">Generated JSON Condition:</label>
+          <div class="json-display">
+            <div class="json-label">JSON</div>
+            <pre class="json-content">{{ getGeneratedConditionPreview(newRule.type, dynamicFormFields) }}</pre>
+          </div>
+        </div>
 
 
         <div class="modal-actions">
@@ -764,17 +540,11 @@
         </div>
 
         <!-- JSON Preview -->
-        <div class="json-preview" style="margin-top: 20px">
-          <label style="font-weight: 600; margin-bottom: 8px; display: block"
-            >Generated JSON Condition:</label
-          >
-          <div
-            class="condition-json"
-            style="background: #f5f5f5; padding: 12px; border-radius: 4px; border: 1px solid #ddd"
-          >
-            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px">{{
-              getGeneratedConditionPreview(editRule.type!, editDynamicFormFields)
-            }}</pre>
+        <div class="json-preview-section">
+          <label class="json-preview-label">Generated JSON Condition:</label>
+          <div class="json-display">
+            <div class="json-label">JSON</div>
+            <pre class="json-content">{{ getGeneratedConditionPreview(editRule.type!, editDynamicFormFields) }}</pre>
           </div>
         </div>
 
@@ -808,53 +578,66 @@
 
 <!-- View Rule Modal -->
 <div *ngIf="showViewModal" class="modal-overlay" (click)="closeModals()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-content large-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>Rule Details</h3>
       <button class="close-btn" (click)="closeModals()">×</button>
     </div>
     <div class="modal-body">
-      <div class="details-grid" *ngIf="selectedRule">
-        <div class="detail-item">
-          <label>Rule Name:</label>
-          <span>{{ selectedRule.name }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Rule Type:</label>
-          <span [class]="getTypeBadgeClass(selectedRule.type)">{{ selectedRule.type }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Impact Score:</label>
-          <span>{{ selectedRule.impact }}</span>
-        </div>
-        <div class="detail-item">
-          <label>Status:</label>
-          <span [class]="getStatusBadgeClass(selectedRule.isActive)">{{
-            selectedRule.isActive ? 'Active' : 'Inactive'
-          }}</span>
-        </div>
-        <div class="detail-item full-width" *ngIf="selectedRule.description">
-          <label>Description:</label>
-          <div class="detail-content">{{ selectedRule.description }}</div>
-        </div>
-        <div class="detail-item full-width" *ngIf="selectedRule.condition">
-          <label>Condition:</label>
-          <div class="condition-json">
-            <pre>{{ formatJsonCondition(selectedRule.condition) }}</pre>
+      <div *ngIf="selectedRule">
+        <!-- Rule Information Section -->
+        <div class="info-section">
+          <h4 class="section-heading">Rule Information</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Rule Name:</label>
+              <span>{{ selectedRule.name }}</span>
+            </div>
+            <div class="info-item">
+              <label>Rule Type:</label>
+              <span [class]="getTypeBadgeClass(selectedRule.type)">{{ selectedRule.type }}</span>
+            </div>
+            <div class="info-item">
+              <label>Impact Score:</label>
+              <span>{{ selectedRule.impact }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span [class]="getStatusBadgeClass(selectedRule.isActive)">{{
+                selectedRule.isActive ? 'Active' : 'Inactive'
+              }}</span>
+            </div>
+            <div class="info-item full-width" *ngIf="selectedRule.description">
+              <label>Description:</label>
+              <div class="info-content">{{ selectedRule.description }}</div>
+            </div>
+            <div class="info-item">
+              <label>Created:</label>
+              <span>{{ selectedRule.createdAt | date : 'medium' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Last Updated:</label>
+              <span>{{ selectedRule.updatedAt | date : 'medium' }}</span>
+            </div>
           </div>
         </div>
-        <div class="detail-item" *ngIf="selectedRule.createdAt">
-          <label>Created:</label>
-          <span>{{ selectedRule.createdAt | date : 'medium' }}</span>
-        </div>
-        <div class="detail-item" *ngIf="selectedRule.updatedAt">
-          <label>Last Updated:</label>
-          <span>{{ selectedRule.updatedAt | date : 'medium' }}</span>
+
+        <!-- Condition Section -->
+        <div class="info-section" *ngIf="selectedRule.condition">
+          <h4 class="section-heading">Generated JSON Condition</h4>
+          <div class="json-display">
+            <div class="json-label">JSON</div>
+            <pre class="json-content">{{ formatJsonCondition(selectedRule.condition) }}</pre>
+          </div>
         </div>
       </div>
+      
       <div class="modal-actions">
-        <button type="button" class="btn-secondary" (click)="closeModals()">Close</button>
         <button type="button" class="btn-primary" (click)="openEditModal(selectedRule!)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
+          </svg>
           Edit Rule
         </button>
       </div>
@@ -862,29 +645,3 @@
   </div>
 </div>
 
-<!-- Delete Rule Modal -->
-<div *ngIf="showDeleteModal" class="modal-overlay" (click)="closeModals()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Delete Rule</h3>
-      <button class="close-btn" (click)="closeModals()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="delete-confirmation" *ngIf="selectedRule">
-        <p>Are you sure you want to delete the following rule?</p>
-        <div class="rule-info">
-          <strong>{{ selectedRule.name }}</strong>
-          <span [class]="getTypeBadgeClass(selectedRule.type)">{{ selectedRule.type }}</span>
-          <span>Impact: {{ selectedRule.impact }}</span>
-        </div>
-        <p class="warning-text">This action cannot be undone.</p>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn-danger" (click)="deleteRule()" [disabled]="isSubmitting">
-          {{ isSubmitting ? 'Deleting...' : 'Delete Rule' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>

@@ -441,6 +441,26 @@ h1, h2, h3, h4, h5, h6 {
   color: #374151;
   border-bottom: 1px solid #e2e8f0;
   letter-spacing: 0.005em;
+  white-space: nowrap;
+}
+
+.countries-table thead th:first-child {
+  width: 100px;
+}
+
+.countries-table thead th:nth-child(2) {
+  width: 35%;
+  min-width: 180px;
+}
+
+.countries-table thead th:nth-child(3) {
+  width: 20%;
+  min-width: 120px;
+}
+
+.countries-table thead th:nth-child(4) {
+  width: 150px;
+  text-align: center;
 }
 
 .countries-table tbody td {
@@ -449,6 +469,34 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.875rem;
   color: #1e293b;
   vertical-align: middle;
+}
+
+.countries-table tbody td:nth-child(4) {
+  text-align: center;
+}
+
+/* Better alignment for table cells */
+.country-code {
+  text-align: left !important;
+}
+
+.country-name {
+  text-align: left !important;
+}
+
+.country-risk {
+  text-align: left !important;
+}
+
+.country-actions {
+  text-align: center !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .table-row:hover {

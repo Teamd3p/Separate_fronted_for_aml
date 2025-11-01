@@ -106,7 +106,18 @@ export class Login {
       error: (error) => {
         this.isLoading = false;
         console.error('Login error:', error);
-        this.errorMessage = 'Invalid email or password. Please try again.';
+        
+        // Extract proper error message from backend
+        if (error.error?.message) {
+          this.errorMessage = error.error.message;
+        } else if (error.error?.error) {
+          this.errorMessage = error.error.error;
+        } else if (error.message) {
+          this.errorMessage = error.message;
+        } else {
+          this.errorMessage = 'Invalid email or password. Please try again.';
+        }
+        
         this.scrollToTop();
       }
     });

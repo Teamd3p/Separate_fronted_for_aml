@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface DashboardStats {
   totalUsers: number;
@@ -49,7 +51,8 @@ export class Dashboard implements OnInit {
 
   constructor(
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -67,8 +70,8 @@ export class Dashboard implements OnInit {
 
     console.log('Loading dashboard stats with token:', token ? 'Token exists' : 'No token');
 
-    // Load all customers from KYC compliance endpoint
-    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+    // Load all customers from admin endpoint
+    this.http.get<any>(`${this.apiUrl}/admin/customers`, { headers })
       .subscribe({
         next: (response) => {
           console.log('Customers received:', response);
@@ -132,7 +135,7 @@ export class Dashboard implements OnInit {
         }
       });
 
-    // Load all alerts
+    // Load all alerts from compliance endpoint (admin has access)
     this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
       .subscribe({
         next: (alerts) => {
@@ -167,8 +170,8 @@ export class Dashboard implements OnInit {
     // Load help tickets data (simulated for now)
     this.loadHelpTicketsData(headers);
     
-    // Load active accounts data from customers endpoint
-    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+    // Load active accounts data from admin customers endpoint
+    this.http.get<any>(`${this.apiUrl}/admin/customers`, { headers })
       .subscribe({
         next: (response) => {
           console.log('Customer accounts data received:', response);
@@ -315,13 +318,14 @@ export class Dashboard implements OnInit {
       .subscribe({
         next: (response) => {
           console.log('SAR submitted successfully:', response);
-          alert(`SAR #${sarId} has been submitted successfully.`);
+          this.toastService.success(`SAR #${sarId} has been submitted successfully.`);
           this.loadDraftedSars();
           this.loadDashboardStats();
         },
         error: (error) => {
           console.error('Error submitting SAR:', error);
-          alert(`Failed to submit SAR: ${error.error?.message || error.message || 'Unknown error'}`);
+          const errorMsg = error.error?.message || error.message || 'Unknown error';
+          this.toastService.error(`Failed to submit SAR: ${errorMsg}`);
         }
       });
   }

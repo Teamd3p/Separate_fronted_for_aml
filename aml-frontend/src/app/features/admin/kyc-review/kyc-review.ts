@@ -207,37 +207,23 @@ export class KycReview implements OnInit {
     }
   }
 
-  setActiveTab(tab: string, event?: Event): void {
-    if (event) {
-      event.preventDefault();
-    }
+  setActiveTab(tab: string, event: Event): void {
+    event.preventDefault();
     
-    switch(tab) {
-      case 'dashboard':
-        this.router.navigate(['/admin/dashboard']);
-        break;
-      case 'users':
-        this.router.navigate(['/admin/users']);
-        break;
-      case 'kyc':
-        // Already on KYC page
-        break;
-      case 'rules':
-        this.router.navigate(['/admin/rules']);
-        break;
-      case 'audit':
-        this.router.navigate(['/admin/audit']);
-        break;
-      case 'reports':
-        // this.router.navigate(['/admin/reports']); // Route doesn't exist yet
-        console.log('Reports page not implemented yet');
-        break;
-      case 'keywords':
-        this.router.navigate(['/admin/keywords']);
-        break;
-      case 'countries':
-        this.router.navigate(['/admin/countries']);
-        break;
+    const routes: { [key: string]: string } = {
+      'dashboard': '/admin/dashboard',
+      'kyc-review': '/admin/kyc-review',
+      'transactions': '/admin/transactions',
+      'rules': '/admin/rules',
+      'users': '/admin/users',
+      'keywords': '/admin/keywords',
+      'countries': '/admin/countries',
+      'audit-logs': '/admin/audit-logs',
+      'reports': '/admin/reports'
+    };
+    
+    if (routes[tab]) {
+      this.router.navigate([routes[tab]]);
     }
   }
 
