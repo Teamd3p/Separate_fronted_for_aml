@@ -19,11 +19,14 @@ interface PagedResponse {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './transactions.html',
-  styleUrl: './transactions.css',
+  styleUrls: ['./transactions.css']
 })
 export class Transactions implements OnInit {
+  Math = Math; // Expose Math to template
   allTransactions: Transaction[] = [];
   transactions: Transaction[] = [];
+  filteredTransactions: Transaction[] = [];
+  paginatedTransactions: Transaction[] = [];
   isLoading = false;
   errorMessage = '';
   
@@ -32,8 +35,8 @@ export class Transactions implements OnInit {
   selectedTransaction: Transaction | null = null;
   
   // Pagination
-  currentPage = 0;
-  pageSize = 20;
+  currentPage = 1;
+  pageSize = 10;
   totalPages = 0;
   totalElements = 0;
   
@@ -102,34 +105,41 @@ export class Transactions implements OnInit {
       );
     }
     
-    this.transactions = filtered;
+    this.filteredTransactions = filtered;
     this.totalElements = filtered.length;
-    this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+    this.currentPage = 1; // Reset to first page
+    this.updatePagination();
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredTransactions.length / this.pageSize);
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedTransactions = this.filteredTransactions.slice(startIndex, endIndex);
   }
 
   onFilterChange(): void {
-    this.currentPage = 0;
-    this.loadTransactions();
+    this.applyFilters();
   }
 
   goToPage(page: number): void {
-    if (page >= 0 && page < this.totalPages) {
+    if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.loadTransactions();
+      this.updatePagination();
     }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.totalPages - 1) {
+    if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.loadTransactions();
+      this.updatePagination();
     }
   }
 
   previousPage(): void {
-    if (this.currentPage > 0) {
+    if (this.currentPage > 1) {
       this.currentPage--;
-      this.loadTransactions();
+      this.updatePagination();
     }
   }
 
@@ -154,16 +164,34 @@ export class Transactions implements OnInit {
 
   getPageNumbers(): number[] {
     const pages: number[] = [];
-    const maxPages = 5;
-    let startPage = Math.max(0, this.currentPage - Math.floor(maxPages / 2));
-    let endPage = Math.min(this.totalPages - 1, startPage + maxPages - 1);
+    const maxPagesToShow = 5;
     
-    if (endPage - startPage < maxPages - 1) {
-      startPage = Math.max(0, endPage - maxPages + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (this.currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      } else if (this.currentPage >= this.totalPages - 2) {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.totalPages - 3; i <= this.totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.currentPage - 1; i <= this.currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      }
     }
     
     return pages;

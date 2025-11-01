@@ -120,59 +120,270 @@
     <div class="modal-body" *ngIf="selectedAlert">
       <!-- Alert Summary -->
       <div class="sar-section">
-        <h3>Alert Information</h3>
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          Alert Information
+        </h3>
         <div class="details-grid">
           <div class="detail-item">
             <label>Customer:</label>
-            <span>{{ selectedAlert.customerName }}</span>
+            <span class="detail-value">{{ selectedAlert.customerName }}</span>
           </div>
           <div class="detail-item">
             <label>Risk Score:</label>
-            <span class="risk-badge">{{ selectedAlert.riskScore }}</span>
+            <span class="risk-score-badge" [class.high-risk]="selectedAlert.riskScore >= 70">{{ selectedAlert.riskScore }}</span>
           </div>
           <div class="detail-item">
             <label>Rule Triggered:</label>
-            <span>{{ selectedAlert.ruleTriggered }}</span>
+            <span class="detail-value">{{ selectedAlert.ruleTriggered }}</span>
           </div>
           <div class="detail-item">
             <label>Status:</label>
-            <span>{{ selectedAlert.status }}</span>
+            <span class="status-badge status-{{ selectedAlert.status.toLowerCase() }}">{{ selectedAlert.status }}</span>
           </div>
         </div>
       </div>
 
-      <!-- SAR Summary Form -->
+      <!-- Subject Information -->
       <div class="sar-section">
-        <h3>SAR Summary</h3>
-        <p class="help-text">Provide a comprehensive summary of the suspicious activity, investigation findings, and reasons for filing this SAR.</p>
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Subject Information
+          <span class="auto-filled-badge">Auto-filled from Alert</span>
+        </h3>
+        <div class="form-group">
+          <label>Subject Name: *</label>
+          <input type="text" [(ngModel)]="sarData.subjectName" class="form-control readonly-field" readonly>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date of Birth:</label>
+            <input type="date" [(ngModel)]="sarData.subjectDOB" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Identification Type:</label>
+            <select [(ngModel)]="sarData.identificationType" class="form-control">
+              <option value="">Select type</option>
+              <option value="PASSPORT">Passport</option>
+              <option value="NATIONAL_ID">National ID</option>
+              <option value="DRIVERS_LICENSE">Driver's License</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Identification Number:</label>
+            <input type="text" [(ngModel)]="sarData.identificationNumber" class="form-control readonly-field" readonly>
+          </div>
+          <div class="form-group">
+            <label>Nationality:</label>
+            <input type="text" [(ngModel)]="sarData.nationality" class="form-control readonly-field" readonly>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Address:</label>
+          <textarea [(ngModel)]="sarData.address" class="form-control readonly-field" rows="3" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- Suspicious Activity Description -->
+      <div class="sar-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Suspicious Activity Description
+          <span class="auto-filled-badge">Auto-generated</span>
+        </h3>
+        <p class="help-text">Review and edit the auto-generated description. Add any additional details from your investigation.</p>
         
         <div class="form-group">
-          <label>Detailed Summary: *</label>
-          <textarea 
-            [(ngModel)]="sarSummary"
-            class="form-control"
-            rows="10"
-            placeholder="Include:
-- Description of suspicious activity
-- Investigation findings
-- Customer behavior patterns
-- Transaction details
-- Reason for filing SAR
-- Supporting evidence
-- Regulatory compliance notes"
-            required></textarea>
-          <div class="char-count">{{ sarSummary.length }} characters</div>
+          <label>Activity Type: *</label>
+          <select [(ngModel)]="sarData.activityType" class="form-control" required>
+            <option value="">Select activity type</option>
+            <option value="STRUCTURING">Structuring/Smurfing</option>
+            <option value="RAPID_MOVEMENT">Rapid Movement of Funds</option>
+            <option value="UNUSUAL_TRANSACTIONS">Unusual Transaction Patterns</option>
+            <option value="HIGH_RISK_JURISDICTION">High-Risk Jurisdiction Transfers</option>
+            <option value="INCONSISTENT_PROFILE">Activity Inconsistent with Profile</option>
+            <option value="POTENTIAL_FRAUD">Potential Fraud</option>
+            <option value="TERRORIST_FINANCING">Potential Terrorist Financing</option>
+            <option value="OTHER">Other</option>
+          </select>
         </div>
 
-        <div class="modal-actions">
-          <button class="btn-secondary" (click)="closeSarForm()">Cancel</button>
-          <button 
-            class="btn-primary" 
-            (click)="submitSAR()"
-            [disabled]="!sarSummary.trim() || sarSummary.length < 50">
-            Generate SAR
-          </button>
+        <div class="form-group">
+          <label>Detailed Description: *</label>
+          <textarea 
+            [(ngModel)]="sarData.activityDescription"
+            class="form-control editable-field"
+            rows="10"
+            required></textarea>
+          <div class="char-count">{{ sarData.activityDescription?.length || 0 }} characters</div>
         </div>
+      </div>
+
+      <!-- Transaction Details -->
+      <div class="sar-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          Transaction Details
+          <span class="auto-filled-badge">Auto-filled from Alert</span>
+        </h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total Amount Involved: *</label>
+            <input type="number" [(ngModel)]="sarData.totalAmount" class="form-control readonly-field" readonly required>
+          </div>
+          <div class="form-group">
+            <label>Currency:</label>
+            <input type="text" [(ngModel)]="sarData.currency" class="form-control readonly-field" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Number of Transactions:</label>
+            <input type="number" [(ngModel)]="sarData.transactionCount" class="form-control" placeholder="Update if needed">
+          </div>
+          <div class="form-group">
+            <label>Date Range:</label>
+            <input type="text" [(ngModel)]="sarData.dateRange" class="form-control readonly-field" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Investigation Findings -->
+      <div class="sar-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          Investigation Findings
+          <span class="auto-filled-badge">Template Provided</span>
+        </h3>
+        <p class="help-text">Review the pre-filled template and add your specific investigation findings in the designated sections.</p>
+        <div class="form-group">
+          <label>Investigation Summary: *</label>
+          <textarea 
+            [(ngModel)]="sarData.investigationFindings"
+            class="form-control editable-field"
+            rows="12"
+            required></textarea>
+        </div>
+      </div>
+
+      <!-- Supporting Documentation -->
+      <div class="sar-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+            <polyline points="13 2 13 9 20 9"/>
+          </svg>
+          Supporting Documentation
+          <span class="auto-filled-badge">Auto-generated</span>
+        </h3>
+        <p class="help-text">Review the list and add any additional supporting documents.</p>
+        <div class="form-group">
+          <label>List of Supporting Documents:</label>
+          <textarea 
+            [(ngModel)]="sarData.supportingDocs"
+            class="form-control editable-field"
+            rows="6"></textarea>
+        </div>
+      </div>
+
+      <!-- Regulatory Compliance -->
+      <div class="sar-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Regulatory Compliance
+        </h3>
+        <div class="form-group">
+          <label>Regulatory Authority: *</label>
+          <select [(ngModel)]="sarData.regulatoryAuthority" class="form-control" required>
+            <option value="">Select authority</option>
+            <option value="FINCEN">FinCEN (Financial Crimes Enforcement Network)</option>
+            <option value="FCA">FCA (Financial Conduct Authority)</option>
+            <option value="AUSTRAC">AUSTRAC</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Compliance Notes:</label>
+          <textarea 
+            [(ngModel)]="sarData.complianceNotes"
+            class="form-control"
+            rows="3"
+            placeholder="Additional compliance-related information or notes"></textarea>
+        </div>
+      </div>
+
+      <!-- Officer Declaration -->
+      <div class="sar-section declaration-section">
+        <h3 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Officer Declaration
+          <span class="auto-filled-badge">Auto-filled</span>
+        </h3>
+        <div class="declaration-box">
+          <p><strong>I hereby declare that:</strong></p>
+          <ul>
+            <li>The information provided in this SAR is accurate and complete to the best of my knowledge</li>
+            <li>I have conducted a thorough investigation of the suspicious activity</li>
+            <li>This report is filed in compliance with applicable AML regulations</li>
+            <li>I understand the confidentiality requirements of SAR filing</li>
+          </ul>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Officer Name: *</label>
+            <input type="text" [(ngModel)]="sarData.officerName" class="form-control readonly-field" readonly required>
+          </div>
+          <div class="form-group">
+            <label>Officer ID: *</label>
+            <input type="text" [(ngModel)]="sarData.officerId" class="form-control readonly-field" readonly required>
+          </div>
+        </div>
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="sarData.declaration" required>
+            <span>I confirm that I have read and agree to the above declaration *</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeSarForm()">Cancel</button>
+        <button 
+          class="btn-primary" 
+          (click)="submitSAR()"
+          [disabled]="!isFormValid()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Generate SAR Report
+        </button>
       </div>
     </div>
   </div>

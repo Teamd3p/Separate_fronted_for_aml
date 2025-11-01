@@ -12,6 +12,7 @@ import { ComplianceService, Alert, Transaction } from '../../../core/services/co
   styleUrl: './alerts.css',
 })
 export class Alerts implements OnInit {
+  Math = Math; // Expose Math to template
   activeTab: 'all' | 'assigned' = 'all';
   isLoading = false;
   allAlerts: Alert[] = [];
@@ -35,6 +36,12 @@ export class Alerts implements OnInit {
   filterStatus = 'all';
   filterRiskLevel = 'all';
   searchQuery = '';
+  
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  totalPages = 1;
+  paginatedAlerts: Alert[] = [];
   
   errorMessage = '';
   successMessage = '';
@@ -93,7 +100,78 @@ export class Alerts implements OnInit {
 
   switchTab(tab: 'all' | 'assigned'): void {
     this.activeTab = tab;
+    this.currentPage = 1; // Reset to first page when switching tabs
     this.applyFilters();
+  }
+
+  getOpenAlertsCount(): number {
+    // Count only unassigned open alerts
+    return this.allAlerts.filter(alert => 
+      !alert.assignedOfficerName && alert.status === 'OPEN'
+    ).length;
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredAlerts.length / this.pageSize);
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedAlerts = this.filteredAlerts.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (this.currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      } else if (this.currentPage >= this.totalPages - 2) {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.totalPages - 3; i <= this.totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.currentPage - 1; i <= this.currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      }
+    }
+    
+    return pages;
   }
 
   applyFilters(): void {
@@ -131,6 +209,8 @@ export class Alerts implements OnInit {
     }
     
     this.filteredAlerts = alerts;
+    this.currentPage = 1; // Reset to first page when filters change
+    this.updatePagination();
   }
 
   assignToMe(alert: Alert, event: Event): void {

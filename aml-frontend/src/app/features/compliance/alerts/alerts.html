@@ -23,21 +23,33 @@
   </div>
 
   <!-- Tabs -->
-  <div class="tabs">
-    <button 
-      class="tab-button" 
-      [class.active]="activeTab === 'all'"
-      (click)="switchTab('all')">
-      All Open Alerts
-      <span class="badge">{{ allAlerts.length }}</span>
-    </button>
-    <button 
-      class="tab-button" 
-      [class.active]="activeTab === 'assigned'"
-      (click)="switchTab('assigned')">
-      My Assigned Alerts
-      <span class="badge">{{ assignedAlerts.length }}</span>
-    </button>
+  <div class="tabs-container">
+    <div class="tabs">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'all'"
+        (click)="switchTab('all')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none"/>
+          <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="17" r="1" fill="currentColor"/>
+        </svg>
+        All Open Alerts
+        <span class="tab-badge">{{ getOpenAlertsCount() }}</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'assigned'"
+        (click)="switchTab('assigned')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+          <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+          <polyline points="17 11 19 13 23 9" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        My Assigned Alerts
+        <span class="tab-badge">{{ assignedAlerts.length }}</span>
+      </button>
+    </div>
   </div>
 
   <!-- Filters -->
@@ -104,7 +116,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let alert of filteredAlerts">
+        <tr *ngFor="let alert of paginatedAlerts">
           <td><span class="alert-id">#{{ alert.alertId }}</span></td>
           <td>
             <div class="customer-info">
@@ -192,6 +204,44 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div *ngIf="filteredAlerts.length > pageSize" class="pagination-container">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredAlerts.length) }} of {{ filteredAlerts.length }} alerts
+      </div>
+      <div class="pagination-controls">
+        <button 
+          class="pagination-btn" 
+          [disabled]="currentPage === 1"
+          (click)="previousPage()"
+          title="Previous">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="15 18 9 12 15 6" stroke-width="2"/>
+          </svg>
+        </button>
+
+        <button 
+          *ngFor="let page of getPageNumbers()"
+          class="pagination-number"
+          [class.active]="page === currentPage"
+          [class.ellipsis]="page === -1"
+          [disabled]="page === -1"
+          (click)="page !== -1 && goToPage(page)">
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button 
+          class="pagination-btn" 
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()"
+          title="Next">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="9 18 15 12 9 6" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
