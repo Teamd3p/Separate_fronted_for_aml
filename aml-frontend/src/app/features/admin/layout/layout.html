@@ -108,38 +108,139 @@
     <!-- Common Top Bar -->
     <header class="top-bar">
       <div class="top-bar-left">
-        <div class="search-bar">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2" fill="none"/>
-            <path d="M21 21L16.65 16.65" stroke="#9CA3AF" stroke-width="2"/>
-          </svg>
-          <input type="text" placeholder="Search..." class="search-input">
-        </div>
+        <h1 class="page-title">{{ getPageTitle() }}</h1>
       </div>
       <div class="top-bar-right">
-        <button class="top-bar-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2"/>
-          </svg>
-        </button>
-        <button class="top-bar-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2"/>
-          </svg>
-        </button>
-        <div class="user-profile">
-          <div class="user-avatar">
+        <!-- Notifications -->
+        <div class="notification-wrapper">
+          <button class="top-bar-btn notification-btn" (click)="toggleNotifications()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" stroke-width="2"/>
-              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2"/>
             </svg>
+            <span class="notification-badge" *ngIf="unreadNotifications > 0">{{ unreadNotifications }}</span>
+          </button>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" *ngIf="showNotifications">
+            <div class="notification-header">
+              <h3>Notifications</h3>
+              <button class="mark-read-btn" (click)="markAllAsRead()">Mark all as read</button>
+            </div>
+            <div class="notification-list">
+              <div *ngFor="let notification of notifications" 
+                   class="notification-item" 
+                   [class.unread]="!notification.read"
+                   (click)="handleNotificationClick(notification)">
+                <div class="notification-icon" [ngClass]="notification.type">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="notification-content">
+                  <p class="notification-title">{{ notification.title }}</p>
+                  <p class="notification-message">{{ notification.message }}</p>
+                  <span class="notification-time">{{ notification.time }}</span>
+                </div>
+              </div>
+              <div *ngIf="notifications.length === 0" class="no-notifications">
+                <p>No notifications</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Profile Menu -->
+        <div class="user-profile-wrapper">
+          <button class="user-profile-btn" (click)="toggleUserMenu()">
+            <div class="user-avatar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <span class="user-name">{{ getUserName() }}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="dropdown-icon">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+
+          <!-- User Menu Dropdown -->
+          <div class="user-menu-dropdown" *ngIf="showUserMenu">
+            <button class="menu-item" (click)="openChangePasswordModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Change Password
+            </button>
+            <button class="menu-item logout-item" (click)="logout()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2"/>
+                <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Logout
+            </button>
           </div>
         </div>
       </div>
     </header>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" *ngIf="showChangePasswordModal" (click)="closeChangePasswordModal()">
+      <div class="modal-content change-password-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Change Password</h3>
+          <button class="close-btn" (click)="closeChangePasswordModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="changePassword()">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <input 
+                type="password" 
+                id="currentPassword" 
+                [(ngModel)]="passwordData.currentPassword"
+                name="currentPassword"
+                placeholder="Enter current password"
+                required>
+            </div>
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input 
+                type="password" 
+                id="newPassword" 
+                [(ngModel)]="passwordData.newPassword"
+                name="newPassword"
+                placeholder="Enter new password"
+                required>
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Confirm New Password</label>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                [(ngModel)]="passwordData.confirmPassword"
+                name="confirmPassword"
+                placeholder="Confirm new password"
+                required>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn-secondary" (click)="closeChangePasswordModal()">Cancel</button>
+              <button type="submit" class="btn-primary">Change Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     
     <router-outlet></router-outlet>
   </main>
+
+  <!-- Toast Notifications -->
+  <app-toast></app-toast>
+  
+  <!-- Confirmation Dialog -->
+  <app-confirmation-dialog></app-confirmation-dialog>
 </div>

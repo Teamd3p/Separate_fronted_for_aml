@@ -88,7 +88,7 @@ export const routes: Routes = [
       { path: 'audit-logs', component: AuditLogsComponent },
       { path: 'rules', component: Rules },
       { path: 'users', component: Users },
-      { path: 'reports', loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'reports', loadComponent: () => import('./features/admin/reports/reports').then(m => m.Reports) },
       { path: 'kyc-review', component: KycReview },
       { path: 'keywords', component: Keywords },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

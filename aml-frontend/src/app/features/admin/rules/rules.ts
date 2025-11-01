@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RuleService } from '../../../core/services/rule.service';
 import { Rule, RuleCreateRequest, RuleUpdateRequest } from '../../../core/models/rule.models';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 // Field configuration interfaces
 interface RuleFieldConfig {
@@ -262,7 +264,9 @@ export class Rules implements OnInit {
 
   constructor(
     private ruleService: RuleService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationDialogService
   ) {}
 
   ngOnInit(): void {
@@ -528,21 +532,35 @@ export class Rules implements OnInit {
   deleteRule(): void {
     if (!this.selectedRule) return;
 
-    this.isSubmitting = true;
-    this.ruleService.deleteRule(this.selectedRule.id).subscribe({
-      next: () => {
-        this.rules = this.rules.filter(r => r.id !== this.selectedRule!.id);
-        this.updateStatistics();
-        this.applyFilters();
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: 'Delete Rule',
+      message: `Are you sure you want to delete the rule "${this.selectedRule.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    }).subscribe(confirmed => {
+      if (!confirmed) {
         this.closeModals();
-        this.showSuccessMessage('Rule deleted successfully');
-      },
-      error: (error) => {
-        console.error('Error deleting rule:', error);
-        this.isSubmitting = false;
-        const errorMsg = error.error?.message || error.message || 'Unknown error';
-        this.showErrorMessage(`Failed to delete rule: ${errorMsg}`);
+        return;
       }
+
+      this.isSubmitting = true;
+      this.ruleService.deleteRule(this.selectedRule!.id).subscribe({
+        next: () => {
+          this.rules = this.rules.filter(r => r.id !== this.selectedRule!.id);
+          this.updateStatistics();
+          this.applyFilters();
+          this.closeModals();
+          this.showSuccessMessage('Rule deleted successfully');
+        },
+        error: (error) => {
+          console.error('Error deleting rule:', error);
+          this.isSubmitting = false;
+          const errorMsg = error.error?.message || error.message || 'Unknown error';
+          this.showErrorMessage(`Failed to delete rule: ${errorMsg}`);
+        }
+      });
     });
   }
 
@@ -814,13 +832,11 @@ export class Rules implements OnInit {
   }
 
   showSuccessMessage(message: string): void {
-    console.log('Success:', message);
-    alert(message); // Temporary solution
+    this.toastService.success(message);
   }
 
   showErrorMessage(message: string): void {
-    console.error('Error:', message);
-    alert(message); // Temporary solution
+    this.toastService.error(message);
   }
   
   // Dynamic form field methods

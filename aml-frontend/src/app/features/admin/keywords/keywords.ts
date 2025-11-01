@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { KeywordService } from '../../../core/services/keyword.service';
-import { KeywordApiTestService } from '../../../core/services/keyword-api-test.service';
 import { Keyword, KeywordCreateRequest, KeywordUpdateRequest } from '../../../core/models/keyword.models';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
+import { KeywordApiTestService } from '../../../core/services/keyword-api-test.service';
 
 @Component({
   selector: 'app-keywords',
@@ -67,7 +69,9 @@ export class Keywords implements OnInit {
   constructor(
     private keywordService: KeywordService,
     private keywordApiTestService: KeywordApiTestService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationDialogService
   ) {}
 
   ngOnInit(): void {
@@ -240,21 +244,35 @@ export class Keywords implements OnInit {
   deleteKeyword(): void {
     if (!this.selectedKeyword) return;
 
-    this.isSubmitting = true;
-    this.keywordService.deleteKeyword(this.selectedKeyword.id!).subscribe({
-      next: () => {
-        this.keywords = this.keywords.filter(k => k.id !== this.selectedKeyword!.id);
-        this.updateStatistics();
-        this.applyFilters();
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: 'Delete Keyword',
+      message: `Are you sure you want to delete the keyword "${this.selectedKeyword.keyword}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    }).subscribe(confirmed => {
+      if (!confirmed) {
         this.closeModals();
-        this.showSuccessMessage('Keyword deleted successfully');
-      },
-      error: (error) => {
-        console.error('Error deleting keyword:', error);
-        this.isSubmitting = false;
-        const errorMsg = error.error?.message || error.message || 'Failed to delete keyword';
-        this.showErrorMessage(`Failed to delete keyword: ${errorMsg}`);
+        return;
       }
+
+      this.isSubmitting = true;
+      this.keywordService.deleteKeyword(this.selectedKeyword!.id!).subscribe({
+        next: () => {
+          this.keywords = this.keywords.filter(k => k.id !== this.selectedKeyword!.id);
+          this.updateStatistics();
+          this.applyFilters();
+          this.closeModals();
+          this.showSuccessMessage('Keyword deleted successfully');
+        },
+        error: (error) => {
+          console.error('Error deleting keyword:', error);
+          this.isSubmitting = false;
+          const errorMsg = error.error?.message || error.message || 'Failed to delete keyword';
+          this.showErrorMessage(`Failed to delete keyword: ${errorMsg}`);
+        }
+      });
     });
   }
 
@@ -341,13 +359,11 @@ export class Keywords implements OnInit {
   }
 
   showSuccessMessage(message: string): void {
-    console.log('Success:', message);
-    alert(message); // Temporary solution
+    this.toastService.success(message);
   }
 
   showErrorMessage(message: string): void {
-    console.error('Error:', message);
-    alert(message); // Temporary solution
+    this.toastService.error(message);
   }
 
   // Navigation methods

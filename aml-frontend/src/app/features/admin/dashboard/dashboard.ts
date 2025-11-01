@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface DashboardStats {
   totalUsers: number;
@@ -49,7 +51,8 @@ export class Dashboard implements OnInit {
 
   constructor(
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -132,8 +135,8 @@ export class Dashboard implements OnInit {
         }
       });
 
-    // Load all alerts from admin endpoint
-    this.http.get<any[]>(`${this.apiUrl}/admin/alerts`, { headers })
+    // Load all alerts from compliance endpoint (admin has access)
+    this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
       .subscribe({
         next: (alerts) => {
           console.log('Alerts received:', alerts);
@@ -239,7 +242,7 @@ export class Dashboard implements OnInit {
     });
 
     // Get all alerts and filter for those with drafted SARs
-    this.http.get<any[]>(`${this.apiUrl}/admin/alerts`, { headers })
+    this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
       .subscribe({
         next: (alerts) => {
           console.log('Alerts received for SAR filtering:', alerts);
@@ -311,17 +314,18 @@ export class Dashboard implements OnInit {
     });
 
     console.log('Submitting SAR:', sarId);
-    this.http.post(`${this.apiUrl}/admin/sar/${sarId}/submit`, {}, { headers })
+    this.http.post(`${this.apiUrl}/compliance/sar/${sarId}/submit`, {}, { headers })
       .subscribe({
         next: (response) => {
           console.log('SAR submitted successfully:', response);
-          alert(`SAR #${sarId} has been submitted successfully.`);
+          this.toastService.success(`SAR #${sarId} has been submitted successfully.`);
           this.loadDraftedSars();
           this.loadDashboardStats();
         },
         error: (error) => {
           console.error('Error submitting SAR:', error);
-          alert(`Failed to submit SAR: ${error.error?.message || error.message || 'Unknown error'}`);
+          const errorMsg = error.error?.message || error.message || 'Unknown error';
+          this.toastService.error(`Failed to submit SAR: ${errorMsg}`);
         }
       });
   }

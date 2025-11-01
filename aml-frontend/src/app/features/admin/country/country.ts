@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CountryService } from '../../../core/services/country.service';
 import { Country as CountryModel, CountryCreateRequest, CountryUpdateRequest } from '../../../core/models/country.models';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-country',
@@ -46,7 +48,9 @@ export class Country implements OnInit {
 
   constructor(
     private countryService: CountryService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationDialogService
   ) {}
 
   ngOnInit(): void {
@@ -238,21 +242,35 @@ export class Country implements OnInit {
   deleteCountry(): void {
     if (!this.selectedCountry) return;
 
-    this.isSubmitting = true;
-    this.countryService.deleteCountry(this.selectedCountry.code).subscribe({
-      next: () => {
-        this.countries = this.countries.filter(c => c.code !== this.selectedCountry!.code);
-        this.updateStatistics();
-        this.applyFilters();
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: 'Delete Country',
+      message: `Are you sure you want to delete "${this.selectedCountry.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    }).subscribe(confirmed => {
+      if (!confirmed) {
         this.closeModals();
-        this.showSuccessMessage('Country deleted successfully');
-      },
-      error: (error) => {
-        console.error('Error deleting country:', error);
-        this.isSubmitting = false;
-        const errorMsg = error.error?.message || error.message || 'Unknown error';
-        this.showErrorMessage(`Failed to delete country: ${errorMsg}`);
+        return;
       }
+
+      this.isSubmitting = true;
+      this.countryService.deleteCountry(this.selectedCountry!.code).subscribe({
+        next: () => {
+          this.countries = this.countries.filter(c => c.code !== this.selectedCountry!.code);
+          this.updateStatistics();
+          this.applyFilters();
+          this.closeModals();
+          this.showSuccessMessage('Country deleted successfully');
+        },
+        error: (error) => {
+          console.error('Error deleting country:', error);
+          this.isSubmitting = false;
+          const errorMsg = error.error?.message || error.message || 'Unknown error';
+          this.showErrorMessage(`Failed to delete country: ${errorMsg}`);
+        }
+      });
     });
   }
 
@@ -295,15 +313,11 @@ export class Country implements OnInit {
   }
 
   showSuccessMessage(message: string): void {
-    // You can implement a toast notification service here
-    console.log('Success:', message);
-    alert(message); // Temporary solution
+    this.toastService.success(message);
   }
 
   showErrorMessage(message: string): void {
-    // You can implement a toast notification service here
-    console.error('Error:', message);
-    alert(message); // Temporary solution
+    this.toastService.error(message);
   }
 
   // Navigation methods

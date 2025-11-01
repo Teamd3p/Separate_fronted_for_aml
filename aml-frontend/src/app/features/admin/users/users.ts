@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 interface User {
   userId: number;
@@ -76,7 +78,9 @@ export class Users implements OnInit {
 
   constructor(
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService,
+    private confirmationService: ConfirmationDialogService
   ) {}
 
   ngOnInit(): void {
@@ -148,7 +152,7 @@ export class Users implements OnInit {
           this.loading = false;
           this.customers = [];
           this.filteredCustomers = [];
-          alert('Failed to load customers. Please check your connection and try again.');
+          this.toastService.error('Failed to load customers. Please check your connection and try again.');
         }
       });
   }
@@ -276,7 +280,7 @@ export class Users implements OnInit {
           console.error('Error loading officers:', error.status, error.message);
           this.officers = [];
           this.filteredOfficers = [];
-          alert('Failed to load officers. Please check your connection and try again.');
+          this.toastService.error('Failed to load officers. Please check your connection and try again.');
         }
       });
   }
@@ -488,7 +492,7 @@ export class Users implements OnInit {
         console.log('Customer status updated successfully:', response);
         user.status = newStatus;
         user.isActive = newStatus === 'ACTIVE';
-        alert(`Customer ${action}d successfully!`);
+        this.toastService.success(`Customer ${action}d successfully!`);
         // Reload to ensure data is fresh
         this.loadCustomers();
       },
@@ -496,7 +500,7 @@ export class Users implements OnInit {
         console.error(`Customer status update failed:`, error);
         console.error('Error status:', error.status);
         console.error('Error message:', error.error?.message || error.message);
-        alert(`Failed to ${action} customer: ${error.error?.message || error.message || 'Unknown error'}`);
+        this.toastService.error(`Failed to ${action} customer: ${error.error?.message || error.message || 'Unknown error'}`);
       }
     });
   }
@@ -547,7 +551,7 @@ export class Users implements OnInit {
     if (index >= endpoints.length) {
       // All methods failed
       console.error('All status update methods failed');
-      alert(`Failed to ${action} user. Please check your permissions or contact the administrator.`);
+      this.toastService.error(`Failed to ${action} user. Please check your permissions or contact the administrator.`);
       return;
     }
     
@@ -634,7 +638,7 @@ export class Users implements OnInit {
       next: (response) => {
         console.log(`Officer ${action}d successfully:`, response);
         this.updateOfficerStatusLocally(officer, newStatus);
-        alert(`Officer ${action}d successfully!`);
+        this.toastService.success(`Officer ${action}d successfully!`);
         // Reload officers to ensure data is fresh
         this.loadOfficers();
       },
@@ -642,7 +646,7 @@ export class Users implements OnInit {
         console.error(`Officer status update failed:`, error);
         console.error('Error status:', error.status);
         console.error('Error message:', error.error?.message || error.message);
-        alert(`Failed to ${action} officer: ${error.error?.message || error.message || 'Unknown error'}`);
+        this.toastService.error(`Failed to ${action} officer: ${error.error?.message || error.message || 'Unknown error'}`);
       }
     });
   }
@@ -826,14 +830,14 @@ export class Users implements OnInit {
           
           this.addingOfficer = false;
           this.closeAddOfficerModal();
-          alert('Officer added successfully!');
+          this.toastService.success('Officer added successfully!');
         },
         error: (error) => {
           console.error('Error creating officer:', error);
           this.addingOfficer = false;
           
           let errorMessage = this.parseErrorMessage(error);
-          alert(errorMessage);
+          this.toastService.error(errorMessage);
         }
       });
   }
@@ -864,7 +868,7 @@ export class Users implements OnInit {
     }
     
     if (errors.length > 0) {
-      alert('Please fix the following errors:\n\n' + errors.join('\n'));
+      this.toastService.error('Please fix the following errors: ' + errors.join(', '));
       return false;
     }
     

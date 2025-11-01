@@ -449,12 +449,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .countries-table thead th:nth-child(2) {
-  width: auto;
-  min-width: 200px;
+  width: 35%;
+  min-width: 180px;
 }
 
 .countries-table thead th:nth-child(3) {
-  width: 150px;
+  width: 20%;
+  min-width: 120px;
 }
 
 .countries-table thead th:nth-child(4) {
@@ -472,6 +473,30 @@ h1, h2, h3, h4, h5, h6 {
 
 .countries-table tbody td:nth-child(4) {
   text-align: center;
+}
+
+/* Better alignment for table cells */
+.country-code {
+  text-align: left !important;
+}
+
+.country-name {
+  text-align: left !important;
+}
+
+.country-risk {
+  text-align: left !important;
+}
+
+.country-actions {
+  text-align: center !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .table-row:hover {
