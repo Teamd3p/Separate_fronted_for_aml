@@ -16,39 +16,34 @@
 
   <!-- Filters -->
   <div class="filters-section">
-    <div class="search-box">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input 
-        type="text" 
-        placeholder="Search by sender, counterparty, or account..."
-        [(ngModel)]="searchQuery"
-        (ngModelChange)="applyFilters()">
+    <div class="filter-grid">
+      <div class="search-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search by sender, counterparty, or account..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilters()">
+      </div>
+
+      <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()" class="filter-select">
+        <option value="all">All Types</option>
+        <option value="TRANSFER">Transfer</option>
+        <option value="DEPOSIT">Deposit</option>
+        <option value="WITHDRAWAL">Withdrawal</option>
+      </select>
+
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()" class="filter-select">
+        <option value="all">All Status</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="PENDING">Pending</option>
+        <option value="FAILED">Failed</option>
+        <option value="FLAGGED">Flagged</option>
+      </select>
     </div>
-
-    <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()" class="filter-select">
-      <option value="all">All Types</option>
-      <option value="TRANSFER">Transfer</option>
-      <option value="DEPOSIT">Deposit</option>
-      <option value="WITHDRAWAL">Withdrawal</option>
-    </select>
-
-    <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()" class="filter-select">
-      <option value="all">All Status</option>
-      <option value="COMPLETED">Completed</option>
-      <option value="PENDING">Pending</option>
-      <option value="FAILED">Failed</option>
-      <option value="FLAGGED">Flagged</option>
-    </select>
-
-    <select [(ngModel)]="pageSize" (ngModelChange)="onFilterChange()" class="filter-select">
-      <option value="10">10 per page</option>
-      <option value="20">20 per page</option>
-      <option value="50">50 per page</option>
-      <option value="100">100 per page</option>
-    </select>
   </div>
 
   <!-- Loading State -->
@@ -59,11 +54,7 @@
 
   <!-- Transactions Table -->
   <div *ngIf="!isLoading" class="transactions-table-container">
-    <div class="table-info">
-      <span>Showing {{ transactions.length }} of {{ totalElements }} transactions</span>
-    </div>
-
-    <div *ngIf="transactions.length === 0" class="empty-state">
+    <div *ngIf="filteredTransactions.length === 0" class="empty-state">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
@@ -73,25 +64,28 @@
       <p>There are no transactions matching your criteria</p>
     </div>
 
-    <table *ngIf="transactions.length > 0" class="transactions-table">
+    <table *ngIf="filteredTransactions.length > 0" class="transactions-table">
       <thead>
         <tr>
+          <th>Transaction ID</th>
           <th>Sender</th>
           <th>Counterparty</th>
           <th>Amount</th>
           <th>Type</th>
           <th>Status</th>
           <th>Date</th>
-          <th>View</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let txn of transactions">
+        <tr *ngFor="let txn of paginatedTransactions">
+          <td>
+            <span class="transaction-id">#{{ txn.transactionId }}</span>
+          </td>
           <td>
             <div class="sender-info">
               <div class="sender-name">{{ txn.customerName || 'N/A' }}</div>
               <div class="sender-account">{{ txn.senderAccountNumber }}</div>
-              <div *ngIf="txn.customerEmail" class="sender-email">{{ txn.customerEmail }}</div>
             </div>
           </td>
           <td>
@@ -129,36 +123,41 @@
     </table>
 
     <!-- Pagination -->
-    <div *ngIf="totalPages > 1" class="pagination">
-      <button 
-        class="pagination-btn" 
-        (click)="previousPage()" 
-        [disabled]="currentPage === 0">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-        Previous
-      </button>
+    <div *ngIf="filteredTransactions.length > pageSize" class="pagination-container">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredTransactions.length) }} of {{ filteredTransactions.length }} transactions
+      </div>
+      <div class="pagination-controls">
+        <button 
+          class="pagination-btn" 
+          [disabled]="currentPage === 1"
+          (click)="previousPage()"
+          title="Previous">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="15 18 9 12 15 6" stroke-width="2"/>
+          </svg>
+        </button>
 
-      <div class="page-numbers">
         <button 
           *ngFor="let page of getPageNumbers()"
-          class="page-number"
+          class="pagination-number"
           [class.active]="page === currentPage"
-          (click)="goToPage(page)">
-          {{ page + 1 }}
+          [class.ellipsis]="page === -1"
+          [disabled]="page === -1"
+          (click)="page !== -1 && goToPage(page)">
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button 
+          class="pagination-btn" 
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()"
+          title="Next">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="9 18 15 12 9 6" stroke-width="2"/>
+          </svg>
         </button>
       </div>
-
-      <button 
-        class="pagination-btn" 
-        (click)="nextPage()" 
-        [disabled]="currentPage === totalPages - 1">
-        Next
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
     </div>
   </div>
 </div>
