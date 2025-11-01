@@ -260,7 +260,13 @@ export class Keywords implements OnInit {
 
   toggleKeywordStatus(keyword: Keyword): void {
     const newStatus = !keyword.isActive;
-    this.keywordService.toggleKeywordStatus(keyword.id!, newStatus).subscribe({
+    // Use update endpoint with all data, just changing status
+    const updatedKeywordData = {
+      ...keyword,
+      isActive: newStatus
+    };
+    
+    this.keywordService.updateKeyword(keyword.id!, updatedKeywordData).subscribe({
       next: (updatedKeyword) => {
         const index = this.keywords.findIndex(k => k.id === updatedKeyword.id);
         if (index !== -1) {

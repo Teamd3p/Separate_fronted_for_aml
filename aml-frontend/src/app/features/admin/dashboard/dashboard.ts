@@ -67,8 +67,8 @@ export class Dashboard implements OnInit {
 
     console.log('Loading dashboard stats with token:', token ? 'Token exists' : 'No token');
 
-    // Load all customers from KYC compliance endpoint
-    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+    // Load all customers from admin endpoint
+    this.http.get<any>(`${this.apiUrl}/admin/customers`, { headers })
       .subscribe({
         next: (response) => {
           console.log('Customers received:', response);
@@ -132,8 +132,8 @@ export class Dashboard implements OnInit {
         }
       });
 
-    // Load all alerts
-    this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
+    // Load all alerts from admin endpoint
+    this.http.get<any[]>(`${this.apiUrl}/admin/alerts`, { headers })
       .subscribe({
         next: (alerts) => {
           console.log('Alerts received:', alerts);
@@ -167,8 +167,8 @@ export class Dashboard implements OnInit {
     // Load help tickets data (simulated for now)
     this.loadHelpTicketsData(headers);
     
-    // Load active accounts data from customers endpoint
-    this.http.get<any>(`${this.apiUrl}/kyc/compliance/customers/status`, { headers })
+    // Load active accounts data from admin customers endpoint
+    this.http.get<any>(`${this.apiUrl}/admin/customers`, { headers })
       .subscribe({
         next: (response) => {
           console.log('Customer accounts data received:', response);
@@ -239,7 +239,7 @@ export class Dashboard implements OnInit {
     });
 
     // Get all alerts and filter for those with drafted SARs
-    this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
+    this.http.get<any[]>(`${this.apiUrl}/admin/alerts`, { headers })
       .subscribe({
         next: (alerts) => {
           console.log('Alerts received for SAR filtering:', alerts);
@@ -311,7 +311,7 @@ export class Dashboard implements OnInit {
     });
 
     console.log('Submitting SAR:', sarId);
-    this.http.post(`${this.apiUrl}/compliance/sar/${sarId}/submit`, {}, { headers })
+    this.http.post(`${this.apiUrl}/admin/sar/${sarId}/submit`, {}, { headers })
       .subscribe({
         next: (response) => {
           console.log('SAR submitted successfully:', response);

@@ -1,6 +1,13 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { Layout } from './features/admin/layout/layout';
+import { Country } from './features/admin/country/country';
+import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs';
+import { Rules } from './features/admin/rules/rules';
+import { Users } from './features/admin/users/users';
+import { KycReview } from './features/admin/kyc-review/kyc-review';
+import { Keywords } from './features/admin/keywords/keywords';
 
 export const routes: Routes = [
   {
@@ -71,46 +78,21 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'admin/dashboard',
-    loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard),
+    path: 'admin',
+    component: Layout,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
-  },
-  {
-    path: 'admin/kyc-review',
-    loadComponent: () => import('./features/admin/kyc-review/kyc-review').then(m => m.KycReview),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN', 'COMPLIANCE_OFFICER'] }
-  },
-  {
-    path: 'admin/users',
-    loadComponent: () => import('./features/admin/users/users').then(m => m.Users),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
-  },
-  {
-    path: 'admin/rules',
-    loadComponent: () => import('./features/admin/rules/rules').then(m => m.Rules),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
-  },
-  {
-    path: 'admin/audit',
-    loadComponent: () => import('./features/admin/audit/audit').then(m => m.Audit),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
-  },
-  {
-    path: 'admin/keywords',
-    loadComponent: () => import('./features/admin/keywords/keywords').then(m => m.Keywords),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
-  },
-  {
-    path: 'admin/countries',
-    loadComponent: () => import('./features/admin/country/country').then(m => m.Country),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] }
+    data: { roles: ['ADMIN'] },
+    children: [
+      { path: 'dashboard', loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'countries', component: Country },
+      { path: 'audit-logs', component: AuditLogsComponent },
+      { path: 'rules', component: Rules },
+      { path: 'users', component: Users },
+      { path: 'reports', loadComponent: () => import('./features/admin/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'kyc-review', component: KycReview },
+      { path: 'keywords', component: Keywords },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+    ]
   },
   {
     path: 'compliance',

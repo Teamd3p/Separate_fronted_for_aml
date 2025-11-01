@@ -548,7 +548,13 @@ export class Rules implements OnInit {
 
   toggleRuleStatus(rule: Rule): void {
     const newStatus = !rule.isActive;
-    this.ruleService.toggleRuleStatus(rule.id, newStatus).subscribe({
+    // Use update endpoint with all data, just changing status
+    const updatedRuleData = {
+      ...rule,
+      isActive: newStatus
+    };
+    
+    this.ruleService.updateRule(rule.id, updatedRuleData).subscribe({
       next: (updatedRule) => {
         const index = this.rules.findIndex(r => r.id === updatedRule.id);
         if (index !== -1) {
