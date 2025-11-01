@@ -23,6 +23,21 @@ export interface AlertStats {
   total: number;
 }
 
+export interface CustomerTicket {
+  ticketId: number;
+  customerId: number;
+  customerName: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  assignedToId: number | null;
+  resolution?: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -167,11 +182,10 @@ export class AlertService {
     const ticketRequest = {
       subject: `Alert Inquiry - Transaction ${alert?.transactionId || 'ID: ' + alertId}`,
       description: this.buildAlertTicketDescription(alert, message),
-      priority: this.determineTicketPriority(alert?.severity),
-      category: 'ALERT_INQUIRY', // Help compliance officers categorize
-      alertId: alertId, // Reference to the alert
-      transactionId: alert?.transactionId
+      priority: this.determineTicketPriority(alert?.severity)
     };
+    
+    console.log('Creating ticket with request:', ticketRequest);
     
     return this.http.post<any>(
       `${this.API_URL}/customers/helpdesk/tickets`,
@@ -282,5 +296,31 @@ Please review the alert and provide explanation to the customer about why this t
 
   private getToken(): string | null {
     return localStorage.getItem('token');
+  }
+
+  // Get all tickets for current customer
+  getCustomerTickets(): Observable<CustomerTicket[]> {
+    return this.http.get<any>(`${this.API_URL}/customers/helpdesk/tickets`, this.getHttpOptions()).pipe(
+      map((response: any) => {
+        // Handle ApiResponseDto wrapper
+        const tickets = response.data || response;
+        return Array.isArray(tickets) ? tickets : [];
+      }),
+      catchError((error) => {
+        console.error('Error fetching customer tickets:', error);
+        return of([]);
+      })
+    );
+  }
+
+  // Update ticket description
+  updateTicketDescription(ticketId: number, description: string): Observable<CustomerTicket> {
+    return this.http.put<any>(
+      `${this.API_URL}/customers/helpdesk/tickets/${ticketId}`,
+      description,
+      this.getHttpOptions()
+    ).pipe(
+      map((response: any) => response.data || response)
+    );
   }
 }

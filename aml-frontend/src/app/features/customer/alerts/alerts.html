@@ -71,6 +71,68 @@
         </div>
       </div>
     </div>
+
+    <!-- Support Tickets Section -->
+    <div class="tickets-section">
+      <h2 class="section-title">My Support Tickets</h2>
+      <p class="section-subtitle">Track your inquiries and their status</p>
+
+      <!-- Loading State -->
+      <div *ngIf="loadingTickets" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading tickets...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loadingTickets && tickets.length === 0" class="empty-state">
+        <div class="empty-icon">🎫</div>
+        <h3>No Support Tickets</h3>
+        <p>You haven't raised any support tickets yet. Use "Contact Support" on alerts to create one.</p>
+      </div>
+
+      <!-- Tickets List -->
+      <div *ngIf="!loadingTickets && tickets.length > 0" class="tickets-list">
+        <div *ngFor="let ticket of tickets" class="ticket-card">
+          <div class="ticket-header">
+            <div class="ticket-info">
+              <h3 class="ticket-subject">{{ ticket.subject }}</h3>
+              <span class="ticket-id">Ticket #{{ ticket.ticketId }}</span>
+            </div>
+            <div class="ticket-badges">
+              <span class="status-badge" [class]="getTicketStatusClass(ticket.status)">
+                {{ ticket.status.replace('_', ' ') }}
+              </span>
+              <span class="priority-badge" [class]="getTicketPriorityClass(ticket.priority)">
+                {{ ticket.priority }}
+              </span>
+            </div>
+          </div>
+          <div class="ticket-body">
+            <p class="ticket-description">{{ ticket.description }}</p>
+            <div class="ticket-meta">
+              <span class="meta-item">
+                <strong>Created:</strong> {{ formatDate(ticket.createdAt) }}
+              </span>
+              <span class="meta-item" *ngIf="ticket.assignedToId">
+                <strong>Assigned to Officer</strong>
+              </span>
+              <span class="meta-item" *ngIf="ticket.resolvedAt">
+                <strong>Resolved:</strong> {{ formatDate(ticket.resolvedAt) }}
+              </span>
+            </div>
+            <div *ngIf="ticket.resolution" class="ticket-resolution">
+              <strong>Resolution:</strong>
+              <p>{{ ticket.resolution }}</p>
+            </div>
+          </div>
+          <div class="ticket-actions">
+            <button class="btn-secondary" (click)="viewTicketDetails(ticket)">
+              View Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -152,6 +214,63 @@
       <button class="btn-primary" (click)="contactSupport()" [disabled]="!contactMessage.trim() || sendingMessage">
         {{ sendingMessage ? 'Sending...' : 'Send Message' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Ticket Details Modal -->
+<div *ngIf="showTicketDetailsModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Ticket Details</h3>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedTicket">
+      <div class="detail-row">
+        <span class="detail-label">Ticket ID:</span>
+        <span class="detail-value">#{{ selectedTicket.ticketId }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Subject:</span>
+        <span class="detail-value">{{ selectedTicket.subject }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Status:</span>
+        <span class="status-badge" [class]="getTicketStatusClass(selectedTicket.status)">
+          {{ selectedTicket.status.replace('_', ' ') }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Priority:</span>
+        <span class="priority-badge" [class]="getTicketPriorityClass(selectedTicket.priority)">
+          {{ selectedTicket.priority }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Created:</span>
+        <span class="detail-value">{{ formatDate(selectedTicket.createdAt) }}</span>
+      </div>
+      <div class="detail-row" *ngIf="selectedTicket.assignedToId">
+        <span class="detail-label">Assignment:</span>
+        <span class="detail-value">✅ Assigned to Compliance Officer</span>
+      </div>
+      <div class="detail-row" *ngIf="selectedTicket.resolvedAt">
+        <span class="detail-label">Resolved:</span>
+        <span class="detail-value">{{ formatDate(selectedTicket.resolvedAt) }}</span>
+      </div>
+      <div class="detail-row full-width">
+        <span class="detail-label">Description:</span>
+        <p class="detail-description">{{ selectedTicket.description }}</p>
+      </div>
+      <div class="detail-row full-width" *ngIf="selectedTicket.resolution">
+        <span class="detail-label">Resolution:</span>
+        <div class="resolution-box">
+          <p>{{ selectedTicket.resolution }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="closeModals()">Close</button>
     </div>
   </div>
 </div>

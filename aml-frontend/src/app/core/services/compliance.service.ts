@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface Alert {
@@ -45,6 +46,30 @@ export interface SAR {
   status: string;
   createdAt: string;
   submittedAt: string;
+}
+
+export interface Ticket {
+  ticketId: number;
+  customerId: number;
+  customerName: string;
+  subject: string;
+  description: string;
+  status: string; // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority: string; // LOW, MEDIUM, HIGH, URGENT
+  assignedToId: number;
+  resolution?: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+}
+
+export interface TicketResponse {
+  responseId: number;
+  ticketId: number;
+  officerId: number;
+  officerName: string;
+  message: string;
+  createdAt: string;
 }
 
 export interface DashboardStats {
@@ -179,6 +204,56 @@ export class ComplianceService {
     });
   }
 
+  // === HELPDESK TICKETS ===
+  // Get all tickets (optionally filter by status)
+  getAllTickets(status?: string): Observable<Ticket[]> {
+    let url = `${this.apiUrl}/helpdesk/tickets`;
+    if (status) {
+      url += `?status=${status}`;
+    }
+    return this.http.get<Ticket[]>(url, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // Get tickets assigned to logged-in officer
+  getMyTickets(): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(`${this.apiUrl}/helpdesk/tickets/my-tickets`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // Assign ticket to officer
+  assignTicket(ticketId: number, adminId: number): Observable<Ticket> {
+    return this.http.post<Ticket>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/assign?adminId=${adminId}`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Resolve ticket
+  resolveTicket(ticketId: number, resolution: string): Observable<Ticket> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Content-Type': 'text/plain',
+      'Authorization': `Bearer ${token}`
+    });
+    
+    return this.http.post<Ticket>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/resolve`,
+      resolution,
+      { headers }
+    );
+  }
+
+  // Delete ticket
+  deleteTicket(ticketId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/helpdesk/tickets/${ticketId}`, {
+      headers: this.getHeaders()
+    });
+  }
+
   // Alert History
   getAlertHistoryByCustomer(customerId: number): Observable<Alert[]> {
     return this.http.get<Alert[]>(`${this.apiUrl}/alerts/history/customer/${customerId}`, {
@@ -188,6 +263,20 @@ export class ComplianceService {
 
   getTriggeredRules(alertId: number): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/alerts/${alertId}/rules`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // Get transaction details
+  getTransactionDetails(transactionId: number): Observable<Transaction> {
+    return this.http.get<Transaction>(`${this.apiUrl}/transactions/${transactionId}`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // Get account details
+  getAccountDetails(accountNumber: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/accounts/${accountNumber}`, {
       headers: this.getHeaders()
     });
   }

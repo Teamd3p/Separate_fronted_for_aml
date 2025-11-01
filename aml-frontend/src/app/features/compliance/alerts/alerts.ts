@@ -20,9 +20,14 @@ export class Alerts implements OnInit {
   
   // Investigation Modal
   showInvestigationModal = false;
+  showDetailedReview = false;
   selectedAlert: Alert | null = null;
+  selectedTransaction: Transaction | null = null;
+  senderAccountDetails: any = null;
+  receiverAccountDetails: any = null;
   customerTransactions: Transaction[] = [];
   loadingTransactions = false;
+  loadingAccountDetails = false;
   investigationNotes = '';
   investigationAction = 'INVESTIGATING';
   
@@ -94,6 +99,11 @@ export class Alerts implements OnInit {
   applyFilters(): void {
     let alerts = this.activeTab === 'all' ? this.allAlerts : this.assignedAlerts;
     
+    // For "All Open Alerts" tab, show only unassigned alerts
+    if (this.activeTab === 'all') {
+      alerts = alerts.filter(a => this.isUnassigned(a));
+    }
+    
     // Filter by status
     if (this.filterStatus !== 'all') {
       alerts = alerts.filter(a => a.status === this.filterStatus);
@@ -130,6 +140,12 @@ export class Alerts implements OnInit {
       this.complianceService.assignAlertToMe(alert.alertId).subscribe({
         next: (updatedAlert) => {
           this.successMessage = `Alert #${alert.alertId} assigned successfully`;
+          
+          // Remove from unassigned list immediately
+          this.allAlerts = this.allAlerts.filter(a => a.alertId !== alert.alertId);
+          this.applyFilters();
+          
+          // Reload to get updated data
           this.loadAlerts();
           setTimeout(() => this.successMessage = '', 3000);
         },
@@ -144,27 +160,92 @@ export class Alerts implements OnInit {
 
   openInvestigation(alertId: number): void {
     this.loadingTransactions = true;
+    this.loadingAccountDetails = true;
     this.showInvestigationModal = true;
+    this.showDetailedReview = false;
     this.investigationNotes = '';
     this.investigationAction = 'INVESTIGATING';
+    this.selectedTransaction = null;
+    this.senderAccountDetails = null;
+    this.receiverAccountDetails = null;
     
     // Load alert details
     this.complianceService.getAlertDetails(alertId).subscribe({
       next: (alert) => {
         this.selectedAlert = alert;
         
-        // Load customer transactions
-        if (alert.customerId) {
+        // Load transaction details if available
+        if (alert.transactionId) {
+          // First, try to find transaction in customer transactions
           this.complianceService.getCustomerTransactions(alert.customerId).subscribe({
             next: (transactions) => {
               this.customerTransactions = transactions;
+              
+              // Find the specific transaction
+              const foundTransaction = transactions.find(t => t.transactionId === alert.transactionId);
+              
+              if (foundTransaction) {
+                this.selectedTransaction = foundTransaction;
+                console.log('Transaction found in customer transactions:', foundTransaction);
+                
+                // Create sender account details from transaction data
+                this.senderAccountDetails = {
+                  customerName: foundTransaction.customerName,
+                  customerEmail: foundTransaction.customerEmail,
+                  accountNumber: foundTransaction.senderAccountNumber,
+                  accountType: 'SAVINGS', // Default type, can be updated if available
+                  balance: null,
+                  currency: foundTransaction.currency,
+                  status: 'ACTIVE'
+                };
+                
+                // Create receiver account details from transaction data
+                this.receiverAccountDetails = {
+                  customerName: foundTransaction.counterpartyName,
+                  customerEmail: null,
+                  accountNumber: foundTransaction.counterpartyAccount,
+                  accountType: 'SAVINGS', // Default type, can be updated if available
+                  balance: null,
+                  currency: foundTransaction.currency,
+                  status: 'ACTIVE'
+                };
+                
+                console.log('Sender account details created:', this.senderAccountDetails);
+                console.log('Receiver account details created:', this.receiverAccountDetails);
+                
+                this.loadingAccountDetails = false;
+              } else {
+                console.log('Transaction not found in customer transactions');
+                this.loadingAccountDetails = false;
+              }
+              
               this.loadingTransactions = false;
             },
             error: (error) => {
-              console.error('Error loading transactions:', error);
+              console.error('Error loading customer transactions:', error);
+              this.loadingAccountDetails = false;
               this.loadingTransactions = false;
             }
           });
+        } else {
+          console.log('No transaction ID found for alert');
+          this.loadingAccountDetails = false;
+          this.loadingTransactions = false;
+          this.selectedTransaction = null;
+          
+          // Still load customer transactions even if no transaction ID
+          if (alert.customerId) {
+            this.complianceService.getCustomerTransactions(alert.customerId).subscribe({
+              next: (transactions) => {
+                this.customerTransactions = transactions;
+                this.loadingTransactions = false;
+              },
+              error: (error) => {
+                console.error('Error loading transactions:', error);
+                this.loadingTransactions = false;
+              }
+            });
+          }
         }
       },
       error: (error) => {
@@ -178,8 +259,12 @@ export class Alerts implements OnInit {
   closeInvestigationModal(): void {
     this.showInvestigationModal = false;
     this.selectedAlert = null;
+    this.selectedTransaction = null;
+    this.senderAccountDetails = null;
+    this.receiverAccountDetails = null;
     this.customerTransactions = [];
     this.investigationNotes = '';
+    this.loadingAccountDetails = false;
   }
 
   submitInvestigation(): void {
@@ -188,21 +273,25 @@ export class Alerts implements OnInit {
       return;
     }
     
-    const action = {
+    // Backend expects: action (for logging) and decision (for status update)
+    const request = {
       action: this.investigationAction,
+      decision: this.investigationAction,  // Backend uses 'decision' field
       notes: this.investigationNotes
     };
     
-    this.complianceService.takeActionOnAlert(this.selectedAlert.alertId, action).subscribe({
+    console.log('Submitting investigation:', request);
+    
+    this.complianceService.takeActionOnAlert(this.selectedAlert.alertId, request).subscribe({
       next: (updatedAlert) => {
-        this.successMessage = 'Investigation action recorded successfully';
+        this.successMessage = `Investigation action "${this.investigationAction}" recorded successfully`;
         this.closeInvestigationModal();
         this.loadAlerts();
         setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error submitting investigation:', error);
-        this.errorMessage = 'Failed to submit investigation';
+        this.errorMessage = error.error?.message || 'Failed to submit investigation';
         setTimeout(() => this.errorMessage = '', 3000);
       }
     });
@@ -230,5 +319,9 @@ export class Alerts implements OnInit {
       'ESCALATED': 'status-escalated'
     };
     return statusMap[status] || 'status-open';
+  }
+
+  isUnassigned(alert: Alert): boolean {
+    return !alert.assignedOfficerName || alert.assignedOfficerName.trim() === '';
   }
 }

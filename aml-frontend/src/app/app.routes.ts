@@ -139,6 +139,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/compliance/sar/sar').then(m => m.Sar)
       },
       {
+        path: 'tickets',
+        loadComponent: () => import('./features/compliance/tickets/tickets').then(m => m.Tickets)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/compliance/profile/profile').then(m => m.Profile)
       },

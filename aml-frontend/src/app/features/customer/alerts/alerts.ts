@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AlertService, AlertNotification, AlertStats } from '../../../core/services/alert.service';
+import { AlertService, AlertNotification, AlertStats, CustomerTicket } from '../../../core/services/alert.service';
 
 @Component({
   selector: 'app-alerts',
@@ -15,6 +15,10 @@ export class Alerts implements OnInit {
   alerts: AlertNotification[] = [];
   filteredAlerts: AlertNotification[] = [];
   loading: boolean = false;
+  
+  // Tickets
+  tickets: CustomerTicket[] = [];
+  loadingTickets: boolean = false;
   
   // Statistics
   stats: AlertStats = {
@@ -30,7 +34,9 @@ export class Alerts implements OnInit {
   // Modal states
   showDetailsModal: boolean = false;
   showContactModal: boolean = false;
+  showTicketDetailsModal: boolean = false;
   selectedAlert: AlertNotification | null = null;
+  selectedTicket: CustomerTicket | null = null;
   contactMessage: string = '';
   sendingMessage: boolean = false;
 
@@ -42,6 +48,7 @@ export class Alerts implements OnInit {
   ngOnInit(): void {
     this.loadAlerts();
     this.loadStats();
+    this.loadTickets();
   }
 
   // Load alerts from API
@@ -70,6 +77,21 @@ export class Alerts implements OnInit {
         console.error('Error loading stats:', error);
         // Calculate stats from alerts if API fails
         this.calculateStatsFromAlerts();
+      }
+    });
+  }
+
+  // Load tickets
+  loadTickets(): void {
+    this.loadingTickets = true;
+    this.alertService.getCustomerTickets().subscribe({
+      next: (tickets) => {
+        this.tickets = tickets;
+        this.loadingTickets = false;
+      },
+      error: (error) => {
+        console.error('Error loading tickets:', error);
+        this.loadingTickets = false;
       }
     });
   }
@@ -160,9 +182,39 @@ export class Alerts implements OnInit {
   closeModals(): void {
     this.showDetailsModal = false;
     this.showContactModal = false;
+    this.showTicketDetailsModal = false;
     this.selectedAlert = null;
+    this.selectedTicket = null;
     this.contactMessage = '';
     this.sendingMessage = false;
+  }
+
+  // View ticket details
+  viewTicketDetails(ticket: CustomerTicket): void {
+    this.selectedTicket = ticket;
+    this.showTicketDetailsModal = true;
+  }
+
+  // Get ticket status badge class
+  getTicketStatusClass(status: string): string {
+    switch (status) {
+      case 'OPEN': return 'status-open';
+      case 'IN_PROGRESS': return 'status-in-progress';
+      case 'RESOLVED': return 'status-resolved';
+      case 'CLOSED': return 'status-closed';
+      default: return 'status-open';
+    }
+  }
+
+  // Get ticket priority badge class
+  getTicketPriorityClass(priority: string): string {
+    switch (priority) {
+      case 'URGENT': return 'priority-urgent';
+      case 'HIGH': return 'priority-high';
+      case 'MEDIUM': return 'priority-medium';
+      case 'LOW': return 'priority-low';
+      default: return 'priority-medium';
+    }
   }
 
   // Get alert icon class

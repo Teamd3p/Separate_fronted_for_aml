@@ -1,1 +1,179 @@
-<p>sar works!</p>
+<div class="sar-container">
+  <div class="page-header">
+    <h1>Suspicious Activity Reports (SAR)</h1>
+    <p class="subtitle">Generate and manage suspicious activity reports for regulatory compliance</p>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="success-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="error-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading SARs...</p>
+  </div>
+
+  <!-- SARs Table -->
+  <div *ngIf="!isLoading" class="sars-table-container">
+    <div class="table-header">
+      <h2>All SARs ({{ sars.length }})</h2>
+    </div>
+
+    <div *ngIf="sars.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <h3>No SARs found</h3>
+      <p>SARs will appear here once they are generated from alerts</p>
+    </div>
+
+    <table *ngIf="sars.length > 0" class="sars-table">
+      <thead>
+        <tr>
+          <th>SAR ID</th>
+          <th>Alert ID</th>
+          <th>Officer</th>
+          <th>Summary</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sar of sars">
+          <td><span class="sar-id">#{{ sar.sarId }}</span></td>
+          <td><span class="alert-id">#{{ sar.alertId }}</span></td>
+          <td>Officer #{{ sar.officerId }}</td>
+          <td>
+            <div class="summary-text">{{ sar.summary }}</div>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(sar.status)">
+              {{ sar.status }}
+            </span>
+          </td>
+          <td>{{ sar.createdAt | date:'short' }}</td>
+          <td>
+            <span *ngIf="sar.submittedAt">{{ sar.submittedAt | date:'short' }}</span>
+            <span *ngIf="!sar.submittedAt" class="text-muted">Not submitted</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                *ngIf="sar.status === 'DRAFT'"
+                class="btn-submit"
+                (click)="submitSARToRegulator(sar.sarId)"
+                title="Submit to Regulator">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                Submit
+              </button>
+              <button 
+                class="btn-view"
+                title="View Details">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                View
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SAR Form Modal -->
+<div class="modal-overlay" *ngIf="showSarForm" (click)="closeSarForm()">
+  <div class="modal-content sar-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Generate SAR for Alert #{{ selectedAlertId }}</h2>
+      <button class="close-button" (click)="closeSarForm()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedAlert">
+      <!-- Alert Summary -->
+      <div class="sar-section">
+        <h3>Alert Information</h3>
+        <div class="details-grid">
+          <div class="detail-item">
+            <label>Customer:</label>
+            <span>{{ selectedAlert.customerName }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Risk Score:</label>
+            <span class="risk-badge">{{ selectedAlert.riskScore }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Rule Triggered:</label>
+            <span>{{ selectedAlert.ruleTriggered }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Status:</label>
+            <span>{{ selectedAlert.status }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAR Summary Form -->
+      <div class="sar-section">
+        <h3>SAR Summary</h3>
+        <p class="help-text">Provide a comprehensive summary of the suspicious activity, investigation findings, and reasons for filing this SAR.</p>
+        
+        <div class="form-group">
+          <label>Detailed Summary: *</label>
+          <textarea 
+            [(ngModel)]="sarSummary"
+            class="form-control"
+            rows="10"
+            placeholder="Include:
+- Description of suspicious activity
+- Investigation findings
+- Customer behavior patterns
+- Transaction details
+- Reason for filing SAR
+- Supporting evidence
+- Regulatory compliance notes"
+            required></textarea>
+          <div class="char-count">{{ sarSummary.length }} characters</div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeSarForm()">Cancel</button>
+          <button 
+            class="btn-primary" 
+            (click)="submitSAR()"
+            [disabled]="!sarSummary.trim() || sarSummary.length < 50">
+            Generate SAR
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
