@@ -112,28 +112,95 @@
             <svg class="chart-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
               <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="#374151" stroke-width="2" fill="none"/>
             </svg>
-            <h3 class="chart-title">Transaction Trend (Last 30 Days)</h3>
+            <h3 class="chart-title">Alert & SAR Trends (Last 6 Months)</h3>
+            <span class="chart-subtitle">Monthly comparison of alerts and SARs generated</span>
           </div>
           <div class="chart-placeholder">
-            <div class="chart-area">
-              <!-- Chart will be rendered here -->
-              <div class="chart-mock">Chart Area</div>
-            </div>
+            <ng-container *ngIf="trendData && trendData.length > 0; else noTrendData">
+              <div class="chart-visual trend-chart">
+                <div class="trend-chart-container">
+                  <div class="trend-y-axis">
+                    <div class="y-axis-label" *ngFor="let tick of [trendMax.alerts, Math.round(trendMax.alerts * 0.75), Math.round(trendMax.alerts * 0.5), Math.round(trendMax.alerts * 0.25), 0]">{{ tick }}</div>
+                  </div>
+                  <div class="trend-chart-grid">
+                    <div *ngFor="let data of trendData" class="trend-column">
+                      <div class="trend-bars">
+                        <div class="trend-bar alerts" 
+                             [style.height.px]="getTrendBarHeight(data.alerts, 'alerts')"
+                             [title]="'Alerts: ' + data.alerts">
+                          <span class="bar-value" *ngIf="data.alerts > 0">{{ data.alerts }}</span>
+                        </div>
+                        <div class="trend-bar sars" 
+                             [style.height.px]="getTrendBarHeight(data.sars, 'sars')"
+                             [title]="'SARs: ' + data.sars">
+                          <span class="bar-value" *ngIf="data.sars > 0">{{ data.sars }}</span>
+                        </div>
+                      </div>
+                      <div class="trend-label">{{ data.month }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <span class="legend-dot alerts"></span> 
+                    <span>Alerts (Total: {{ getTrendTotal('alerts') }}, Avg: {{ Math.round(getTrendTotal('alerts') / trendData.length) }}, Max: {{ trendMax.alerts }})</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot sars"></span> 
+                    <span>SARs (Total: {{ getTrendTotal('sars') }}, Avg: {{ Math.round(getTrendTotal('sars') / trendData.length) }}, Max: {{ trendMax.sars }})</span>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noTrendData>
+              <div class="chart-empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="opacity: 0.3;">
+                  <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>Loading trend data...</span>
+              </div>
+            </ng-template>
           </div>
         </div>
 
         <div class="chart-container">
           <div class="chart-header">
             <svg class="chart-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" stroke="#374151" stroke-width="2" fill="none"/>
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#374151" stroke-width="2"/>
             </svg>
-            <h3 class="chart-title">Alert Trend (Last 30 Days)</h3>
+            <h3 class="chart-title">Risk Distribution</h3>
+            <span class="chart-subtitle">Customer segmentation by risk level</span>
           </div>
           <div class="chart-placeholder">
-            <div class="chart-area">
-              <!-- Chart will be rendered here -->
-              <div class="chart-mock">Chart Area</div>
-            </div>
+            <ng-container *ngIf="riskDistribution.labels && riskDistribution.labels.length > 0; else noRiskData">
+              <div class="chart-visual risk-chart">
+                <div *ngFor="let label of riskDistribution.labels; let i = index" class="risk-bar-row">
+                  <div class="risk-bar-label">{{ label }}</div>
+                  <div class="risk-bar-meter">
+                    <div class="risk-bar-fill"
+                         [style.width.%]="getPercentage(riskDistribution.values[i], riskDistributionTotal)"
+                         [style.background]="['#10b981', '#f59e0b', '#f97316', '#ef4444'][i % 4]">
+                      <span class="risk-bar-percentage" *ngIf="getPercentage(riskDistribution.values[i], riskDistributionTotal) > 5">{{ getPercentage(riskDistribution.values[i], riskDistributionTotal) }}%</span>
+                    </div>
+                  </div>
+                  <div class="risk-bar-count">{{ riskDistribution.values[i] }} customers ({{ getPercentage(riskDistribution.values[i], riskDistributionTotal) }}%)</div>
+                </div>
+                <div class="risk-total-note">
+                  <strong>Total Customers:</strong> {{ riskDistributionTotal }}
+                  <ng-container *ngIf="riskDistribution.values && riskDistribution.values.length > 0">
+                    | <strong>Highest Risk:</strong> {{ getHighestRiskCategory() }}
+                  </ng-container>
+                </div>
+              </div>
+            </ng-container>
+            <ng-template #noRiskData>
+              <div class="chart-empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="opacity: 0.3;">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>Loading risk distribution data...</span>
+              </div>
+            </ng-template>
           </div>
         </div>
       </div>

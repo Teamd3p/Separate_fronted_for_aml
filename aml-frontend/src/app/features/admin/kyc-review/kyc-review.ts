@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { KycService } from '../../../core/services/kyc.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { 
   KycDocument, 
   KycStatus, 
@@ -37,7 +38,7 @@ interface DocumentDetailsModal {
 @Component({
   selector: 'app-kyc-review',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './kyc-review.html',
   styleUrl: './kyc-review.css',
 })
@@ -74,6 +75,11 @@ export class KycReview implements OnInit {
   documentTypes = Object.values(DocumentType);
   loading = false;
   selectedDocuments: number[] = [];
+  
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 25, 50, 100];
 
   constructor(
     private router: Router,
@@ -193,6 +199,23 @@ export class KycReview implements OnInit {
     }
 
     this.filteredDocuments = filtered;
+    this.currentPage = 1; // Reset to first page when filters change
+  }
+  
+  // Pagination methods
+  getPaginatedDocuments(): KycDocument[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredDocuments.slice(startIndex, endIndex);
+  }
+  
+  onPageChange(page: number): void {
+    this.currentPage = page;
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page
   }
 
   onFilterChange(): void {

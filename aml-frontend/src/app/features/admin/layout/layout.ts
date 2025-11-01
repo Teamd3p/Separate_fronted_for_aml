@@ -59,7 +59,7 @@ export class Layout implements OnInit {
     
     this.currentRoute = this.router.url;
     
-    // Load dynamic notifications
+    // Load notifications from system data
     this.loadNotifications();
   }
 
@@ -71,26 +71,8 @@ export class Layout implements OnInit {
       'Authorization': `Bearer ${token}`
     });
 
-    // Load notifications from backend
-    this.http.get<any[]>(`${this.apiUrl}/admin/notifications`, { headers })
-      .subscribe({
-        next: (data) => {
-          this.notifications = data.map((n: any) => ({
-            id: n.id,
-            title: n.title,
-            message: n.message,
-            time: this.formatNotificationTime(n.createdAt || n.timestamp),
-            type: n.type || 'info',
-            read: n.read || false,
-            link: n.link
-          }));
-        },
-        error: (error) => {
-          console.log('Notifications endpoint not available, using fallback');
-          // Fallback: Generate notifications from system data
-          this.generateFallbackNotifications(headers);
-        }
-      });
+    // Generate notifications from system data
+    this.generateFallbackNotifications(headers);
   }
 
   private generateFallbackNotifications(headers: HttpHeaders): void {
@@ -247,13 +229,42 @@ export class Layout implements OnInit {
       'Content-Type': 'application/json'
     });
 
-    const payload = {
+    const email = localStorage.getItem('email');
+    const userId = localStorage.getItem('userId');
+    const role = localStorage.getItem('role');
+    
+    if (!email) {
+      this.toastService.error('User email not found. Please login again.');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+    
+    // Build payload - email is the primary identifier
+    const payload: any = {
+      email: email,
+      oldPassword: this.passwordData.currentPassword,
       currentPassword: this.passwordData.currentPassword,
       newPassword: this.passwordData.newPassword,
       confirmPassword: this.passwordData.confirmPassword
     };
+    
+    // Add userId if available (but email should be sufficient)
+    if (userId && userId !== 'null') {
+      payload.userId = parseInt(userId);
+      payload.id = parseInt(userId);
+    }
+    
+    // Add role to help backend route to correct user table
+    if (role && role !== 'null') {
+      payload.role = role;
+    }
 
-    console.log('Changing password with token:', token.substring(0, 20) + '...');
+    console.log('Changing password for user:', email, 'userId:', userId, 'role:', role);
+    
+    // If userId is null, warn but continue with email
+    if (!userId || userId === 'null') {
+      console.warn('UserId not found in localStorage. Backend should identify user by email:', email);
+    }
     
     this.http.post(`${this.apiUrl}/auth/change-password`, payload, { headers })
       .subscribe({
@@ -266,19 +277,36 @@ export class Layout implements OnInit {
           console.error('Password change error:', error);
           console.error('Error status:', error.status);
           console.error('Error body:', error.error);
+          console.error('Full error object:', JSON.stringify(error.error, null, 2));
           
           let errorMessage = 'Failed to change password.';
           
           if (error.status === 401) {
-            errorMessage = 'Session expired. Please login again.';
-            setTimeout(() => {
-              this.router.navigate(['/auth/login']);
-            }, 2000);
-          } else if (error.status === 404) {
-            errorMessage = 'User not found. Please login again.';
-            setTimeout(() => {
-              this.router.navigate(['/auth/login']);
-            }, 2000);
+            errorMessage = 'Current password is incorrect or session expired. Please try again.';
+          } else if (error.status === 404 || error.status === 500) {
+            // 404 or 500 with "User not found" message
+            if (error.error?.message && error.error.message.includes('User not found')) {
+              errorMessage = 'Unable to verify user identity. The backend requires userId which is missing. Please contact support or try logging out and back in.';
+              console.error('User identification issue - userId:', localStorage.getItem('userId'), 'email:', localStorage.getItem('email'));
+              console.error('Backend error:', error.error.message);
+            } else if (error.error?.message) {
+              errorMessage = error.error.message;
+              console.error('Backend returned:', error.error.message);
+            } else if (error.error?.error) {
+              errorMessage = error.error.error;
+              console.error('Backend error field:', error.error.error);
+            }
+          } else if (error.status === 400) {
+            // Bad request - validation error
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.error?.errors) {
+              // Spring validation errors
+              const errors = error.error.errors;
+              errorMessage = Object.values(errors).join(', ');
+            } else {
+              errorMessage = 'Invalid password format. Please check your input.';
+            }
           } else if (error.error?.message) {
             errorMessage = error.error.message;
           } else if (error.error?.error) {

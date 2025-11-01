@@ -74,7 +74,7 @@
                 <tr *ngIf="!loading && filteredCountries.length === 0" class="table-row">
                   <td colspan="4" class="text-center">No countries found</td>
                 </tr>
-                <tr *ngFor="let country of filteredCountries" class="table-row">
+                <tr *ngFor="let country of getPaginatedCountries()" class="table-row">
                   <td class="country-code">{{ country.code }}</td>
                   <td class="country-name">{{ country.name }}</td>
                   <td class="country-risk">
@@ -106,6 +106,13 @@
               </tbody>
             </table>
           </div>
+          <app-pagination
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalItems]="filteredCountries.length"
+            (pageChange)="goToPage($event)"
+            (pageSizeChange)="pageSize = $event; onPageSizeChange()">
+          </app-pagination>
         </div>
       </div>
     </div>

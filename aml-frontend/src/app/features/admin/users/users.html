@@ -73,7 +73,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="table-row" *ngFor="let officer of filteredOfficers">
+                  <tr class="table-row" *ngFor="let officer of getPaginatedOfficers()">
                     <td class="user-name">{{officer.firstName}} {{officer.lastName}}</td>
                     <td class="user-email">{{officer.email}}</td>
                     <td class="user-phone">{{officer.phone}}</td>
@@ -119,6 +119,13 @@
                 </tbody>
               </table>
             </div>
+            <app-pagination
+              [currentPage]="officerCurrentPage"
+              [pageSize]="officerPageSize"
+              [totalItems]="filteredOfficers.length"
+              (pageChange)="onOfficerPageChange($event)"
+              (pageSizeChange)="onOfficerPageSizeChange($event)">
+            </app-pagination>
           </div>
         </div>
 
@@ -175,7 +182,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="table-row" *ngFor="let customer of filteredCustomers">
+                  <tr class="table-row" *ngFor="let customer of getPaginatedCustomers()">
                     <td class="user-name">{{customer.firstName}} {{customer.lastName}}</td>
                     <td class="user-email">{{customer.email || 'No email'}}</td>
                     <td class="user-phone">{{customer.phone || 'No phone'}}</td>
@@ -221,6 +228,13 @@
                 </tbody>
               </table>
             </div>
+            <app-pagination
+              [currentPage]="customerCurrentPage"
+              [pageSize]="customerPageSize"
+              [totalItems]="filteredCustomers.length"
+              (pageChange)="onCustomerPageChange($event)"
+              (pageSizeChange)="onCustomerPageSizeChange($event)">
+            </app-pagination>
           </div>
         </div>
       </div>

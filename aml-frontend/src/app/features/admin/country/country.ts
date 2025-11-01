@@ -6,11 +6,12 @@ import { CountryService } from '../../../core/services/country.service';
 import { Country as CountryModel, CountryCreateRequest, CountryUpdateRequest } from '../../../core/models/country.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-country',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './country.html',
   styleUrl: './country.css',
 })
@@ -25,6 +26,11 @@ export class Country implements OnInit {
   
   // Filter states
   riskFilter: string = 'all';
+  
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 25, 50, 100];
   
   // Modal states
   showAddModal: boolean = false;
@@ -122,8 +128,62 @@ export class Country implements OnInit {
       filtered = filtered.filter(country => country.riskLevel === this.riskFilter);
     }
     
-    
     this.filteredCountries = filtered;
+    this.currentPage = 1; // Reset to first page when filters change
+  }
+  
+  // Pagination methods
+  getPaginatedCountries(): CountryModel[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredCountries.slice(startIndex, endIndex);
+  }
+  
+  getTotalPages(): number {
+    return Math.ceil(this.filteredCountries.length / this.pageSize);
+  }
+  
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, this.currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+  
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage < this.getTotalPages()) {
+      this.currentPage++;
+    }
+  }
+  
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when page size changes
   }
 
   // Modal management

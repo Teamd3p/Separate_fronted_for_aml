@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 interface User {
   userId: number;
@@ -42,7 +43,7 @@ interface ComplianceOfficer {
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './users.html',
   styleUrl: './users.css',
 })
@@ -61,6 +62,12 @@ export class Users implements OnInit {
   officerStatusFilter: string = 'all';
   customerDateFilter: string = 'all';
   officerDateFilter: string = 'all';
+  
+  // Pagination
+  customerCurrentPage: number = 1;
+  customerPageSize: number = 10;
+  officerCurrentPage: number = 1;
+  officerPageSize: number = 10;
   
   loading: boolean = false;
   showAddOfficerModal: boolean = false;
@@ -462,18 +469,27 @@ export class Users implements OnInit {
   // All edit-related methods removed - only view and status change allowed
 
   toggleUserStatus(user: User): void {
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
-
     const newStatus = user.isActive ? 'INACTIVE' : 'ACTIVE';
     const action = user.isActive ? 'suspend' : 'activate';
 
-    if (confirm(`Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`)) {
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Customer`,
+      message: `Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelText: 'Cancel',
+      type: user.isActive ? 'warning' : 'info'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+
+      const token = localStorage.getItem('token');
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+
       this.tryUpdateUserStatus(user, newStatus, action, headers);
-    }
+    });
   }
   
   private tryUpdateUserStatus(user: User, newStatus: string, action: string, headers: HttpHeaders): void {
@@ -608,7 +624,16 @@ export class Users implements OnInit {
   toggleOfficerStatus(officer: ComplianceOfficer): void {
     const action = officer.isActive ? 'deactivate' : 'activate';
     
-    if (confirm(`Are you sure you want to ${action} ${officer.firstName} ${officer.lastName}?`)) {
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Officer`,
+      message: `Are you sure you want to ${action} ${officer.firstName} ${officer.lastName}?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelText: 'Cancel',
+      type: officer.isActive ? 'warning' : 'info'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+
       const token = localStorage.getItem('token');
       const headers = new HttpHeaders({
         'Authorization': `Bearer ${token}`,
@@ -627,7 +652,7 @@ export class Users implements OnInit {
       };
       
       this.tryOfficerStatusUpdate(endpoints[0], payload, officer, newStatus, action, headers);
-    }
+    });
   }
   
   private tryOfficerStatusUpdate(endpoint: string, payload: any, officer: ComplianceOfficer, newStatus: boolean, action: string, headers: HttpHeaders): void {
@@ -955,5 +980,36 @@ export class Users implements OnInit {
     
     // Default error message
     return error.message || 'Failed to add officer. Please try again.';
+  }
+
+  // Pagination methods
+  getPaginatedCustomers(): User[] {
+    const startIndex = (this.customerCurrentPage - 1) * this.customerPageSize;
+    const endIndex = startIndex + this.customerPageSize;
+    return this.filteredCustomers.slice(startIndex, endIndex);
+  }
+
+  getPaginatedOfficers(): ComplianceOfficer[] {
+    const startIndex = (this.officerCurrentPage - 1) * this.officerPageSize;
+    const endIndex = startIndex + this.officerPageSize;
+    return this.filteredOfficers.slice(startIndex, endIndex);
+  }
+
+  onCustomerPageChange(page: number): void {
+    this.customerCurrentPage = page;
+  }
+
+  onCustomerPageSizeChange(size: number): void {
+    this.customerPageSize = size;
+    this.customerCurrentPage = 1;
+  }
+
+  onOfficerPageChange(page: number): void {
+    this.officerCurrentPage = page;
+  }
+
+  onOfficerPageSizeChange(size: number): void {
+    this.officerPageSize = size;
+    this.officerCurrentPage = 1;
   }
 }

@@ -7,11 +7,12 @@ import { Keyword, KeywordCreateRequest, KeywordUpdateRequest } from '../../../co
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { KeywordApiTestService } from '../../../core/services/keyword-api-test.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-keywords',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './keywords.html',
   styleUrl: './keywords.css',
 })
@@ -29,6 +30,11 @@ export class Keywords implements OnInit {
   // Filter states
   categoryFilter: string = 'all';
   statusFilter: string = 'all';
+  
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 25, 50, 100];
   
   // Modal states
   showAddModal: boolean = false;
@@ -135,6 +141,61 @@ export class Keywords implements OnInit {
     }
 
     this.filteredKeywords = filtered;
+    this.currentPage = 1; // Reset to first page when filters change
+  }
+  
+  // Pagination methods
+  getPaginatedKeywords(): Keyword[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredKeywords.slice(startIndex, endIndex);
+  }
+  
+  getTotalPages(): number {
+    return Math.ceil(this.filteredKeywords.length / this.pageSize);
+  }
+  
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, this.currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+  
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage < this.getTotalPages()) {
+      this.currentPage++;
+    }
+  }
+  
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when page size changes
   }
 
   // Modal management
@@ -278,27 +339,40 @@ export class Keywords implements OnInit {
 
   toggleKeywordStatus(keyword: Keyword): void {
     const newStatus = !keyword.isActive;
-    // Use update endpoint with all data, just changing status
-    const updatedKeywordData = {
-      ...keyword,
-      isActive: newStatus
-    };
+    const action = newStatus ? 'activate' : 'deactivate';
     
-    this.keywordService.updateKeyword(keyword.id!, updatedKeywordData).subscribe({
-      next: (updatedKeyword) => {
-        const index = this.keywords.findIndex(k => k.id === updatedKeyword.id);
-        if (index !== -1) {
-          this.keywords[index] = updatedKeyword;
-          this.updateStatistics();
-          this.applyFilters();
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Keyword`,
+      message: `Are you sure you want to ${action} the keyword "${keyword.keyword}"?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelText: 'Cancel',
+      type: newStatus ? 'info' : 'warning'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      
+      // Use update endpoint with all data, just changing status
+      const updatedKeywordData = {
+        ...keyword,
+        isActive: newStatus
+      };
+      
+      this.keywordService.updateKeyword(keyword.id!, updatedKeywordData).subscribe({
+        next: (updatedKeyword) => {
+          const index = this.keywords.findIndex(k => k.id === updatedKeyword.id);
+          if (index !== -1) {
+            this.keywords[index] = updatedKeyword;
+            this.updateStatistics();
+            this.applyFilters();
+          }
+          this.showSuccessMessage(`Keyword ${newStatus ? 'activated' : 'deactivated'} successfully`);
+        },
+        error: (error) => {
+          console.error('Error updating keyword status:', error);
+          const errorMsg = error.error?.message || error.message || 'Failed to update keyword status';
+          this.showErrorMessage(`Failed to update keyword status: ${errorMsg}`);
         }
-        this.showSuccessMessage(`Keyword ${newStatus ? 'activated' : 'deactivated'} successfully`);
-      },
-      error: (error) => {
-        console.error('Error updating keyword status:', error);
-        const errorMsg = error.error?.message || error.message || 'Failed to update keyword status';
-        this.showErrorMessage(`Failed to update keyword status: ${errorMsg}`);
-      }
+      });
     });
   }
 

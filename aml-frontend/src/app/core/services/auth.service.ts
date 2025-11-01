@@ -41,6 +41,17 @@ export class AuthService {
               } else if (response.user.id) {
                 localStorage.setItem('userId', response.user.id.toString());
                 console.log('Stored user ID:', response.user.id);
+              } else {
+                // Try to extract userId from JWT token
+                const userIdFromToken = this.extractUserIdFromToken(response.token);
+                if (userIdFromToken) {
+                  localStorage.setItem('userId', userIdFromToken.toString());
+                  console.log('Extracted and stored userId from JWT token:', userIdFromToken);
+                } else {
+                  // If userId not in response or token, try to fetch user profile
+                  console.warn('UserId not found in login response or token. Will attempt to fetch from profile.');
+                  this.fetchUserProfile(response.token);
+                }
               }
               
               // Store customerId separately for KYC operations
@@ -52,6 +63,10 @@ export class AuthService {
               if (response.user.firstName) localStorage.setItem('firstName', response.user.firstName);
               if (response.user.lastName) localStorage.setItem('lastName', response.user.lastName);
               if (response.user.contactNumber) localStorage.setItem('contactNumber', response.user.contactNumber);
+            } else {
+              // No user object in response, try to fetch profile
+              console.warn('No user object in login response. Will attempt to fetch from profile.');
+              this.fetchUserProfile(response.token);
             }
             
             this.currentUserSubject.next({ 
@@ -203,6 +218,62 @@ export class AuthService {
 
   resetPassword(data: { email: string; otp: string; newPassword: string; confirmPassword: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API_URL}/reset-password`, data, this.getHttpOptions());
+  }
+
+  private extractUserIdFromToken(token: string): string | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('JWT token payload:', payload);
+      
+      // Try different possible field names for userId in JWT
+      const userId = payload.userId || payload.id || payload.sub || payload.user_id || payload.uid;
+      
+      if (userId) {
+        console.log('Found userId in JWT token:', userId);
+        return userId.toString();
+      }
+      
+      console.warn('No userId found in JWT token payload');
+      return null;
+    } catch (error) {
+      console.error('Error extracting userId from token:', error);
+      return null;
+    }
+  }
+
+  private fetchUserProfile(token: string): void {
+    // Try to fetch user profile to get userId
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+    
+    // Try admin profile endpoint first
+    this.http.get<any>(`${this.API_URL}/admin/profile`, { headers })
+      .subscribe({
+        next: (profile) => {
+          if (profile && (profile.userId || profile.id)) {
+            const userId = profile.userId || profile.id;
+            localStorage.setItem('userId', userId.toString());
+            console.log('Fetched and stored userId from admin profile:', userId);
+          }
+        },
+        error: () => {
+          // If admin profile fails, try customer profile
+          this.http.get<any>(`${this.API_URL}/customer/profile`, { headers })
+            .subscribe({
+              next: (profile) => {
+                if (profile && (profile.userId || profile.id || profile.customerId)) {
+                  const userId = profile.userId || profile.id || profile.customerId;
+                  localStorage.setItem('userId', userId.toString());
+                  console.log('Fetched and stored userId from customer profile:', userId);
+                }
+              },
+              error: (err) => {
+                console.error('Failed to fetch user profile for userId:', err);
+              }
+            });
+        }
+      });
   }
 
   private getHttpOptions() {

@@ -41,7 +41,7 @@
     <p>Loading report data...</p>
   </div>
 
-  <!-- Statistics Cards -->
+  <!-- Statistics Cards - First Row (4 Total Transaction Stats) -->
   <div class="stats-grid" *ngIf="!loading">
     <div class="stat-card">
       <div class="stat-icon transactions">
@@ -149,32 +149,6 @@
       </div>
     </div>
 
-    <!-- Trend Analysis -->
-    <div class="chart-card full-width">
-      <div class="chart-header">
-        <h3>Trend Analysis</h3>
-        <span class="chart-subtitle">Monthly trends for alerts, SARs, and transactions</span>
-      </div>
-      <div class="chart-body">
-        <div class="line-chart">
-          <div class="chart-grid">
-            <div *ngFor="let data of trendData" class="trend-column">
-              <div class="trend-bars">
-                <div class="trend-bar alerts" [style.height.%]="(data.alerts / 50) * 100" 
-                     [title]="'Alerts: ' + data.alerts"></div>
-                <div class="trend-bar sars" [style.height.%]="(data.sars / 20) * 100"
-                     [title]="'SARs: ' + data.sars"></div>
-              </div>
-              <div class="trend-label">{{ data.month }}</div>
-            </div>
-          </div>
-          <div class="chart-legend-horizontal">
-            <div class="legend-item"><span class="legend-dot alerts"></span> Alerts</div>
-            <div class="legend-item"><span class="legend-dot sars"></span> SARs</div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Top Risk Customers -->

@@ -136,7 +136,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let doc of filteredDocuments; trackBy: trackByDocId">
+              <tr *ngFor="let doc of getPaginatedDocuments(); trackBy: trackByDocId">
                 <td class="checkbox-col">
                   <input 
                     type="checkbox" 
@@ -215,7 +215,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let doc of filteredDocuments; trackBy: trackByDocId">
+              <tr *ngFor="let doc of getPaginatedDocuments(); trackBy: trackByDocId">
                 <td class="customer-info">
                   <div class="customer-name">{{doc.customerName}}</div>
                   <div class="customer-email">{{doc.email || 'N/A'}}</div>
@@ -267,6 +267,15 @@
               <h3 class="empty-title">No documents found</h3>
               <p class="empty-message">No KYC documents match your current filters. Try adjusting your search criteria.</p>
             </div>
+            
+            <app-pagination
+              *ngIf="filteredDocuments.length > 0"
+              [currentPage]="currentPage"
+              [pageSize]="pageSize"
+              [totalItems]="filteredDocuments.length"
+              (pageChange)="onPageChange($event)"
+              (pageSizeChange)="onPageSizeChange($event)">
+            </app-pagination>
           </div>
           
         <ng-template #loadingTemplate>

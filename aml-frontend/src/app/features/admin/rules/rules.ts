@@ -6,6 +6,7 @@ import { RuleService } from '../../../core/services/rule.service';
 import { Rule, RuleCreateRequest, RuleUpdateRequest } from '../../../core/models/rule.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 // Field configuration interfaces
 interface RuleFieldConfig {
@@ -28,7 +29,7 @@ interface RuleTypeConfig {
 @Component({
   selector: 'app-rules',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './rules.html',
   styleUrl: './rules.css',
 })
@@ -46,6 +47,11 @@ export class Rules implements OnInit {
   // Filter states
   typeFilter: string = 'all';
   statusFilter: string = 'all';
+  
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 25, 50, 100];
   
   // Modal states
   showAddModal: boolean = false;
@@ -399,6 +405,61 @@ export class Rules implements OnInit {
     }
     
     this.filteredRules = filtered;
+    this.currentPage = 1; // Reset to first page when filters change
+  }
+  
+  // Pagination methods
+  getPaginatedRules(): Rule[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredRules.slice(startIndex, endIndex);
+  }
+  
+  getTotalPages(): number {
+    return Math.ceil(this.filteredRules.length / this.pageSize);
+  }
+  
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, this.currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+  
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage < this.getTotalPages()) {
+      this.currentPage++;
+    }
+  }
+  
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when page size changes
   }
 
   // Modal management
@@ -566,27 +627,40 @@ export class Rules implements OnInit {
 
   toggleRuleStatus(rule: Rule): void {
     const newStatus = !rule.isActive;
-    // Use update endpoint with all data, just changing status
-    const updatedRuleData = {
-      ...rule,
-      isActive: newStatus
-    };
+    const action = newStatus ? 'activate' : 'deactivate';
     
-    this.ruleService.updateRule(rule.id, updatedRuleData).subscribe({
-      next: (updatedRule) => {
-        const index = this.rules.findIndex(r => r.id === updatedRule.id);
-        if (index !== -1) {
-          this.rules[index] = updatedRule;
+    // Show confirmation dialog
+    this.confirmationService.confirm({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} Rule`,
+      message: `Are you sure you want to ${action} the rule "${rule.name}"?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelText: 'Cancel',
+      type: newStatus ? 'info' : 'warning'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      
+      // Use update endpoint with all data, just changing status
+      const updatedRuleData = {
+        ...rule,
+        isActive: newStatus
+      };
+      
+      this.ruleService.updateRule(rule.id, updatedRuleData).subscribe({
+        next: (updatedRule) => {
+          const index = this.rules.findIndex(r => r.id === updatedRule.id);
+          if (index !== -1) {
+            this.rules[index] = updatedRule;
+          }
+          this.updateStatistics();
+          this.applyFilters();
+          this.showSuccessMessage(`Rule ${newStatus ? 'activated' : 'deactivated'} successfully`);
+        },
+        error: (error) => {
+          console.error('Error updating rule status:', error);
+          const errorMsg = error.error?.message || error.message || 'Unknown error';
+          this.showErrorMessage(`Failed to update rule status: ${errorMsg}`);
         }
-        this.updateStatistics();
-        this.applyFilters();
-        this.showSuccessMessage(`Rule ${newStatus ? 'activated' : 'deactivated'} successfully`);
-      },
-      error: (error) => {
-        console.error('Error updating rule status:', error);
-        const errorMsg = error.error?.message || error.message || 'Unknown error';
-        this.showErrorMessage(`Failed to update rule status: ${errorMsg}`);
-      }
+      });
     });
   }
 

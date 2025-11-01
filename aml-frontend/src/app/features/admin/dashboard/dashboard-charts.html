@@ -1,0 +1,51 @@
+    <!-- New Charts Section -->
+    <div class="dashboard-charts-section">
+      <!-- Trend Analysis -->
+      <div class="dashboard-chart-card">
+        <div class="dashboard-chart-header">
+          <h3>Alert & SAR Trends</h3>
+          <span class="dashboard-chart-subtitle">Last 6 months activity</span>
+        </div>
+        <div class="dashboard-chart-body">
+          <div class="dashboard-line-chart">
+            <div class="dashboard-chart-grid">
+              <div *ngFor="let data of trendData" class="dashboard-trend-column">
+                <div class="dashboard-trend-bars">
+                  <div class="dashboard-trend-bar alerts" [style.height.%]="(data.alerts / 50) * 100" 
+                       [title]="'Alerts: ' + data.alerts"></div>
+                  <div class="dashboard-trend-bar sars" [style.height.%]="(data.sars / 20) * 100"
+                       [title]="'SARs: ' + data.sars"></div>
+                </div>
+                <div class="dashboard-trend-label">{{ data.month }}</div>
+              </div>
+            </div>
+            <div class="dashboard-chart-legend-horizontal">
+              <div class="dashboard-legend-item"><span class="dashboard-legend-dot alerts"></span> Alerts</div>
+              <div class="dashboard-legend-item"><span class="dashboard-legend-dot sars"></span> SARs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Distribution -->
+      <div class="dashboard-chart-card">
+        <div class="dashboard-chart-header">
+          <h3>Risk Distribution</h3>
+          <span class="dashboard-chart-subtitle">Customer risk levels</span>
+        </div>
+        <div class="dashboard-chart-body">
+          <div class="dashboard-bar-chart">
+            <div *ngFor="let label of riskDistribution.labels; let i = index" class="dashboard-bar-item">
+              <div class="dashboard-bar-label">{{ label }}</div>
+              <div class="dashboard-bar-container">
+                <div class="dashboard-bar-fill" 
+                     [style.width.%]="getPercentage(riskDistribution.values[i], 1000)"
+                     [style.background]="['#10b981', '#f59e0b', '#f97316', '#ef4444'][i]">
+                  <span class="dashboard-bar-value">{{ riskDistribution.values[i] }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
