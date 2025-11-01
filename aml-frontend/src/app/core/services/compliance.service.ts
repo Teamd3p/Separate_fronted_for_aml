@@ -254,6 +254,42 @@ export class ComplianceService {
     });
   }
 
+  // Update ticket status
+  updateTicketStatus(ticketId: number, status: string): Observable<Ticket> {
+    return this.http.put<Ticket>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/status`,
+      { status },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Update ticket priority
+  updateTicketPriority(ticketId: number, priority: string): Observable<Ticket> {
+    return this.http.put<Ticket>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/priority`,
+      { priority },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Add response to ticket
+  addTicketResponse(ticketId: number, message: string): Observable<TicketResponse> {
+    const officerId = localStorage.getItem('userId') || '1';
+    return this.http.post<TicketResponse>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/responses`,
+      { message, officerId: parseInt(officerId) },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Get ticket responses
+  getTicketResponses(ticketId: number): Observable<TicketResponse[]> {
+    return this.http.get<TicketResponse[]>(
+      `${this.apiUrl}/helpdesk/tickets/${ticketId}/responses`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   // Alert History
   getAlertHistoryByCustomer(customerId: number): Observable<Alert[]> {
     return this.http.get<Alert[]>(`${this.apiUrl}/alerts/history/customer/${customerId}`, {
