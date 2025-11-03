@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface Alert {
@@ -277,6 +277,11 @@ export class ComplianceService {
       `${this.apiUrl}/helpdesk/tickets/${ticketId}/status`,
       payload,
       { headers: this.getHeaders() }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error updating ticket status:', error);
+        throw error; // Re-throw to let component handle it
+      })
     );
   }
 
@@ -296,6 +301,11 @@ export class ComplianceService {
       `${this.apiUrl}/helpdesk/tickets/${ticketId}/responses`,
       { message, officerId: parseInt(officerId) },
       { headers: this.getHeaders() }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error adding ticket response:', error);
+        throw error; // Re-throw to let component handle it
+      })
     );
   }
 
@@ -304,6 +314,12 @@ export class ComplianceService {
     return this.http.get<TicketResponse[]>(
       `${this.apiUrl}/helpdesk/tickets/${ticketId}/responses`,
       { headers: this.getHeaders() }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error fetching ticket responses:', error);
+        // Return empty array instead of breaking the UI
+        return of([]);
+      })
     );
   }
 

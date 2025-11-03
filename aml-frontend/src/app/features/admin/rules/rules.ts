@@ -804,9 +804,9 @@ export class Rules implements OnInit {
           if (typeof parsed.minSenders !== 'number' || parsed.minSenders < 0) return false;
         }
         
-        // KEYWORD and KYC Rules (empty objects are valid)
+        // KEYWORD Rules (empty objects are valid)
         if (Object.keys(parsed).length === 0) {
-          return true; // Empty object is valid for KEYWORD and KYC rules
+          return true; // Empty object is valid for KEYWORD rules
         }
         
         return true; // Valid if passes all checks
@@ -826,13 +826,7 @@ export class Rules implements OnInit {
       case 'FREQUENCY': return 'type-badge frequency';
       case 'KEYWORD': return 'type-badge keyword';
       case 'PATTERN': return 'type-badge pattern';
-      case 'GRAPH_BEHAVIOR': return 'type-badge graph-behavior';
-      case 'GRAPH_PATTERN': return 'type-badge graph-pattern';
       case 'VELOCITY': return 'type-badge velocity';
-      case 'BEHAVIOR': return 'type-badge behavior';
-      case 'KYC': return 'type-badge kyc';
-      case 'NETWORK': return 'type-badge network';
-      case 'CASH_WIRE_VELOCITY': return 'type-badge cash-wire-velocity';
       case 'FUNNEL_ACCOUNT': return 'type-badge funnel-account';
       default: return 'type-badge pattern';
     }
@@ -898,7 +892,6 @@ export class Rules implements OnInit {
           '{"minSenders": 10, "timeWindowMinutes": 1440}'
         ];
       case 'KEYWORD':
-      case 'KYC':
         return ['{}'];
       default:
         return ['{}'];
@@ -930,7 +923,7 @@ export class Rules implements OnInit {
   generateConditionJson(ruleType: string, formFields: any): string {
     const config = this.getRuleTypeConfig(ruleType);
     
-    // For KEYWORD and KYC rules, return empty object
+    // For KEYWORD rules, return empty object
     if (!config || config.fields.length === 0) {
       return '{}';
     }

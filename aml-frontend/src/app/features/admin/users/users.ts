@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
@@ -85,6 +85,7 @@ export class Users implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private http: HttpClient,
     private toastService: ToastService,
     private confirmationService: ConfirmationDialogService
@@ -94,6 +95,13 @@ export class Users implements OnInit {
     console.log('Users component: Initializing...');
     const token = localStorage.getItem('token');
     console.log('Users component: Token exists:', !!token);
+    
+    // Check for tab query parameter
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'];
+      }
+    });
     
     this.loadCustomers();
     this.loadOfficers();

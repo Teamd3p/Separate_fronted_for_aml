@@ -894,4 +894,21 @@ export class Dashboard implements OnInit {
     localStorage.removeItem('email');
     this.router.navigate(['/auth/login']);
   }
+
+  // Quick Actions Navigation Methods
+  navigateToUsers(tab: string): void {
+    this.router.navigate(['/admin/users'], { queryParams: { tab: tab } });
+  }
+
+  navigateToKycReview(): void {
+    this.router.navigate(['/admin/kyc-review']);
+  }
+
+  navigateToRules(): void {
+    this.router.navigate(['/admin/rules']);
+  }
+
+  navigateToReports(): void {
+    this.router.navigate(['/admin/reports']);
+  }
 }
