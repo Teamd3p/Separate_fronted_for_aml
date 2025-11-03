@@ -1,8 +1,4 @@
 <div class="alerts-container">
-  <div class="page-header">
-    <h1>Alert Management</h1>
-    <p class="subtitle">Monitor and investigate suspicious activity alerts</p>
-  </div>
 
   <!-- Success/Error Messages -->
   <div *ngIf="successMessage" class="success-banner">
@@ -68,7 +64,7 @@
 
     <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()" class="filter-select">
       <option value="all">All Status</option>
-      <option value="OPEN">Open</option>
+      <option *ngIf="activeTab !== 'assigned'" value="OPEN">Open</option>
       <option value="INVESTIGATING">Investigating</option>
       <option value="TRUE_POSITIVE">True Positive</option>
       <option value="FALSE_POSITIVE">False Positive</option>
@@ -104,24 +100,20 @@
     <table *ngIf="filteredAlerts.length > 0" class="alerts-table">
       <thead>
         <tr>
-          <th>Alert ID</th>
           <th>Customer</th>
           <th>Transaction ID</th>
-          <th>Rule Triggered</th>
           <th>Risk Score</th>
           <th>Status</th>
-          <th>Assigned To</th>
           <th>Created</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let alert of paginatedAlerts">
-          <td><span class="alert-id">#{{ alert.alertId }}</span></td>
-          <td>
+         <td>
             <div class="customer-info">
               <div class="customer-name">{{ alert.customerName }}</div>
-              <div class="customer-id">ID: {{ alert.customerId }}</div>
+              <div class="customer-id">Alert ID: {{ alert.alertId }}</div>
             </div>
           </td>
           <td>
@@ -129,9 +121,7 @@
             <span *ngIf="!alert.transactionId" class="text-muted">N/A</span>
           </td>
           <td>
-            <div class="rule-info">{{ alert.ruleTriggered }}</div>
-          </td>
-          <td>
+         
             <span class="risk-badge" [class]="getRiskClass(alert.riskScore)">
               {{ alert.riskScore }}
             </span>
@@ -141,12 +131,7 @@
               {{ alert.status }}
             </span>
           </td>
-          <td>
-            <span *ngIf="alert.assignedOfficerName" class="assigned-officer">
-              {{ alert.assignedOfficerName }}
-            </span>
-            <span *ngIf="!alert.assignedOfficerName" class="unassigned">Unassigned</span>
-          </td>
+       
           <td>{{ alert.createdAt | date:'short' }}</td>
           <td>
             <div class="action-buttons">
@@ -261,10 +246,21 @@
     <div class="modal-body" *ngIf="selectedAlert">
       <!-- For Assigned Alerts: Show minimal info + Review button + Take Action -->
       <ng-container *ngIf="!isUnassigned(selectedAlert)">
-        <!-- Basic Alert Info -->
+        <!-- 1. Alert Overview -->
         <div class="investigation-section">
-          <h3>Alert #{{ selectedAlert.alertId }}</h3>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            1. Alert Overview
+          </h3>
           <div class="details-grid">
+            <div class="detail-item">
+              <label>Alert ID:</label>
+              <span><strong>#{{ selectedAlert.alertId }}</strong></span>
+            </div>
             <div class="detail-item">
               <label>Customer:</label>
               <span>{{ selectedAlert.customerName }}</span>
@@ -272,7 +268,7 @@
             <div class="detail-item">
               <label>Risk Score:</label>
               <span class="risk-badge" [class]="getRiskClass(selectedAlert.riskScore)">
-                {{ selectedAlert.riskScore }}
+                {{ selectedAlert.riskScore }}/100
               </span>
             </div>
             <div class="detail-item">
@@ -281,16 +277,39 @@
                 {{ selectedAlert.status }}
               </span>
             </div>
+            <div class="detail-item">
+              <label>Created:</label>
+              <span>{{ selectedAlert.createdAt | date:'medium' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Triggered Rules & Why Flagged -->
+        <div class="investigation-section">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            2. Triggered Rules & Analysis
+          </h3>
+          <div class="simple-rule-box">
+            <div class="rule-label">Rule Triggered:</div>
+            <div class="rule-value">{{ selectedAlert.ruleTriggered }}</div>
+            <div class="rule-description">
+              <strong>Why Flagged:</strong> {{ getRuleDescription(selectedAlert.ruleTriggered) }}
+            </div>
           </div>
           
-          <!-- Review Button -->
+          <!-- Toggle Detailed Review Button -->
           <div style="margin-top: 1rem;">
             <button class="btn-primary" (click)="showDetailedReview = !showDetailedReview">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right: 0.5rem;">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              {{ showDetailedReview ? 'Hide' : 'View' }} Detailed Review
+              {{ showDetailedReview ? 'Hide' : 'View' }} Detailed Transaction Review
             </button>
           </div>
         </div>

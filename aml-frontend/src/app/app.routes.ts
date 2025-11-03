@@ -124,10 +124,7 @@ export const routes: Routes = [
         path: 'tickets',
         loadComponent: () => import('./features/compliance/tickets/tickets').then(m => m.Tickets)
       },
-      {
-        path: 'profile',
-        loadComponent: () => import('./features/compliance/profile/profile').then(m => m.Profile)
-      },
+     
       {
         path: '',
         redirectTo: 'dashboard',

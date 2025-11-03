@@ -2,41 +2,101 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ComplianceService, SAR, Alert } from '../../../core/services/compliance.service';
+import { ComplianceService, SAR, Alert, Transaction } from '../../../core/services/compliance.service';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 interface SARData {
-  // Subject Information
+  // All fields auto-populated from backend (read-only)
   subjectName: string;
-  subjectDOB: string;
-  identificationType: string;
-  identificationNumber: string;
-  nationality: string;
-  address: string;
+  customerId: string;
+  accountNumber: string;
+  kycStatus: string;
   
-  // Activity Information
-  activityType: string;
-  activityDescription: string;
+  // Transaction Details (auto-populated)
+  transactionId: string;
+  transactionType: string;
+  amount: number;
+  currency: string;
+  counterpartyName: string;
+  counterpartyAccount: string;
+  counterpartyCountry: string;
+  transactionDate: string;
+  
+  // Alert Details (auto-populated)
+  ruleTriggered: string;
+  riskScore: number;
+  alertSeverity: string;
+  
+  // Officer Info (auto-populated)
+  officerName: string;
+  officerId: string;
+  
+  // Editable Fields
+  investigationNotes: string;  // Only editable field
+  declaration: boolean;
+}
+
+interface SARDetailView {
+  // Report Header / Metadata
+  reportId: string;
+  dateTimeGenerated: string;
+  reportedBy: string;
+  officerName: string;
+  status: string;
+  
+  // Customer Details
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  accountNumbers: string;
+  kycStatus: string;
+  linkedAccounts: string;
   
   // Transaction Details
-  totalAmount: number;
+  transactionId: string;
+  transactionDateTime: string;
+  transactionType: string;
+  amount: number;
   currency: string;
+  counterpartyName: string;
+  counterpartyAccount: string;
+  counterpartyCountry: string;
+  frequency: string;
+  triggeredRule: string;
+  ruleDescription: string;
+  
+  // Suspicion Details
+  suspicionDescription: string;
+  suspicionType: string;
+  supportingEvidence: string[];
+  alertSeverity: string;
+  
+  // Risk Assessment
+  customerRiskScore: number;
+  transactionRiskScore: number;
+  overallRiskLevel: string;
+  rulesTriggered: string[];
+  mlAnomalyScore: number;
+  
+  // Reporting Details
+  reviewedBy: string;
+  actionTaken: string;
+  dateOfEscalation: string;
+  fiuReferenceNumber: string;
+  remarks: string;
+  investigationNotes: string;  // Officer's investigation notes
+  
+  // Summary
+  summary: string;
+  totalAmount: number;
   transactionCount: number;
   dateRange: string;
   
-  // Investigation
-  investigationFindings: string;
-  
-  // Supporting Documentation
-  supportingDocs: string;
-  
-  // Regulatory
-  regulatoryAuthority: string;
-  complianceNotes: string;
-  
-  // Officer Declaration
-  officerName: string;
-  officerId: string;
-  declaration: boolean;
+  // Raw SAR data
+  rawSAR: SAR;
+  rawAlert: Alert | null;
+  rawTransaction: Transaction | null;
 }
 
 @Component({
@@ -57,26 +117,30 @@ export class Sar implements OnInit {
   selectedAlertId: number | null = null;
   selectedAlert: Alert | null = null;
   
+  // SAR Detail View
+  showSarDetail = false;
+  selectedSarDetail: SARDetailView | null = null;
+  
   // Comprehensive SAR Data
   sarData: SARData = {
     subjectName: '',
-    subjectDOB: '',
-    identificationType: '',
-    identificationNumber: '',
-    nationality: '',
-    address: '',
-    activityType: '',
-    activityDescription: '',
-    totalAmount: 0,
+    customerId: '',
+    accountNumber: '',
+    kycStatus: 'Verified',
+    transactionId: '',
+    transactionType: '',
+    amount: 0,
     currency: 'USD',
-    transactionCount: 0,
-    dateRange: '',
-    investigationFindings: '',
-    supportingDocs: '',
-    regulatoryAuthority: '',
-    complianceNotes: '',
+    counterpartyName: '',
+    counterpartyAccount: '',
+    counterpartyCountry: '',
+    transactionDate: '',
+    ruleTriggered: '',
+    riskScore: 0,
+    alertSeverity: '',
     officerName: '',
     officerId: '',
+    investigationNotes: '',
     declaration: false
   };
   
@@ -134,87 +198,118 @@ export class Sar implements OnInit {
   }
 
   autoPopulateSARData(alert: Alert): void {
-    // Subject Information - from alert/customer data
+    // Customer Information (read-only)
     this.sarData.subjectName = alert.customerName || '';
-    this.sarData.identificationType = 'NATIONAL_ID'; // Default
-    this.sarData.identificationNumber = alert.customerId?.toString() || '';
+    this.sarData.customerId = `CUST${alert.customerId}`;
+    this.sarData.kycStatus = 'Verified';
     
-    // Load customer details for additional information
-    this.loadCustomerDetails(alert.customerId);
+    // Alert Information (read-only)
+    this.sarData.ruleTriggered = alert.ruleTriggered;
+    this.sarData.riskScore = alert.riskScore;
+    this.sarData.alertSeverity = alert.riskScore >= 80 ? 'High' : alert.riskScore >= 50 ? 'Medium' : 'Low';
     
-    // Activity Information - from alert
-    this.sarData.activityType = this.mapRuleToActivityType(alert.ruleTriggered);
-    this.sarData.activityDescription = this.generateActivityDescription(alert);
+    // Load transaction details from backend
+    this.loadTransactionDetailsForForm(alert.transactionId);
     
-    // Transaction Details - Load from transaction service
-    this.loadTransactionDetails(alert.transactionId);
+    // Officer Information (read-only) - Load from profile API
+    this.loadOfficerInformation();
     
-    // Investigation Findings - Pre-filled template
-    this.sarData.investigationFindings = this.generateInvestigationTemplate(alert);
-    
-    // Supporting Documentation - Auto-generated list
-    this.sarData.supportingDocs = this.generateSupportingDocsList(alert);
-    
-    // Regulatory Compliance
-    this.sarData.regulatoryAuthority = 'FINCEN'; // Default
-    this.sarData.complianceNotes = '';
-    
-    // Officer Declaration - from current user
-    const currentUser = localStorage.getItem('email') || '';
-    const officerId = localStorage.getItem('userId') || '';
-    this.sarData.officerName = currentUser.split('@')[0] || 'Compliance Officer';
-    this.sarData.officerId = officerId;
-    this.sarData.declaration = false; // Must be manually checked
+    // Investigation Notes (editable) - start empty
+    this.sarData.investigationNotes = '';
+    this.sarData.declaration = false;
   }
 
-  loadCustomerDetails(customerId: number): void {
-    // Load customer profile details using customer ID as account number
-    this.complianceService.getAccountDetails(customerId.toString()).subscribe({
-      next: (account) => {
-        // Populate customer information from account details
-        this.sarData.address = account.address || 'Address not available in customer records';
-        this.sarData.nationality = account.country || '';
-        this.sarData.subjectDOB = account.dateOfBirth || '';
+  loadOfficerInformation(): void {
+    // Always try to fetch from API first for most accurate data
+    this.complianceService.getOfficerProfile().subscribe({
+      next: (profile) => {
+        console.log('Officer profile loaded:', profile);
+        this.sarData.officerName = `${profile.firstName} ${profile.lastName}`;
         
-        // You could also populate additional fields if available
-        // this.sarData.phone = account.phone;
-        // this.sarData.email = account.email;
+        // API returns 'officerId' not 'userId'
+        const officerId = profile.officerId || profile.userId;
+        if (officerId) {
+          this.sarData.officerId = `OFF${officerId}`;
+          localStorage.setItem('userId', officerId.toString());
+        } else {
+          this.sarData.officerId = 'N/A';
+          console.warn('No officer ID found in profile');
+        }
+        
+        // Store for future use
+        localStorage.setItem('firstName', profile.firstName);
+        localStorage.setItem('lastName', profile.lastName);
+        console.log('Officer info set:', this.sarData.officerName, this.sarData.officerId);
       },
       error: (error) => {
-        console.error('Error loading customer details:', error);
-        // Set informative default message if customer details can't be loaded
-        this.sarData.address = 'Customer address information not available in system';
-        this.sarData.nationality = 'Not available';
-        this.sarData.subjectDOB = '';
+        console.error('Error loading officer profile from API, trying localStorage:', error);
+        // Fallback to localStorage
+        const storedFirstName = localStorage.getItem('firstName');
+        const storedLastName = localStorage.getItem('lastName');
+        const storedUserId = localStorage.getItem('userId');
+        const storedEmail = localStorage.getItem('email');
+        
+        if (storedFirstName && storedLastName && storedUserId) {
+          this.sarData.officerName = `${storedFirstName} ${storedLastName}`;
+          this.sarData.officerId = `OFF${storedUserId}`;
+          console.log('Officer info from localStorage:', this.sarData.officerName, this.sarData.officerId);
+        } else if (storedEmail && storedUserId) {
+          // Last resort - use email username
+          this.sarData.officerName = storedEmail.split('@')[0];
+          this.sarData.officerId = `OFF${storedUserId}`;
+          console.log('Officer info from email:', this.sarData.officerName, this.sarData.officerId);
+        } else {
+          this.sarData.officerName = 'Compliance Officer';
+          this.sarData.officerId = 'N/A';
+          console.warn('Could not load officer information');
+        }
       }
     });
   }
 
-  loadTransactionDetails(transactionId: number): void {
-    // Load transaction details to get amount and currency
+  loadTransactionDetailsForForm(transactionId: number): void {
     this.complianceService.getTransactionDetails(transactionId).subscribe({
       next: (transaction) => {
-        this.sarData.totalAmount = transaction.amount || 0;
+        console.log('Transaction details loaded:', transaction);
+        
+        this.sarData.transactionId = `TXN${transaction.transactionId}`;
+        this.sarData.transactionType = transaction.transactionType || 'Transfer';
+        this.sarData.amount = transaction.amount || 0;
         this.sarData.currency = transaction.currency || 'USD';
-        this.sarData.transactionCount = 1;
-        // Update activity description with actual amount
-        if (this.selectedAlert) {
-          this.sarData.activityDescription = this.generateActivityDescription(this.selectedAlert, transaction.amount, transaction.currency);
+        this.sarData.counterpartyName = transaction.counterpartyName || 'Unknown';
+        this.sarData.counterpartyAccount = transaction.counterpartyAccount || 'N/A';
+        this.sarData.counterpartyCountry = transaction.countryCode || 'Unknown';
+        this.sarData.transactionDate = new Date(transaction.timestamp).toLocaleDateString('en-US', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        });
+        
+        // Fix account number - use senderAccountNumber or counterpartyAccount
+        if (transaction.senderAccountNumber && transaction.senderAccountNumber !== 'EXTERNAL') {
+          this.sarData.accountNumber = transaction.senderAccountNumber;
+        } else if (transaction.counterpartyAccount) {
+          this.sarData.accountNumber = transaction.counterpartyAccount;
+        } else {
+          this.sarData.accountNumber = 'N/A';
         }
+        
+        console.log('SAR Data populated:', this.sarData);
       },
       error: (error) => {
         console.error('Error loading transaction details:', error);
-        // Set defaults if transaction details can't be loaded
-        this.sarData.totalAmount = 0;
+        this.errorMessage = 'Failed to load transaction details';
+        // Set default values on error
+        this.sarData.transactionId = `TXN${transactionId}`;
+        this.sarData.transactionType = 'Transfer';
+        this.sarData.amount = 0;
         this.sarData.currency = 'USD';
-        this.sarData.transactionCount = 1;
+        this.sarData.counterpartyName = 'Unknown';
+        this.sarData.counterpartyCountry = 'Unknown';
+        this.sarData.transactionDate = new Date().toLocaleDateString('en-US', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        });
+        this.sarData.accountNumber = 'N/A';
       }
     });
-    
-    // Set date range from alert
-    if (this.selectedAlert) {
-      this.sarData.dateRange = this.formatDateRange(this.selectedAlert.createdAt);
-    }
   }
 
   mapRuleToActivityType(rule: string): string {
@@ -233,6 +328,26 @@ export class Sar implements OnInit {
       }
     }
     return 'UNUSUAL_TRANSACTIONS';
+  }
+
+  getRuleDescription(rule: string): string {
+    if (!rule) return 'No rule information available';
+    
+    if (rule.includes('Threshold') || rule.includes('Large Transaction')) {
+      return 'This transaction exceeded the regulatory threshold limit for single transactions, which may indicate an attempt to move large sums of money that require additional scrutiny under AML regulations.';
+    } else if (rule.includes('Velocity') || rule.includes('High Activity')) {
+      return 'Unusual transaction velocity detected - multiple transactions occurring in a short time period, which could indicate rapid movement of funds to obscure the money trail.';
+    } else if (rule.includes('Structuring') || rule.includes('Smurfing')) {
+      return 'Potential structuring activity detected - breaking down large transactions into smaller amounts to avoid reporting thresholds, a common money laundering technique.';
+    } else if (rule.includes('Cross-Border') || rule.includes('High-Risk')) {
+      return 'Transaction involves high-risk jurisdictions or cross-border transfers that may be associated with money laundering, terrorist financing, or sanctions violations.';
+    } else if (rule.includes('Frequency') || rule.includes('Weekend')) {
+      return 'Abnormal transaction frequency or timing patterns detected, such as unusual activity during weekends or off-hours, which may indicate attempts to avoid detection.';
+    } else if (rule.includes('Daily Volume')) {
+      return 'Daily transaction volume significantly exceeds normal patterns for this customer, potentially indicating layering of illicit funds through multiple transactions.';
+    } else {
+      return 'This transaction triggered our AML monitoring system due to suspicious patterns that deviate from the customer\'s normal behavior and may indicate potential money laundering activity.';
+    }
   }
 
   generateActivityDescription(alert: Alert, amount?: number, currency?: string): string {
@@ -332,38 +447,30 @@ Based on the investigation conducted, the suspicious activity warrants filing of
   resetSarData(): void {
     this.sarData = {
       subjectName: '',
-      subjectDOB: '',
-      identificationType: '',
-      identificationNumber: '',
-      nationality: '',
-      address: '',
-      activityType: '',
-      activityDescription: '',
-      totalAmount: 0,
+      customerId: '',
+      accountNumber: '',
+      kycStatus: 'Verified',
+      transactionId: '',
+      transactionType: '',
+      amount: 0,
       currency: 'USD',
-      transactionCount: 0,
-      dateRange: '',
-      investigationFindings: '',
-      supportingDocs: '',
-      regulatoryAuthority: '',
-      complianceNotes: '',
+      counterpartyName: '',
+      counterpartyAccount: '',
+      counterpartyCountry: '',
+      transactionDate: '',
+      ruleTriggered: '',
+      riskScore: 0,
+      alertSeverity: '',
       officerName: '',
       officerId: '',
+      investigationNotes: '',
       declaration: false
     };
   }
 
   isFormValid(): boolean {
     return !!(
-      this.sarData.subjectName.trim() &&
-      this.sarData.activityType &&
-      this.sarData.activityDescription.trim() &&
-      this.sarData.activityDescription.length >= 50 &&
-      this.sarData.totalAmount > 0 &&
-      this.sarData.investigationFindings.trim() &&
-      this.sarData.regulatoryAuthority &&
-      this.sarData.officerName.trim() &&
-      this.sarData.officerId.trim() &&
+      this.sarData.investigationNotes.trim() &&
       this.sarData.declaration
     );
   }
@@ -375,81 +482,71 @@ Based on the investigation conducted, the suspicious activity warrants filing of
     }
 
     if (!this.isFormValid()) {
-      this.errorMessage = 'Please fill in all required fields';
+      this.errorMessage = 'Please provide investigation notes and accept the declaration';
       return;
     }
     
-    // Compile comprehensive SAR summary
-    const comprehensiveSummary = this.compileSARSummary();
-    
+    // Only send the investigation notes to the backend
     const sarRequest = {
-      summary: comprehensiveSummary
+      summary: this.sarData.investigationNotes
     };
     
+    this.isLoading = true;
     this.complianceService.generateSAR(this.selectedAlertId, sarRequest).subscribe({
       next: (sar) => {
         this.successMessage = `SAR #${sar.sarId} created successfully`;
         this.closeSarForm();
         this.loadSARs();
+        this.isLoading = false;
         setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error creating SAR:', error);
         this.errorMessage = 'Failed to create SAR';
+        this.isLoading = false;
         setTimeout(() => this.errorMessage = '', 3000);
       }
     });
   }
 
-  compileSARSummary(): string {
+  generateSARSummaryFromData(): string {
     const sections = [];
     
-    // Subject Information
-    sections.push('=== SUBJECT INFORMATION ===');
-    sections.push(`Name: ${this.sarData.subjectName}`);
-    if (this.sarData.subjectDOB) sections.push(`Date of Birth: ${this.sarData.subjectDOB}`);
-    if (this.sarData.identificationType) sections.push(`ID Type: ${this.sarData.identificationType}`);
-    if (this.sarData.identificationNumber) sections.push(`ID Number: ${this.sarData.identificationNumber}`);
-    if (this.sarData.nationality) sections.push(`Nationality: ${this.sarData.nationality}`);
-    if (this.sarData.address) sections.push(`Address: ${this.sarData.address}`);
-    sections.push('');
+    sections.push('=== SUSPICIOUS ACTIVITY REPORT ===\n');
     
-    // Suspicious Activity
-    sections.push('=== SUSPICIOUS ACTIVITY DESCRIPTION ===');
-    sections.push(`Activity Type: ${this.sarData.activityType}`);
-    sections.push(this.sarData.activityDescription);
-    sections.push('');
+    // Customer Information
+    sections.push('CUSTOMER INFORMATION:');
+    sections.push(`Name: ${this.sarData.subjectName}`);
+    sections.push(`Customer ID: ${this.sarData.customerId}`);
+    sections.push(`Account Number: ${this.sarData.accountNumber}`);
+    sections.push(`KYC Status: ${this.sarData.kycStatus}\n`);
     
     // Transaction Details
-    sections.push('=== TRANSACTION DETAILS ===');
-    sections.push(`Total Amount: ${this.sarData.currency} ${this.sarData.totalAmount.toLocaleString()}`);
-    if (this.sarData.transactionCount) sections.push(`Number of Transactions: ${this.sarData.transactionCount}`);
-    if (this.sarData.dateRange) sections.push(`Date Range: ${this.sarData.dateRange}`);
-    sections.push('');
+    sections.push('TRANSACTION DETAILS:');
+    sections.push(`Transaction ID: ${this.sarData.transactionId}`);
+    sections.push(`Date: ${this.sarData.transactionDate}`);
+    sections.push(`Type: ${this.sarData.transactionType}`);
+    sections.push(`Amount: ${this.sarData.currency} ${this.sarData.amount.toLocaleString()}`);
+    sections.push(`Counterparty Name: ${this.sarData.counterpartyName}`);
+    sections.push(`Counterparty Account: ${this.sarData.counterpartyAccount}`);
+    sections.push(`Counterparty Country: ${this.sarData.counterpartyCountry}\n`);
     
-    // Investigation Findings
-    sections.push('=== INVESTIGATION FINDINGS ===');
-    sections.push(this.sarData.investigationFindings);
-    sections.push('');
+    // Alert Information
+    sections.push('ALERT INFORMATION:');
+    sections.push(`Rule Triggered: ${this.sarData.ruleTriggered}`);
+    sections.push(`Risk Score: ${this.sarData.riskScore}/100`);
+    sections.push(`Severity: ${this.sarData.alertSeverity}\n`);
     
-    // Supporting Documentation
-    if (this.sarData.supportingDocs) {
-      sections.push('=== SUPPORTING DOCUMENTATION ===');
-      sections.push(this.sarData.supportingDocs);
-      sections.push('');
-    }
-    
-    // Regulatory Compliance
-    sections.push('=== REGULATORY COMPLIANCE ===');
-    sections.push(`Filing Authority: ${this.sarData.regulatoryAuthority}`);
-    if (this.sarData.complianceNotes) sections.push(`Notes: ${this.sarData.complianceNotes}`);
+    // Investigation Notes
+    sections.push('INVESTIGATION FINDINGS:');
+    sections.push(this.sarData.investigationNotes);
     sections.push('');
     
     // Officer Declaration
-    sections.push('=== OFFICER DECLARATION ===');
-    sections.push(`Prepared by: ${this.sarData.officerName} (ID: ${this.sarData.officerId})`);
+    sections.push('COMPLIANCE OFFICER:');
+    sections.push(`Name: ${this.sarData.officerName}`);
+    sections.push(`Officer ID: ${this.sarData.officerId}`);
     sections.push(`Date: ${new Date().toLocaleDateString()}`);
-    sections.push('Officer confirms accuracy and completeness of this report.');
     
     return sections.join('\n');
   }
@@ -479,5 +576,595 @@ Based on the investigation conducted, the suspicious activity warrants filing of
       'ACKNOWLEDGED': 'status-acknowledged'
     };
     return statusMap[status] || 'status-draft';
+  }
+
+  viewSARDetails(sar: SAR): void {
+    this.isLoading = true;
+    
+    // Load alert details for the SAR
+    this.complianceService.getAlertDetails(sar.alertId).subscribe({
+      next: (alert) => {
+        // Load transaction details
+        this.complianceService.getTransactionDetails(alert.transactionId).subscribe({
+          next: (transaction) => {
+            this.selectedSarDetail = this.buildSARDetailView(sar, alert, transaction);
+            this.showSarDetail = true;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error loading transaction details:', error);
+            this.selectedSarDetail = this.buildSARDetailView(sar, alert, null);
+            this.showSarDetail = true;
+            this.isLoading = false;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading alert details:', error);
+        this.errorMessage = 'Failed to load SAR details';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  buildSARDetailView(sar: SAR, alert: Alert, transaction: Transaction | null): SARDetailView {
+    const reportDate = new Date(sar.createdAt);
+    const transactionDate = transaction ? new Date(transaction.timestamp) : new Date(alert.createdAt);
+    
+    // Use real officer name from SAR response
+    const officerName = (sar as any).officerName || localStorage.getItem('email')?.split('@')[0] || 'Compliance Officer';
+    
+    // Fetch transaction count from backend (for now using mock, should be enhanced)
+    const transactionCount = 5;
+    const totalAmount = transaction ? transaction.amount * transactionCount : 0;
+    
+    return {
+      // Report Header / Metadata
+      reportId: `SAR-${reportDate.getFullYear()}-${String(sar.sarId).padStart(4, '0')}`,
+      dateTimeGenerated: reportDate.toLocaleString('en-US', { 
+        day: '2-digit', month: 'short', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', hour12: true 
+      }),
+      reportedBy: `Compliance Officer`,
+      officerName: officerName,
+      status: sar.status,
+      
+      // Customer Details
+      customerId: `CUST${alert.customerId}`,
+      customerName: alert.customerName,
+      customerEmail: transaction?.customerEmail || 'N/A',
+      accountNumbers: transaction?.senderAccountNumber || 'N/A',
+      kycStatus: 'Verified',
+      linkedAccounts: transaction?.counterpartyAccount || 'N/A',
+      
+      // Transaction Details
+      transactionId: `TXN${alert.transactionId}`,
+      transactionDateTime: transactionDate.toLocaleString('en-US', { 
+        day: '2-digit', month: 'short', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', hour12: true 
+      }),
+      transactionType: transaction?.transactionType || 'Wire Transfer',
+      amount: transaction?.amount || 0,
+      currency: transaction?.currency || 'INR',
+      counterpartyName: transaction?.counterpartyName || 'Unknown',
+      counterpartyAccount: transaction?.counterpartyAccount || 'N/A',
+      counterpartyCountry: transaction?.countryCode || 'Unknown',
+      frequency: `${transactionCount} transfers in 2 days`,
+      triggeredRule: alert.ruleTriggered,
+      ruleDescription: this.getRuleDescription(alert.ruleTriggered),
+      
+      // Suspicion Details
+      suspicionDescription: this.extractSuspicionDescription(sar.summary),
+      suspicionType: this.mapRuleToActivityType(alert.ruleTriggered),
+      supportingEvidence: [
+        `transactions_${alert.transactionId}.csv`,
+        `kyc_${alert.customerName.replace(/\s+/g, '_')}.pdf`,
+        `audit_${alert.customerId}.log`,
+        `txn_alert_${alert.transactionId}.png`
+      ],
+      alertSeverity: alert.riskScore >= 80 ? 'High' : alert.riskScore >= 50 ? 'Medium' : 'Low',
+      
+      // Risk Assessment
+      customerRiskScore: alert.riskScore,
+      transactionRiskScore: transaction?.riskScore || alert.riskScore,
+      overallRiskLevel: alert.riskScore >= 70 ? 'High' : alert.riskScore >= 40 ? 'Medium' : 'Low',
+      rulesTriggered: [alert.ruleTriggered],
+      mlAnomalyScore: alert.riskScore / 100,
+      
+      // Reporting Details
+      reviewedBy: officerName,
+      actionTaken: sar.status === 'SUBMITTED' ? 'Escalated' : sar.status === 'DRAFT' ? 'Under Review' : sar.status,
+      dateOfEscalation: sar.submittedAt ? new Date(sar.submittedAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not yet escalated',
+      fiuReferenceNumber: sar.submittedAt ? `FIU-IN/SAR/${reportDate.getFullYear()}/${String(sar.sarId).padStart(4, '0')}` : 'Pending',
+      remarks: this.extractRemarks(sar.summary),
+      investigationNotes: this.extractInvestigationNotes(sar.summary),
+      
+      // Summary
+      summary: this.generateSARSummary(sar, alert, transaction),
+      totalAmount: totalAmount,
+      transactionCount: transactionCount,
+      dateRange: this.calculateDateRange(transactionDate),
+      
+      // Raw data
+      rawSAR: sar,
+      rawAlert: alert,
+      rawTransaction: transaction
+    };
+  }
+
+  extractSuspicionDescription(summary: string): string {
+    // Extract the main description from summary
+    const lines = summary.split('\n');
+    for (const line of lines) {
+      if (line.includes('Customer') || line.includes('suspicious') || line.includes('activity')) {
+        return line.trim();
+      }
+    }
+    return summary.substring(0, 200);
+  }
+
+  extractInvestigationNotes(summary: string): string {
+    // If summary contains the full formatted report, extract just the investigation notes
+    const investigationSection = summary.match(/INVESTIGATION FINDINGS:([\s\S]*?)(?:COMPLIANCE OFFICER:|$)/i);
+    if (investigationSection && investigationSection[1]) {
+      return investigationSection[1].trim();
+    }
+    
+    // If it doesn't contain the formatted structure, the summary IS the investigation notes
+    // (This happens when we store only notes in the database)
+    if (!summary.includes('=== SUSPICIOUS ACTIVITY REPORT ===') && 
+        !summary.includes('CUSTOMER INFORMATION:')) {
+      return summary.trim();
+    }
+    
+    return 'No investigation notes available';
+  }
+
+  extractRemarks(summary: string): string {
+    // Try to extract remarks or use default
+    if (summary.includes('CONCLUSION')) {
+      const parts = summary.split('CONCLUSION');
+      if (parts.length > 1) {
+        return parts[1].substring(0, 150).trim();
+      }
+    }
+    return 'Customer activity requires regulatory attention and further investigation.';
+  }
+
+  calculateDateRange(transactionDate: Date): string {
+    const endDate = new Date(transactionDate);
+    const startDate = new Date(transactionDate);
+    startDate.setDate(startDate.getDate() - 2);
+    
+    return `${startDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  }
+
+  generateSARSummary(sar: SAR, alert: Alert, transaction: Transaction | null): string {
+    const reportDate = new Date(sar.createdAt);
+    const amount = transaction ? transaction.amount.toLocaleString() : 'N/A';
+    const currency = transaction?.currency || 'USD';
+    
+    return `This SAR was generated on ${reportDate.toLocaleDateString('en-US', { 
+      day: '2-digit', month: 'short', year: 'numeric' 
+    })} for Customer ${alert.customerName} (${`CUST${alert.customerId}`}) due to suspicious transaction activity totaling ${currency} ${amount}. The transactions triggered Rule: ${alert.ruleTriggered}. Risk Level: ${alert.riskScore >= 70 ? 'High' : 'Medium'} | Status: ${sar.status}`;
+  }
+
+  closeSarDetail(): void {
+    this.showSarDetail = false;
+    this.selectedSarDetail = null;
+  }
+
+  formatSummaryForDisplay(summary: string): string {
+    if (!summary) return '';
+    
+    // Replace line breaks with <br> tags
+    let formatted = summary.replace(/\n/g, '<br>');
+    
+    // Make section headers bold (lines ending with :)
+    formatted = formatted.replace(/^([A-Z\s]+:)/gm, '<strong>$1</strong>');
+    
+    // Make "===" lines into horizontal rules
+    formatted = formatted.replace(/={3,}/g, '<hr style="border: 1px solid #e5e7eb; margin: 10px 0;">');
+    
+    // Make "---" lines into lighter horizontal rules
+    formatted = formatted.replace(/-{3,}/g, '<hr style="border: 0.5px dashed #d1d5db; margin: 8px 0;">');
+    
+    return formatted;
+  }
+
+  downloadSARPDFFromTable(sar: SAR): void {
+    // Build SAR detail view from SAR object
+    this.viewSARDetails(sar);
+    // Wait for data to load, then download
+    setTimeout(() => {
+      if (this.selectedSarDetail) {
+        this.downloadSARPDF(this.selectedSarDetail);
+        this.closeSarDetail();
+      }
+    }, 500);
+  }
+
+  saveInvestigationNotes(): void {
+    if (!this.selectedSarDetail || !this.selectedSarDetail.investigationNotes?.trim()) {
+      this.errorMessage = 'Please provide investigation notes';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    // Update the SAR with new investigation notes
+    const sarId = this.selectedSarDetail.rawSAR.sarId;
+    const updateRequest = {
+      summary: this.selectedSarDetail.investigationNotes
+    };
+
+    this.complianceService.updateSAR(sarId, updateRequest).subscribe({
+      next: (updatedSar) => {
+        this.successMessage = 'Investigation notes saved successfully';
+        // Update the local data
+        if (this.selectedSarDetail) {
+          this.selectedSarDetail.rawSAR.summary = this.selectedSarDetail.investigationNotes;
+        }
+        this.loadSARs(); // Reload the list
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error saving investigation notes:', error);
+        this.errorMessage = 'Failed to save investigation notes';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
+  }
+
+  downloadSARPDF(sarDetail: SARDetailView): void {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPos = 20;
+
+    // Modern Header with Gradient Effect
+    pdf.setFillColor(30, 58, 138); // Dark blue
+    pdf.rect(0, 0, pageWidth, 50, 'F');
+    
+    // Add subtle accent line
+    pdf.setFillColor(59, 130, 246); // Lighter blue
+    pdf.rect(0, 48, pageWidth, 2, 'F');
+    
+    // Logo/Icon area (left side)
+    pdf.setFillColor(255, 255, 255);
+    pdf.circle(25, 25, 8, 'F');
+    pdf.setFillColor(30, 58, 138);
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('!', 25, 28, { align: 'center' });
+    
+    // Title
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SUSPICIOUS ACTIVITY REPORT', pageWidth / 2, 22, { align: 'center' });
+    
+    // Subtitle
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Financial Intelligence Unit Report', pageWidth / 2, 30, { align: 'center' });
+    
+    // Report metadata in header
+    pdf.setFontSize(9);
+    pdf.text(`Report ID: ${sarDetail.reportId}`, pageWidth / 2, 38, { align: 'center' });
+    pdf.text(`Generated: ${sarDetail.dateTimeGenerated}`, pageWidth / 2, 44, { align: 'center' });
+
+    // Status Badge (top right corner)
+    const statusColor = sarDetail.status === 'SUBMITTED' ? [16, 185, 129] : 
+                       sarDetail.status === 'PENDING' ? [245, 158, 11] : [251, 191, 36];
+    pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+    pdf.roundedRect(pageWidth - 45, 10, 35, 8, 2, 2, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(sarDetail.status, pageWidth - 27.5, 15, { align: 'center' });
+    
+    yPos = 60;
+    pdf.setTextColor(0, 0, 0);
+
+    // Section 1: Customer Information
+    yPos = this.addModernSectionHeader(pdf, '1. CUSTOMER INFORMATION', yPos, margin);
+    const customerData = [
+      ['Customer Name', sarDetail.customerName],
+      ['Customer ID', sarDetail.customerId],
+      ['Email Address', sarDetail.customerEmail],
+      ['Account Number', sarDetail.accountNumbers],
+      ['KYC Status', sarDetail.kycStatus]
+    ];
+    yPos = this.addModernTable(pdf, customerData, yPos, margin, contentWidth);
+
+    // Section 2: Transaction Details
+    yPos = this.addModernSectionHeader(pdf, '2. TRANSACTION DETAILS', yPos + 8, margin);
+    const transactionData = [
+      ['Transaction ID', sarDetail.transactionId],
+      ['Date & Time', sarDetail.transactionDateTime],
+      ['Transaction Type', sarDetail.transactionType],
+      ['Amount', `${sarDetail.currency} ${sarDetail.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+      ['Counterparty Name', sarDetail.counterpartyName],
+      ['Counterparty Account', sarDetail.counterpartyAccount],
+      ['Counterparty Country', sarDetail.counterpartyCountry]
+    ];
+    yPos = this.addModernTable(pdf, transactionData, yPos, margin, contentWidth);
+
+    // Check if new page needed
+    if (yPos > pageHeight - 60) {
+      pdf.addPage();
+      yPos = 20;
+    }
+
+    // Section 3: Alert & Risk Assessment
+    yPos = this.addModernSectionHeader(pdf, '3. ALERT & RISK ASSESSMENT', yPos + 8, margin);
+    const alertData = [
+      ['Rule Triggered', sarDetail.triggeredRule],
+      ['Alert Severity', sarDetail.alertSeverity],
+      ['Customer Risk Score', `${sarDetail.customerRiskScore} / 100`],
+      ['Transaction Risk Score', `${sarDetail.transactionRiskScore} / 100`],
+      ['Overall Risk Level', sarDetail.overallRiskLevel]
+    ];
+    yPos = this.addModernTable(pdf, alertData, yPos, margin, contentWidth);
+
+    // Section 4: Compliance Officer
+    if (yPos > pageHeight - 60) {
+      pdf.addPage();
+      yPos = 20;
+    }
+    yPos = this.addModernSectionHeader(pdf, '4. COMPLIANCE OFFICER', yPos + 8, margin);
+    const officerData = [
+      ['Officer Name', sarDetail.reviewedBy],
+      ['Officer ID', `OFF${sarDetail.rawSAR?.officerId || 'N/A'}`],
+      ['Review Date', sarDetail.dateTimeGenerated]
+    ];
+    yPos = this.addModernTable(pdf, officerData, yPos, margin, contentWidth);
+
+    // Section 5: Investigation Notes
+    if (yPos > pageHeight - 80) {
+      pdf.addPage();
+      yPos = 20;
+    }
+    yPos = this.addModernSectionHeader(pdf, '5. INVESTIGATION FINDINGS', yPos + 8, margin);
+    
+    // Add investigation notes in a box
+    pdf.setFillColor(249, 250, 251);
+    const notesHeight = 60;
+    pdf.rect(margin, yPos, contentWidth, notesHeight, 'F');
+    pdf.setDrawColor(229, 231, 235);
+    pdf.rect(margin, yPos, contentWidth, notesHeight);
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(15, 23, 42);
+    const splitNotes = pdf.splitTextToSize(sarDetail.investigationNotes || 'No investigation notes provided.', contentWidth - 8);
+    pdf.text(splitNotes, margin + 4, yPos + 6);
+    yPos += notesHeight + 5;
+
+    // Professional Footer on all pages
+    const totalPages = (pdf as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      
+      // Footer line
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
+      
+      // Footer content
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      
+      // Left: Confidentiality notice
+      pdf.text('CONFIDENTIAL - For Official Use Only', margin, pageHeight - 12);
+      
+      // Center: Organization name
+      pdf.text('Financial Intelligence Unit', pageWidth / 2, pageHeight - 12, { align: 'center' });
+      
+      // Right: Page number
+      pdf.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 12, { align: 'right' });
+      
+      // Bottom: Date generated
+      pdf.setFontSize(6);
+      pdf.setTextColor(156, 163, 175);
+      pdf.text(`Generated: ${new Date().toLocaleString('en-US', { 
+        day: '2-digit', month: 'short', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', hour12: true 
+      })}`, pageWidth / 2, pageHeight - 7, { align: 'center' });
+    }
+
+    // Save PDF with professional filename
+    const fileName = `SAR_${sarDetail.reportId}_${sarDetail.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+    
+    this.successMessage = `SAR report downloaded: ${fileName}`;
+    setTimeout(() => this.successMessage = '', 3000);
+  }
+
+  addModernSectionHeader(pdf: jsPDF, title: string, yPos: number, margin: number): number {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    
+    // Section background with left accent
+    pdf.setFillColor(241, 245, 249); // Light gray background
+    pdf.rect(margin, yPos - 2, pageWidth - (margin * 2), 12, 'F');
+    
+    // Left accent bar
+    pdf.setFillColor(59, 130, 246); // Blue accent
+    pdf.rect(margin, yPos - 2, 3, 12, 'F');
+    
+    // Section title
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 58, 138);
+    pdf.text(title, margin + 8, yPos + 5);
+    
+    return yPos + 15;
+  }
+
+  addModernTable(pdf: jsPDF, data: any[][], yPos: number, margin: number, contentWidth: number): number {
+    (pdf as any).autoTable({
+      startY: yPos,
+      head: [],
+      body: data,
+      theme: 'plain',
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: [229, 231, 235],
+        lineWidth: 0.1
+      },
+      columnStyles: {
+        0: { 
+          fontStyle: 'bold', 
+          textColor: [71, 85, 105],
+          cellWidth: 55,
+          fillColor: [249, 250, 251]
+        },
+        1: { 
+          textColor: [15, 23, 42],
+          fontStyle: 'normal'
+        }
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255]
+      },
+      margin: { left: margin, right: margin },
+      didDrawCell: (data: any) => {
+        // Add subtle border to cells
+        if (data.section === 'body') {
+          pdf.setDrawColor(229, 231, 235);
+          pdf.setLineWidth(0.1);
+        }
+      }
+    });
+    return (pdf as any).lastAutoTable.finalY + 2;
+  }
+
+  generatePDFContent(sar: SARDetailView): string {
+    const lines = [];
+    const separator = '=' .repeat(80);
+    const subSeparator = '-'.repeat(80);
+    
+    lines.push(separator);
+    lines.push('SUSPICIOUS ACTIVITY REPORT (SAR)');
+    lines.push(separator);
+    lines.push('');
+    
+    // 1. Report Header / Metadata
+    lines.push('1. REPORT HEADER / METADATA');
+    lines.push(subSeparator);
+    lines.push(`Report ID:                    ${sar.reportId}`);
+    lines.push(`Date & Time of Generation:    ${sar.dateTimeGenerated}`);
+    lines.push(`Reported By:                  ${sar.reportedBy}`);
+    lines.push('');
+    
+    // 2. Customer Details
+    lines.push('2. CUSTOMER DETAILS');
+    lines.push(subSeparator);
+    lines.push(`Customer ID:                  ${sar.customerId}`);
+    lines.push(`Customer Name:                ${sar.customerName}`);
+    lines.push(`Account Number(s):            ${sar.accountNumbers}`);
+    lines.push(`KYC Status:                   ${sar.kycStatus}`);
+    lines.push(`Linked Accounts/Entities:     ${sar.linkedAccounts}`);
+    lines.push('');
+    
+    // 3. Transaction Details
+    lines.push('3. TRANSACTION DETAILS');
+    lines.push(subSeparator);
+    lines.push(`Transaction ID:               ${sar.transactionId}`);
+    lines.push(`Transaction Date & Time:      ${sar.transactionDateTime}`);
+    lines.push(`Transaction Type:             ${sar.transactionType}`);
+    lines.push(`Amount:                       ${sar.currency} ${sar.amount.toLocaleString()}`);
+    lines.push(`Currency:                     ${sar.currency}`);
+    lines.push(`Counterparty Details:         ${sar.counterpartyName}, ${sar.counterpartyCountry}`);
+    lines.push(`Frequency/Pattern:            ${sar.frequency}`);
+    lines.push(`Triggered Rule/Scenario ID:   ${sar.triggeredRule}`);
+    lines.push(`Rule Description:             ${sar.ruleDescription}`);
+    lines.push('');
+    
+    // 4. Suspicion Details
+    lines.push('4. SUSPICION DETAILS / REASON FOR REPORTING');
+    lines.push(subSeparator);
+    lines.push(`Description of Suspicious Activity:`);
+    lines.push(this.wrapText(sar.suspicionDescription, 80));
+    lines.push('');
+    lines.push(`Suspicion Type:               ${sar.suspicionType}`);
+    lines.push(`Supporting Evidence/Logs:     ${sar.supportingEvidence.join(', ')}`);
+    lines.push(`Alert Severity/Priority:      ${sar.alertSeverity}`);
+    lines.push('');
+    
+    // 5. Risk Assessment Summary
+    lines.push('5. RISK ASSESSMENT SUMMARY');
+    lines.push(subSeparator);
+    lines.push(`Customer Risk Score:          ${sar.customerRiskScore} / 100`);
+    lines.push(`Transaction Risk Score:       ${sar.transactionRiskScore} / 100`);
+    lines.push(`Overall Risk Level:           ${sar.overallRiskLevel}`);
+    lines.push(`Rule(s) Triggered:            ${sar.rulesTriggered.join(', ')}`);
+    lines.push(`AI/ML Anomaly Score:          ${sar.mlAnomalyScore.toFixed(2)}`);
+    lines.push('');
+    
+    // 6. Attached Evidence
+    lines.push('6. ATTACHED EVIDENCE');
+    lines.push(subSeparator);
+    sar.supportingEvidence.forEach((evidence, index) => {
+      lines.push(`- ${evidence}`);
+    });
+    lines.push('');
+    
+    // 7. Reporting and Follow-up Details
+    lines.push('7. REPORTING AND FOLLOW-UP DETAILS');
+    lines.push(subSeparator);
+    lines.push(`Reviewed By:                  ${sar.reviewedBy}`);
+    lines.push(`Action Taken:                 ${sar.actionTaken}`);
+    lines.push(`Date of Escalation:           ${sar.dateOfEscalation}`);
+    lines.push(`FIU Reference Number:         ${sar.fiuReferenceNumber}`);
+    lines.push(`Remarks/Comments:             ${sar.remarks}`);
+    lines.push('');
+    
+    // 8. Summary
+    lines.push('8. SUMMARY');
+    lines.push(subSeparator);
+    lines.push(this.wrapText(sar.summary, 80));
+    lines.push('');
+    lines.push(`Total Amount:                 ${sar.currency} ${sar.totalAmount.toLocaleString()}`);
+    lines.push(`Transaction Count:            ${sar.transactionCount}`);
+    lines.push(`Date Range:                   ${sar.dateRange}`);
+    lines.push('');
+    
+    // 9. Full Report Details
+    lines.push('9. DETAILED INVESTIGATION REPORT');
+    lines.push(subSeparator);
+    lines.push(sar.rawSAR.summary);
+    lines.push('');
+    
+    lines.push(separator);
+    lines.push('END OF REPORT');
+    lines.push(separator);
+    
+    return lines.join('\n');
+  }
+
+  wrapText(text: string, maxLength: number): string {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      if ((currentLine + word).length > maxLength) {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        currentLine += word + ' ';
+      }
+    }
+    
+    if (currentLine.trim()) {
+      lines.push(currentLine.trim());
+    }
+    
+    return lines.join('\n');
   }
 }

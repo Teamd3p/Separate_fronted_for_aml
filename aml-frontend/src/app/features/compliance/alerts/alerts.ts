@@ -53,6 +53,13 @@ export class Alerts implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Check for query parameters first
+    this.route.queryParams.subscribe(queryParams => {
+      if (queryParams['filter'] === 'assigned') {
+        this.activeTab = 'assigned';
+      }
+    });
+    
     this.loadAlerts();
     
     // Check if there's an alert ID in the route
@@ -216,16 +223,19 @@ export class Alerts implements OnInit {
   assignToMe(alert: Alert, event: Event): void {
     event.stopPropagation();
     
-    if (confirm(`Assign alert #${alert.alertId} to yourself?`)) {
+    if (confirm(`Assign alert #${alert.alertId} to yourself? Status will change to "Under Investigation".`)) {
       this.complianceService.assignAlertToMe(alert.alertId).subscribe({
         next: (updatedAlert) => {
-          this.successMessage = `Alert #${alert.alertId} assigned successfully`;
+          this.successMessage = `Alert #${alert.alertId} assigned and status changed to Under Investigation`;
+          
+          // Update the alert status locally
+          alert.status = 'UNDER_INVESTIGATION';
           
           // Remove from unassigned list immediately
           this.allAlerts = this.allAlerts.filter(a => a.alertId !== alert.alertId);
           this.applyFilters();
           
-          // Reload to get updated data
+          // Reload to get updated data with new status
           this.loadAlerts();
           setTimeout(() => this.successMessage = '', 3000);
         },
@@ -394,11 +404,32 @@ export class Alerts implements OnInit {
     const statusMap: any = {
       'OPEN': 'status-open',
       'INVESTIGATING': 'status-investigating',
+      'UNDER_INVESTIGATION': 'status-investigating',
       'TRUE_POSITIVE': 'status-positive',
       'FALSE_POSITIVE': 'status-negative',
       'ESCALATED': 'status-escalated'
     };
     return statusMap[status] || 'status-open';
+  }
+
+  getRuleDescription(rule: string): string {
+    if (!rule) return 'No rule information available';
+    
+    if (rule.includes('Threshold') || rule.includes('Large Transaction')) {
+      return 'This transaction exceeded the regulatory threshold limit for single transactions, which may indicate an attempt to move large sums of money that require additional scrutiny under AML regulations.';
+    } else if (rule.includes('Velocity') || rule.includes('High Activity') || rule.includes('Burst')) {
+      return 'Unusual transaction velocity detected - multiple transactions occurring in a short time period, which could indicate rapid movement of funds to obscure the money trail.';
+    } else if (rule.includes('Structuring') || rule.includes('Smurfing')) {
+      return 'Potential structuring activity detected - breaking down large transactions into smaller amounts to avoid reporting thresholds, a common money laundering technique.';
+    } else if (rule.includes('Cross-Border') || rule.includes('High-Risk')) {
+      return 'Transaction involves high-risk jurisdictions or cross-border transfers that may be associated with money laundering, terrorist financing, or sanctions violations.';
+    } else if (rule.includes('Frequency') || rule.includes('Weekend')) {
+      return 'Abnormal transaction frequency or timing patterns detected, such as unusual activity during weekends or off-hours, which may indicate attempts to avoid detection.';
+    } else if (rule.includes('Daily Volume')) {
+      return 'Daily transaction volume significantly exceeds normal patterns for this customer, potentially indicating layering of illicit funds through multiple transactions.';
+    } else {
+      return 'This transaction triggered our AML monitoring system due to suspicious patterns that deviate from the customer\'s normal behavior and may indicate potential money laundering activity.';
+    }
   }
 
   isUnassigned(alert: Alert): boolean {

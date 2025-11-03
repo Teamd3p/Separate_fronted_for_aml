@@ -41,8 +41,13 @@ export interface Transaction {
 export interface SAR {
   sarId: number;
   alertId: number;
+  alertRuleTriggered?: string;
+  alertRiskScore?: number;
   officerId: number;
+  officerName?: string;
+  officerEmail?: string;
   summary: string;
+  regulatorReference?: string;
   status: string;
   createdAt: string;
   submittedAt: string;
@@ -91,13 +96,15 @@ export interface SARRequest {
 }
 
 export interface OfficerProfile {
-  userId: number;
+  userId?: number;
+  officerId?: number;  // API returns officerId
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
-  department: string;
-  badgeNumber: string;
+  phone?: string;
+  phoneNumber?: string;
+  department?: string;
+  badgeNumber?: string;
 }
 
 @Injectable({
@@ -169,6 +176,12 @@ export class ComplianceService {
   // SAR
   generateSAR(alertId: number, sarRequest: SARRequest): Observable<SAR> {
     return this.http.post<SAR>(`${this.apiUrl}/alerts/${alertId}/sar`, sarRequest, {
+      headers: this.getHeaders()
+    });
+  }
+
+  updateSAR(sarId: number, sarRequest: SARRequest): Observable<SAR> {
+    return this.http.put<SAR>(`${this.apiUrl}/sars/${sarId}`, sarRequest, {
       headers: this.getHeaders()
     });
   }
@@ -267,9 +280,27 @@ export class ComplianceService {
     });
   }
 
-  // Get transaction details
+  // Get transaction details - uses /api/transactions endpoint
   getTransactionDetails(transactionId: number): Observable<Transaction> {
-    return this.http.get<Transaction>(`${this.apiUrl}/transactions/${transactionId}`, {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+    return this.http.get<any>(`${environment.apiUrl}/transactions/${transactionId}`, {
+      headers: headers
+    }).pipe(
+      map(response => ({
+        ...response,
+        amount: typeof response.amount === 'object' ? parseFloat(response.amount) : response.amount,
+        transactionType: typeof response.transactionType === 'object' ? response.transactionType.toString() : response.transactionType,
+        status: typeof response.status === 'object' ? response.status.toString() : response.status
+      }))
+    );
+  }
+  
+  // Get SAR details by ID
+  getSARDetails(sarId: number): Observable<SAR> {
+    return this.http.get<SAR>(`${this.apiUrl}/sars/${sarId}`, {
       headers: this.getHeaders()
     });
   }
