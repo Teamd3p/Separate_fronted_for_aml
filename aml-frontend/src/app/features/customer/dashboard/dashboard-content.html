@@ -57,16 +57,15 @@
     <div class="stat-value">{{ formatDate(dashboardData.lastLogin) || 'N/A' }}</div>
   </div>
 
-  <div class="stat-card alerts-card">
+  <div class="stat-card accounts-card">
     <div class="stat-header">
       <svg class="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#EF4444" stroke-width="2" fill="none"/>
-        <line x1="12" y1="9" x2="12" y2="13" stroke="#EF4444" stroke-width="2"/>
-        <line x1="12" y1="17" x2="12.01" y2="17" stroke="#EF4444" stroke-width="2"/>
+        <rect x="2" y="7" width="20" height="14" rx="2" stroke="#8B5CF6" stroke-width="2" fill="none"/>
+        <path d="M16 21V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V21" stroke="#8B5CF6" stroke-width="2"/>
       </svg>
-      <span class="stat-label">New Alerts</span>
+      <span class="stat-label">Total Accounts</span>
     </div>
-    <div class="stat-value alert-value">{{ dashboardData.newAlerts }}</div>
+    <div class="stat-value">{{ dashboardData.totalAccounts }}</div>
   </div>
 
   <div class="stat-card pending-card">
@@ -81,106 +80,91 @@
   </div>
 </div>
 
-<!-- Data Tables Section -->
-<div class="tables-section" *ngIf="!isLoading">
-  <!-- Recent Transactions Table -->
-  <div class="table-container">
-    <h3 class="table-title">Recent Transactions</h3>
+<!-- Quick Actions Section -->
+<div class="quick-actions-section" *ngIf="!isLoading">
+  <h3 class="section-title">Quick Actions</h3>
+  <div class="quick-actions-grid">
+    <button class="action-btn deposit-btn" (click)="openDepositModal()">
+      <svg class="action-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="action-label">Deposit</span>
+      <span class="action-description">Add funds to account</span>
+    </button>
+
+    <button class="action-btn withdraw-btn" (click)="openWithdrawModal()">
+      <svg class="action-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="action-label">Withdraw</span>
+      <span class="action-description">Withdraw from account</span>
+    </button>
+
+    <button class="action-btn account-btn" (click)="openCreateAccountModal()">
+      <svg class="action-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M16 21V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V21" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span class="action-label">Create Account</span>
+      <span class="action-description">Open a new account</span>
+    </button>
+  </div>
+</div>
+
+<!-- Recent Transactions Section -->
+<div class="transactions-section" *ngIf="!isLoading">
+  <div class="table-container full-width">
+    <div class="table-header-section">
+      <h3 class="table-title">Recent Transactions</h3>
+      <button class="view-all-btn" (click)="viewAllTransactions()">
+        View All
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
           <tr class="table-header">
+            <th>Transaction ID</th>
             <th>Description</th>
-            <th>Sender Account</th>
+            <th>Receiver Account</th>
             <th>Receiver Name</th>
+            <th>Country</th>
             <th>Amount</th>
             <th>Date</th>
             <th>Status</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr class="table-row" *ngFor="let transaction of recentTransactions; trackBy: trackByTransactionId">
-            <td class="transaction-description">{{ transaction.description || '-' }}</td>
-            <td class="transaction-sender">{{ transaction.senderAccountNumber || 'N/A' }}</td>
-            <td class="transaction-receiver">{{ transaction.receiverName || 'N/A' }}</td>
-            <td class="transaction-amount">{{ formatCurrency(transaction.amount) }}</td>
-            <td class="transaction-date">{{ formatDate(transaction.date) }}</td>
-            <td class="transaction-status" [ngClass]="getStatusClass(transaction.status)">{{ transaction.status }}</td>
-            <td class="transaction-actions">
-              <button class="view-details-btn" (click)="openTransactionModal(transaction)" title="View Details">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" fill="none"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                </svg>
-                View Details
-              </button>
+            <td class="transaction-id">#{{ transaction.id || transaction.transactionId || 'N/A' }}</td>
+            <td class="transaction-description">{{ getTransactionDescription(transaction) }}</td>
+            <td class="transaction-account">{{ getReceiverAccount(transaction) }}</td>
+            <td class="transaction-counterparty">{{ getReceiverName(transaction) }}</td>
+            <td class="transaction-country">{{ getCountry(transaction) }}</td>
+            <td class="transaction-amount" [ngClass]="{'amount-positive': isCredit(transaction), 'amount-negative': isDebit(transaction)}">
+              {{ formatCurrency(transaction.amount) }}
+            </td>
+            <td class="transaction-date">{{ formatDate(getTransactionDate(transaction)) }}</td>
+            <td class="transaction-status">
+              <span class="status-badge" [ngClass]="getStatusClass(transaction.status)">{{ transaction.status }}</span>
             </td>
           </tr>
           <tr *ngIf="recentTransactions.length === 0">
-            <td colspan="7" class="no-data">No recent transactions found</td>
+            <td colspan="8" class="no-data">
+              <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 11L12 14L22 4" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3.89543 5 5 3.89543 5 3H16" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p>No recent transactions found</p>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
-  </div>
-
-  <!-- Recent Alerts Table -->
-  <div class="table-container">
-    <h3 class="table-title">Recent Alerts</h3>
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr class="table-header">
-            <th>Alert Description</th>
-            <th>Date</th>
-            <th>Risk Level</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="table-row" *ngFor="let alert of recentAlerts; trackBy: trackByAlertId">
-            <td class="alert-description">{{ alert.description || 'Alert Description' }}</td>
-            <td class="alert-date">{{ formatDate(alert.date) || (alert.createdAt ? formatDate(alert.createdAt) : 'Invalid Date') }}</td>
-            <td class="alert-risk" [ngClass]="getRiskClass(alert.riskScore)">
-              Risk: {{ alert.riskScore || 0 }}
-            </td>
-            <td class="alert-status">
-              <span class="risk-status" [ngClass]="getStatusClass(alert.status)">{{ alert.status || 'OPEN' }}</span>
-            </td>
-          </tr>
-          <tr *ngIf="recentAlerts.length === 0">
-            <td colspan="4" class="no-data">No recent alerts found</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Account Information Section -->
-<div class="account-info-section" *ngIf="!isLoading && customerProfile">
-  <h3 class="account-info-title">Account Information</h3>
-  <div class="account-info-grid">
-    <div class="info-item">
-      <span class="info-label">Full Name</span>
-      <span class="info-value">{{ customerProfile.firstName }} {{ customerProfile.lastName }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Email</span>
-      <span class="info-value">{{ customerProfile.email }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Phone Number</span>
-      <span class="info-value">{{ customerProfile.phoneNumber }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Address</span>
-      <span class="info-value">{{ customerProfile.address.line1 || 'N/A' }}, {{ customerProfile.address.city || 'N/A' }}, {{ customerProfile.address.state || 'N/A' }} - {{ customerProfile.address.postalCode || 'N/A' }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Last Login</span>
-      <span class="info-value">{{ formatDate(customerProfile.lastLogin) }}</span>
     </div>
   </div>
 </div>

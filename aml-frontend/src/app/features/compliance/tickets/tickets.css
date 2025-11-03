@@ -592,14 +592,48 @@
   cursor: not-allowed;
 }
 
+.ticket-resolved-notice {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #d1fae5;
+  border: 1px solid #10b981;
+  border-radius: 0.5rem;
+  color: #065f46;
+  margin-top: 1rem;
+}
+
+.ticket-resolved-notice svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.ticket-resolved-notice p {
+  margin: 0;
+  font-weight: 500;
+}
+
 .ticket-closed-notice {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem;
   background: #f3f4f6;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   color: #64748b;
+  margin-top: 1rem;
+}
+
+.ticket-closed-notice svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.ticket-closed-notice p {
+  margin: 0;
+  font-weight: 500;
 }
 
 /* Responsive */

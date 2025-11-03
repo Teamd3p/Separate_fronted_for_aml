@@ -157,6 +157,46 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  getUserIdFromToken(): number | null {
+    const token = this.getToken();
+    
+    if (!token) {
+      // Fallback to localStorage
+      const storedUserId = localStorage.getItem('userId') || localStorage.getItem('customerId');
+      return storedUserId ? parseInt(storedUserId) : null;
+    }
+
+    try {
+      // Decode JWT token
+      const payload = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      
+      // Extract user ID from token - try multiple possible field names
+      const userId = decodedPayload.userId || 
+                     decodedPayload.customerId || 
+                     decodedPayload.id ||
+                     decodedPayload.sub ||
+                     decodedPayload.user_id ||
+                     decodedPayload.customer_id ||
+                     null;
+      
+      console.log('AuthService: Extracted user ID from token:', userId);
+      
+      // Store in localStorage for future use
+      if (userId) {
+        localStorage.setItem('userId', userId.toString());
+        localStorage.setItem('customerId', userId.toString());
+      }
+      
+      return userId ? parseInt(userId) : null;
+    } catch (error) {
+      console.error('AuthService: Error extracting user ID from token:', error);
+      // Fallback to localStorage
+      const storedUserId = localStorage.getItem('userId') || localStorage.getItem('customerId');
+      return storedUserId ? parseInt(storedUserId) : null;
+    }
+  }
+
   getUserRoleFromToken(): string | null {
     const token = this.getToken();
     console.log('AuthService: Getting role from token:', token ? 'Token exists' : 'No token');

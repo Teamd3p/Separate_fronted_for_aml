@@ -98,9 +98,22 @@ export class Tickets implements OnInit {
     this.selectedTicket = ticket;
     this.showTicketModal = true;
     this.responseMessage = '';
-    this.loadingResponses = false;
-    // Note: Backend doesn't have responses endpoint yet
-    this.ticketResponses = [];
+    this.loadTicketResponses(ticket.ticketId);
+  }
+
+  loadTicketResponses(ticketId: number): void {
+    this.loadingResponses = true;
+    this.complianceService.getTicketResponses(ticketId).subscribe({
+      next: (responses) => {
+        this.ticketResponses = responses;
+        this.loadingResponses = false;
+      },
+      error: (error) => {
+        console.error('Error loading responses:', error);
+        this.ticketResponses = [];
+        this.loadingResponses = false;
+      }
+    });
   }
 
   closeTicketModal(): void {
@@ -111,18 +124,81 @@ export class Tickets implements OnInit {
   }
 
   submitResponse(): void {
-    this.errorMessage = 'Response feature will be available once backend implements the endpoint';
-    setTimeout(() => this.errorMessage = '', 3000);
+    if (!this.selectedTicket || !this.responseMessage.trim()) {
+      this.errorMessage = 'Please provide a response message';
+      setTimeout(() => this.errorMessage = '', 3000);
+      return;
+    }
+
+    this.complianceService.addTicketResponse(this.selectedTicket.ticketId, this.responseMessage).subscribe({
+      next: (response) => {
+        this.successMessage = 'Response sent successfully';
+        this.ticketResponses.push(response);
+        this.responseMessage = '';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error sending response:', error);
+        this.errorMessage = error.error?.message || 'Failed to send response';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   updateStatus(newStatus: string): void {
-    this.errorMessage = 'Status update feature will be available once backend implements the endpoint';
-    setTimeout(() => this.errorMessage = '', 3000);
+    if (!this.selectedTicket) return;
+
+    this.updatingStatus = true;
+    this.complianceService.updateTicketStatus(this.selectedTicket.ticketId, newStatus).subscribe({
+      next: (updatedTicket) => {
+        this.successMessage = `Ticket status updated to ${newStatus}`;
+        this.selectedTicket = updatedTicket;
+        this.loadTickets();
+        this.updatingStatus = false;
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error updating status:', error);
+        this.errorMessage = error.error?.message || 'Failed to update status';
+        this.updatingStatus = false;
+        // Revert the status change in UI
+        if (this.selectedTicket) {
+          const originalTicket = this.tickets.find(t => t.ticketId === this.selectedTicket!.ticketId);
+          if (originalTicket) {
+            this.selectedTicket.status = originalTicket.status;
+          }
+        }
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   updatePriority(newPriority: string): void {
-    this.errorMessage = 'Priority update feature will be available once backend implements the endpoint';
-    setTimeout(() => this.errorMessage = '', 3000);
+    if (!this.selectedTicket) return;
+
+    this.updatingPriority = true;
+    this.complianceService.updateTicketPriority(this.selectedTicket.ticketId, newPriority).subscribe({
+      next: (updatedTicket) => {
+        this.successMessage = `Ticket priority updated to ${newPriority}`;
+        this.selectedTicket = updatedTicket;
+        this.loadTickets();
+        this.updatingPriority = false;
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('Error updating priority:', error);
+        this.errorMessage = error.error?.message || 'Failed to update priority';
+        this.updatingPriority = false;
+        // Revert the priority change in UI
+        if (this.selectedTicket) {
+          const originalTicket = this.tickets.find(t => t.ticketId === this.selectedTicket!.ticketId);
+          if (originalTicket) {
+            this.selectedTicket.priority = originalTicket.priority;
+          }
+        }
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   resolveTicket(): void {

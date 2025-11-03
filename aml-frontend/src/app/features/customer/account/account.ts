@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { Account as AccountModel } from '../../../core/models/dashboard.models';
 
@@ -41,10 +42,23 @@ export class Account implements OnInit {
     { value: 'GBP', label: 'British Pound (GBP)' }
   ];
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.loadAccounts();
+    
+    // Check for query parameters to open create account form
+    this.route.queryParams.subscribe(params => {
+      if (params['openModal'] === 'create') {
+        setTimeout(() => {
+          this.showCreateForm = true;
+          console.log('Opened create account form from dashboard');
+        }, 500); // Small delay to ensure data is loaded
+      }
+    });
   }
 
   loadAccounts(): void {

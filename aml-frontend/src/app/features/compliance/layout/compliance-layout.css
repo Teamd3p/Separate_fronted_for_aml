@@ -71,10 +71,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .logo-text {
   font-family: 'Poppins', system-ui, sans-serif;
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #007AFF;
   letter-spacing: -0.01em;
+}
+
+.role-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 /* Navigation */

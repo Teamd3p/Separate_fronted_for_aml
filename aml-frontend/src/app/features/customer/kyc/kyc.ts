@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KycService } from '../../../core/services/kyc.service';
 import { CustomerProfileService } from '../../../core/services/customer-profile.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { 
   KycDocument, 
   KycDocumentSummary, 
@@ -54,51 +55,25 @@ export class KycComponent implements OnInit {
 
   constructor(
     private kycService: KycService,
-    private customerProfileService: CustomerProfileService
+    private customerProfileService: CustomerProfileService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.getCurrentUserId();
   }
 
-  // Get current customer ID from localStorage
+  // Get current customer ID using AuthService
   getCurrentUserId(): void {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.errorMessage = 'Authentication required. Please log in.';
-      return;
-    }
-
-    try {
-      // Decode JWT token to get email
-      const payload = token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(payload));
-      const email = decodedPayload.sub; // Email is in 'sub' field
-      
-      console.log('User email from token:', email);
-      console.log('Full token payload:', decodedPayload);
-      
-      // KYC operations require customerId, not userId
-      // Try to get customerId first, fallback to userId
-      const storedCustomerId = localStorage.getItem('customerId');
-      const storedUserId = localStorage.getItem('userId');
-      
-      if (storedCustomerId && storedCustomerId !== 'null' && storedCustomerId !== 'undefined') {
-        this.currentUserId = parseInt(storedCustomerId);
-        console.log('Customer ID from localStorage:', this.currentUserId);
-        this.loadKycData();
-      } else if (storedUserId && storedUserId !== 'null' && storedUserId !== 'undefined') {
-        // Fallback to userId if customerId not available
-        this.currentUserId = parseInt(storedUserId);
-        console.log('Using User ID as Customer ID:', this.currentUserId);
-        this.loadKycData();
-      } else {
-        // Try to fetch customer profile to get customerId
-        console.log('No customerId found, attempting to fetch from backend...');
-        this.fetchCustomerIdFromBackend(email);
-      }
-    } catch (error) {
-      console.error('Error getting customer ID:', error);
+    // Use AuthService to get customer ID from JWT token
+    const customerId = this.authService.getUserIdFromToken();
+    
+    if (customerId) {
+      this.currentUserId = customerId;
+      console.log('Customer ID from token:', this.currentUserId);
+      this.loadKycData();
+    } else {
+      console.error('Unable to get customer ID from token');
       this.errorMessage = 'Authentication error. Please log in again.';
     }
   }

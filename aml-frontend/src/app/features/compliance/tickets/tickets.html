@@ -232,7 +232,7 @@
       </div>
 
       <!-- Response Form -->
-      <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED'">
+      <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED'">
         <h3>Your Response</h3>
         <textarea 
           [(ngModel)]="responseMessage"
@@ -243,15 +243,6 @@
         <div class="form-actions">
           <button class="btn-secondary" (click)="closeTicketModal()">Cancel</button>
           <button 
-            class="btn-resolve" 
-            (click)="resolveTicket()"
-            [disabled]="!responseMessage.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Resolve & Close
-          </button>
-          <button 
             class="btn-primary" 
             (click)="submitResponse()"
             [disabled]="!responseMessage.trim()">
@@ -261,7 +252,24 @@
             </svg>
             Send Response
           </button>
+          <button 
+            class="btn-resolve" 
+            (click)="resolveTicket()"
+            [disabled]="!responseMessage.trim()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Resolve & Close
+          </button>
         </div>
+      </div>
+
+      <!-- Resolved Ticket Notice -->
+      <div *ngIf="selectedTicket.status === 'RESOLVED'" class="ticket-resolved-notice">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <p>This ticket has been resolved. Change status to reopen or close the ticket.</p>
       </div>
 
       <div *ngIf="selectedTicket.status === 'CLOSED'" class="ticket-closed-notice">
