@@ -164,8 +164,8 @@
             <div class="info-item">
               <label>Priority:</label>
               <select 
-                [(ngModel)]="selectedTicket.priority" 
-                (ngModelChange)="updatePriority($event)"
+                [value]="selectedTicket.priority" 
+                (change)="updatePriority($any($event.target).value)"
                 [disabled]="updatingPriority"
                 class="priority-select">
                 <option value="LOW">Low</option>
@@ -177,8 +177,8 @@
             <div class="info-item">
               <label>Status:</label>
               <select 
-                [(ngModel)]="selectedTicket.status" 
-                (ngModelChange)="updateStatus($event)"
+                [value]="selectedTicket.status" 
+                (change)="updateStatus($any($event.target).value)"
                 [disabled]="updatingStatus"
                 class="status-select">
                 <option value="OPEN">Open</option>
@@ -200,36 +200,6 @@
         </div>
       </div>
 
-      <!-- Responses Thread -->
-      <div class="responses-section">
-        <h3>Conversation</h3>
-        
-        <div *ngIf="loadingResponses" class="loading-responses">
-          <div class="spinner-small"></div>
-          <p>Loading responses...</p>
-        </div>
-
-        <div *ngIf="!loadingResponses && ticketResponses.length === 0" class="no-responses">
-          <p>No responses yet. Be the first to respond!</p>
-        </div>
-
-        <div *ngIf="!loadingResponses && ticketResponses.length > 0" class="responses-list">
-          <div *ngFor="let response of ticketResponses" class="response-item">
-            <div class="response-header">
-              <div class="response-author">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <strong>{{ response.officerName }}</strong>
-                <span class="officer-badge">Officer</span>
-              </div>
-              <span class="response-time">{{ response.createdAt | date:'short' }}</span>
-            </div>
-            <div class="response-message">{{ response.message }}</div>
-          </div>
-        </div>
-      </div>
 
       <!-- Response Form -->
       <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED'">

@@ -28,6 +28,7 @@ export class Tickets implements OnInit {
   ticketResponses: TicketResponse[] = [];
   loadingResponses = false;
   responseMessage = '';
+  sendingResponse = false;
 
   // Status update
   updatingStatus = false;
@@ -112,6 +113,7 @@ export class Tickets implements OnInit {
         console.error('Error loading responses:', error);
         this.ticketResponses = [];
         this.loadingResponses = false;
+        // Don't show error to user - just log it and continue with empty responses
       }
     });
   }
@@ -130,17 +132,21 @@ export class Tickets implements OnInit {
       return;
     }
 
+    this.sendingResponse = true;
     this.complianceService.addTicketResponse(this.selectedTicket.ticketId, this.responseMessage).subscribe({
       next: (response) => {
         this.successMessage = 'Response sent successfully';
         this.ticketResponses.push(response);
         this.responseMessage = '';
+        this.sendingResponse = false;
         setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error sending response:', error);
-        this.errorMessage = error.error?.message || 'Failed to send response';
-        setTimeout(() => this.errorMessage = '', 3000);
+        const errorMsg = error.error?.message || error.message || 'Failed to send response. Please try again.';
+        this.errorMessage = errorMsg;
+        this.sendingResponse = false;
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }
@@ -159,7 +165,8 @@ export class Tickets implements OnInit {
       },
       error: (error) => {
         console.error('Error updating status:', error);
-        this.errorMessage = error.error?.message || 'Failed to update status';
+        const errorMsg = error.error?.message || error.message || 'Failed to update status. Please try again.';
+        this.errorMessage = errorMsg;
         this.updatingStatus = false;
         // Revert the status change in UI
         if (this.selectedTicket) {
@@ -168,7 +175,7 @@ export class Tickets implements OnInit {
             this.selectedTicket.status = originalTicket.status;
           }
         }
-        setTimeout(() => this.errorMessage = '', 3000);
+        setTimeout(() => this.errorMessage = '', 5000);
       }
     });
   }
