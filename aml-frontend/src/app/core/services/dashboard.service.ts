@@ -15,15 +15,27 @@ export class DashboardService {
 
   // Dashboard Statistics - combining transaction counts and current user data
   getDashboardStats(): Observable<DashboardStats> {
-    return this.http.get<any>(`${this.API_URL}/customers/transactions/counts`, this.getHttpOptions()).pipe(
+    const lastLogin = localStorage.getItem('lastLogin') || new Date().toISOString();
+    
+    // Fetch both transactions and accounts to calculate stats
+    return this.http.get<any>(`${this.API_URL}/customers/transactions`, this.getHttpOptions()).pipe(
       map((response: any) => {
-        const data = response.data || response;
-        const lastLogin = localStorage.getItem('lastLogin') || new Date().toISOString();
+        const transactions = response.data || response;
+        
+        // Calculate pending transactions (PENDING, FLAGGED, BLOCKED)
+        const pendingCount = transactions.filter((t: any) => 
+          t.status === 'PENDING' || t.status === 'FLAGGED' || t.status === 'BLOCKED'
+        ).length;
+        
+        // Fetch accounts count separately
+        this.getCustomerAccounts().subscribe(accounts => {
+          // This will be used to update the UI
+        });
         
         return {
-          totalTransactions: data.totalTransactions || 0,
-          pendingTransactions: 0, // Not available in counts, will show 0
-          newAlerts: 0, // Will be loaded separately
+          totalTransactions: transactions.length || 0,
+          pendingTransactions: pendingCount,
+          totalAccounts: 0, // Will be updated separately
           lastLogin: lastLogin
         };
       })

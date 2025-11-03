@@ -321,34 +321,52 @@
       <table class="transactions-table">
         <thead>
           <tr>
+            <th>Transaction ID</th>
             <th>Sender Account</th>
-            <th>Receiver Account & Name</th>
-            <th>Date</th>
+            <th>Counterparty</th>
             <th>Amount</th>
+            <th>Type</th>
             <th>Status</th>
+            <th>Date</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let transaction of filteredTransactions; let i = index" class="transaction-row">
-            <td class="sender-account">{{ getSenderAccount(transaction) }}</td>
-            <td class="receiver-info">
-              <div class="receiver-account">{{ getReceiverAccount(transaction) }}</div>
-              <div class="receiver-name">{{ getReceiverName(transaction) }}</div>
+            <td>
+              <span class="transaction-id">#{{ transaction.transactionId || transaction.id }}</span>
             </td>
-            <td class="date">{{ formatDate(transaction.timestamp || transaction.date || '') }}</td>
+            <td>
+              <div class="sender-info">
+                <div class="sender-account">{{ transaction.senderAccountNumber || 'N/A' }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="counterparty-info">
+                <div class="counterparty-name">{{ transaction.counterpartyName || 'N/A' }}</div>
+                <div class="counterparty-account">{{ transaction.counterpartyAccount || 'N/A' }}</div>
+                <div *ngIf="transaction.countryCode" class="country-code">{{ transaction.countryCode }}</div>
+              </div>
+            </td>
             <td class="amount">{{ formatCurrency(transaction.amount, transaction.currency) }}</td>
+            <td>
+              <span class="type-badge" [ngClass]="getTypeClass(transaction.transactionType || transaction.type || '')">
+                {{ transaction.transactionType || transaction.type || 'N/A' }}
+              </span>
+            </td>
             <td>
               <span class="status-badge" [ngClass]="getStatusClass(transaction.status)">
                 {{ getStatusLabel(transaction.status) }}
               </span>
             </td>
+            <td class="date">{{ formatDate(transaction.timestamp || transaction.date || '') }}</td>
             <td class="actions">
               <button class="view-details-btn" (click)="viewTransactionDetails(transaction)" title="View Details">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
                   <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
                 </svg>
+                <span>View</span>
               </button>
             </td>
           </tr>

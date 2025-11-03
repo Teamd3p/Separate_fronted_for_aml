@@ -1,7 +1,7 @@
 export interface DashboardStats {
   totalTransactions: number;
   lastLogin: string;
-  newAlerts: number;
+  totalAccounts: number;
   pendingTransactions: number;
 }
 
@@ -23,6 +23,8 @@ export interface Transaction {
   
   // Additional fields from API response
   timestamp?: string;
+  transactionDate?: string;
+  accountNumber?: string;
   counterpartyName?: string;
   counterpartyAccount?: string;
   countryCode?: string;

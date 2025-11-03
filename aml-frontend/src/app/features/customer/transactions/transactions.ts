@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Transaction, Account } from '../../../core/models/dashboard.models';
 
 @Component({
@@ -57,11 +59,28 @@ export class Transactions implements OnInit {
 
   constructor(
     private transactionService: TransactionService,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private route: ActivatedRoute,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadInitialData();
+    
+    // Check for query parameters to open specific modals
+    this.route.queryParams.subscribe(params => {
+      if (params['openModal']) {
+        setTimeout(() => {
+          if (params['openModal'] === 'deposit') {
+            this.setFormTab('deposit');
+            console.log('Opened deposit form from dashboard');
+          } else if (params['openModal'] === 'withdraw') {
+            this.setFormTab('withdrawal');
+            console.log('Opened withdrawal form from dashboard');
+          }
+        }, 500); // Small delay to ensure data is loaded
+      }
+    });
   }
 
   loadInitialData(): void {
@@ -114,21 +133,26 @@ export class Transactions implements OnInit {
   }
 
   loadTransactions(): void {
-    this.transactionService.getAllTransactions().subscribe({
-      next: (response) => {
+    // Use DashboardService.getAllTransactions() - same endpoint as dashboard
+    // This returns complete transaction data with all fields populated
+    this.dashboardService.getAllTransactions().subscribe({
+      next: (response: any) => {
         this.transactions = response.content || [];
         this.filteredTransactions = [...this.transactions];
         this.isLoading = false;
         
         // Debug: Log the first transaction to see the actual data structure
         if (this.transactions.length > 0) {
-          console.log('First transaction data:', this.transactions[0]);
+          console.log('=== CUSTOMER TRANSACTION DATA ===');
+          console.log('Total transactions:', this.transactions.length);
+          console.log('First transaction:', this.transactions[0]);
           console.log('Available keys:', Object.keys(this.transactions[0]));
+          console.log('============================');
         }
         
         this.applyFilters();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading transactions:', error);
         this.errorMessage = 'Unable to load transactions. Please try again later.';
         this.isLoading = false;
@@ -309,6 +333,17 @@ export class Transactions implements OnInit {
   getStatusLabel(status: string): string {
     return status || 'Pending';
   }
+
+  getTypeClass(type: string): string {
+    switch (type?.toUpperCase()) {
+      case 'TRANSFER': return 'type-transfer';
+      case 'CREDIT':
+      case 'DEPOSIT': return 'type-deposit';
+      case 'DEBIT':
+      case 'WITHDRAWAL': return 'type-withdrawal';
+      default: return 'type-transfer';
+    }
+  }
   
   // Form tab management
   setFormTab(tab: string): void {
@@ -350,8 +385,6 @@ export class Transactions implements OnInit {
   
   // Helper methods to safely get transaction field values
   getSenderAccount(transaction: any): string {
-    console.log('Getting sender account for transaction:', transaction);
-    
     // Handle null/undefined values explicitly
     const senderAccount = (transaction.senderAccountNumber && transaction.senderAccountNumber !== null) ? transaction.senderAccountNumber :
            (transaction.fromAccount && transaction.fromAccount !== null) ? transaction.fromAccount :
@@ -361,13 +394,15 @@ export class Transactions implements OnInit {
            // For deposit/withdrawal transactions, try to extract from description
            this.extractAccountFromDescription(transaction, 'sender');
     
-    console.log('Sender account result:', senderAccount);
+    // If still null/undefined, show meaningful message
+    if (!senderAccount || senderAccount === 'N/A') {
+      return 'Not Available';
+    }
+    
     return senderAccount;
   }
   
   getReceiverAccount(transaction: any): string {
-    console.log('Getting receiver account for transaction:', transaction);
-    
     // Handle null/undefined values explicitly
     const receiverAccount = (transaction.counterpartyAccount && transaction.counterpartyAccount !== null) ? transaction.counterpartyAccount :
            (transaction.receiverAccountNumber && transaction.receiverAccountNumber !== null) ? transaction.receiverAccountNumber :
@@ -378,13 +413,15 @@ export class Transactions implements OnInit {
            // For deposit/withdrawal transactions, try to extract from description
            this.extractAccountFromDescription(transaction, 'receiver');
     
-    console.log('Receiver account result:', receiverAccount);
+    // If still null/undefined, show meaningful message
+    if (!receiverAccount || receiverAccount === 'N/A') {
+      return 'Not Available';
+    }
+    
     return receiverAccount;
   }
   
   getReceiverName(transaction: any): string {
-    console.log('Getting receiver name for transaction:', transaction);
-    
     // Handle null/undefined values explicitly
     const receiverName = (transaction.counterpartyName && transaction.counterpartyName !== null) ? transaction.counterpartyName :
            (transaction.receiverName && transaction.receiverName !== null) ? transaction.receiverName :
@@ -396,7 +433,11 @@ export class Transactions implements OnInit {
            // For deposit/withdrawal, provide meaningful names
            this.getTransactionTypeName(transaction);
     
-    console.log('Receiver name result:', receiverName);
+    // If still null/undefined, show transaction type as fallback
+    if (!receiverName || receiverName === 'N/A') {
+      return transaction.transactionType || transaction.type || 'Unknown';
+    }
+    
     return receiverName;
   }
   
