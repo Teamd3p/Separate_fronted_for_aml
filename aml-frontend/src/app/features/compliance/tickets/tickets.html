@@ -101,7 +101,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let ticket of filteredTickets" (click)="openTicketDetails(ticket)" class="clickable-row">
+        <tr *ngFor="let ticket of filteredTickets" (click)="openTicketModal(ticket)" class="clickable-row">
           <td><span class="ticket-id">#{{ ticket.ticketId }}</span></td>
           <td>{{ ticket.customerName }}</td>
           <td>
@@ -119,7 +119,7 @@
           </td>
           <td>{{ ticket.createdAt | date:'short' }}</td>
           <td>
-            <button class="btn-view" (click)="openTicketDetails(ticket); $event.stopPropagation()">
+            <button class="btn-view" (click)="openTicketModal(ticket); $event.stopPropagation()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -161,31 +161,28 @@
             </div>
           </div>
           <div class="info-row">
-            <div class="info-item">
-              <label>Priority:</label>
-              <select 
-                [(ngModel)]="selectedTicket.priority" 
-                (ngModelChange)="updatePriority($event)"
-                [disabled]="updatingPriority"
-                class="priority-select">
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-            <div class="info-item">
+            <div class="info-item status-update-section">
               <label>Status:</label>
-              <select 
-                [(ngModel)]="selectedTicket.status" 
-                (ngModelChange)="updateStatus($event)"
-                [disabled]="updatingStatus"
-                class="status-select">
-                <option value="OPEN">Open</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-              </select>
+              <div class="status-controls">
+                <select 
+                  [(ngModel)]="newStatus" 
+                  [disabled]="isStatusLocked()"
+                  class="status-select">
+                  <option value="OPEN">Open</option>
+                  <option value="ASSIGNED">Assigned</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+                <button 
+                  class="btn-update-status"
+                  (click)="submitStatusUpdate()"
+                  [disabled]="isStatusLocked() || updatingStatus || newStatus === selectedTicket.status"
+                >
+                  {{ updatingStatus ? 'Updating...' : 'Update Status' }}
+                </button>
+              </div>
+              <span class="current-status">Current: <strong>{{ selectedTicket.status }}</strong></span>
             </div>
           </div>
         </div>
@@ -200,69 +197,9 @@
         </div>
       </div>
 
-      <!-- Responses Thread -->
-      <div class="responses-section">
-        <h3>Conversation</h3>
-        
-        <div *ngIf="loadingResponses" class="loading-responses">
-          <div class="spinner-small"></div>
-          <p>Loading responses...</p>
-        </div>
+      
 
-        <div *ngIf="!loadingResponses && ticketResponses.length === 0" class="no-responses">
-          <p>No responses yet. Be the first to respond!</p>
-        </div>
-
-        <div *ngIf="!loadingResponses && ticketResponses.length > 0" class="responses-list">
-          <div *ngFor="let response of ticketResponses" class="response-item">
-            <div class="response-header">
-              <div class="response-author">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <strong>{{ response.officerName }}</strong>
-                <span class="officer-badge">Officer</span>
-              </div>
-              <span class="response-time">{{ response.createdAt | date:'short' }}</span>
-            </div>
-            <div class="response-message">{{ response.message }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Response Form -->
-      <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED'">
-        <h3>Your Response</h3>
-        <textarea 
-          [(ngModel)]="responseMessage"
-          class="form-control"
-          rows="4"
-          placeholder="Type your response to the customer..."></textarea>
-        
-        <div class="form-actions">
-          <button class="btn-secondary" (click)="closeTicketModal()">Cancel</button>
-          <button 
-            class="btn-primary" 
-            (click)="submitResponse()"
-            [disabled]="!responseMessage.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            Send Response
-          </button>
-          <button 
-            class="btn-resolve" 
-            (click)="resolveTicket()"
-            [disabled]="!responseMessage.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Resolve & Close
-          </button>
-        </div>
-      </div>
+      
 
       <!-- Resolved Ticket Notice -->
       <div *ngIf="selectedTicket.status === 'RESOLVED'" class="ticket-resolved-notice">
@@ -279,6 +216,43 @@
           <line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
         <p>This ticket is closed and cannot receive new responses.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resolution Modal -->
+<div class="modal-overlay" *ngIf="showResolutionModal" (click)="closeResolutionModal()">
+  <div class="modal-content resolution-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Resolve Ticket</h2>
+      <button class="close-button" (click)="closeResolutionModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p class="resolution-instruction">Please provide a resolution message explaining how this ticket was resolved:</p>
+      
+      <textarea 
+        [(ngModel)]="resolutionText" 
+        placeholder="Enter resolution details..."
+        rows="6"
+        class="resolution-textarea"
+      ></textarea>
+      
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeResolutionModal()">Cancel</button>
+        <button 
+          class="btn-primary" 
+          (click)="submitResolution()"
+          [disabled]="!resolutionText.trim() || updatingStatus"
+        >
+          {{ updatingStatus ? 'Resolving...' : 'Resolve Ticket' }}
+        </button>
       </div>
     </div>
   </div>

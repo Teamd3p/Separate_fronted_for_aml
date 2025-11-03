@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceService, Ticket, TicketResponse } from '../../../core/services/compliance.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-tickets',
@@ -32,8 +33,16 @@ export class Tickets implements OnInit {
   // Status update
   updatingStatus = false;
   updatingPriority = false;
+  newStatus = '';
+  
+  // Resolution modal for RESOLVED status
+  showResolutionModal = false;
+  resolutionText = '';
 
-  constructor(private complianceService: ComplianceService) {}
+  constructor(
+    private complianceService: ComplianceService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
@@ -94,11 +103,17 @@ export class Tickets implements OnInit {
     this.filteredTickets = filtered;
   }
 
-  openTicketDetails(ticket: Ticket): void {
+  openTicketModal(ticket: Ticket): void {
     this.selectedTicket = ticket;
+    this.newStatus = ticket.status; // Initialize with current status
     this.showTicketModal = true;
     this.responseMessage = '';
     this.loadTicketResponses(ticket.ticketId);
+  }
+  
+  isStatusLocked(): boolean {
+    if (!this.selectedTicket) return true;
+    return this.selectedTicket.status === 'CLOSED' || this.selectedTicket.status === 'RESOLVED';
   }
 
   loadTicketResponses(ticketId: number): void {
@@ -145,21 +160,49 @@ export class Tickets implements OnInit {
     });
   }
 
-  updateStatus(newStatus: string): void {
+  submitStatusUpdate(): void {
+    if (!this.selectedTicket || !this.newStatus) return;
+
+    // Check if ticket is already CLOSED or RESOLVED
+    if (this.isStatusLocked()) {
+      this.toastService.error('Cannot change status of a closed or resolved ticket');
+      return;
+    }
+
+    // Check if status actually changed
+    if (this.newStatus === this.selectedTicket.status) {
+      this.toastService.error('Please select a different status');
+      return;
+    }
+
+    // If changing to RESOLVED, show resolution modal
+    if (this.newStatus === 'RESOLVED') {
+      this.showResolutionModal = true;
+      return;
+    }
+
+    // For other status changes, proceed directly
+    this.performStatusUpdate(this.newStatus);
+  }
+
+  performStatusUpdate(newStatus: string, resolution?: string): void {
     if (!this.selectedTicket) return;
 
     this.updatingStatus = true;
-    this.complianceService.updateTicketStatus(this.selectedTicket.ticketId, newStatus).subscribe({
+    this.complianceService.updateTicketStatus(this.selectedTicket.ticketId, newStatus, resolution).subscribe({
       next: (updatedTicket) => {
-        this.successMessage = `Ticket status updated to ${newStatus}`;
+        this.toastService.success(`Ticket status updated to ${newStatus}`);
         this.selectedTicket = updatedTicket;
+        this.newStatus = updatedTicket.status; // Update dropdown to new status
         this.loadTickets();
         this.updatingStatus = false;
-        setTimeout(() => this.successMessage = '', 3000);
+        this.showResolutionModal = false;
+        this.resolutionText = '';
       },
       error: (error) => {
         console.error('Error updating status:', error);
-        this.errorMessage = error.error?.message || 'Failed to update status';
+        const errorMsg = error.error?.error || error.error?.message || 'Failed to update status';
+        this.toastService.error(errorMsg);
         this.updatingStatus = false;
         // Revert the status change in UI
         if (this.selectedTicket) {
@@ -168,9 +211,21 @@ export class Tickets implements OnInit {
             this.selectedTicket.status = originalTicket.status;
           }
         }
-        setTimeout(() => this.errorMessage = '', 3000);
       }
     });
+  }
+
+  submitResolution(): void {
+    if (!this.resolutionText.trim()) {
+      this.toastService.error('Please enter a resolution message');
+      return;
+    }
+    this.performStatusUpdate('RESOLVED', this.resolutionText);
+  }
+
+  closeResolutionModal(): void {
+    this.showResolutionModal = false;
+    this.resolutionText = '';
   }
 
   updatePriority(newPriority: string): void {
@@ -179,15 +234,14 @@ export class Tickets implements OnInit {
     this.updatingPriority = true;
     this.complianceService.updateTicketPriority(this.selectedTicket.ticketId, newPriority).subscribe({
       next: (updatedTicket) => {
-        this.successMessage = `Ticket priority updated to ${newPriority}`;
+        this.toastService.success(`Ticket priority updated to ${newPriority}`);
         this.selectedTicket = updatedTicket;
         this.loadTickets();
         this.updatingPriority = false;
-        setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error updating priority:', error);
-        this.errorMessage = error.error?.message || 'Failed to update priority';
+        this.toastService.error(error.error?.message || 'Failed to update priority');
         this.updatingPriority = false;
         // Revert the priority change in UI
         if (this.selectedTicket) {
@@ -196,7 +250,6 @@ export class Tickets implements OnInit {
             this.selectedTicket.priority = originalTicket.priority;
           }
         }
-        setTimeout(() => this.errorMessage = '', 3000);
       }
     });
   }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AlertService, AlertNotification, AlertStats, CustomerTicket } from '../../../core/services/alert.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-alerts',
@@ -19,6 +20,7 @@ export class Alerts implements OnInit {
   // Tickets
   tickets: CustomerTicket[] = [];
   loadingTickets: boolean = false;
+  ticketFilter: string = 'all';
   
   // Statistics
   stats: AlertStats = {
@@ -42,7 +44,8 @@ export class Alerts implements OnInit {
 
   constructor(
     private alertService: AlertService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -167,12 +170,12 @@ export class Alerts implements OnInit {
     this.sendingMessage = true;
     this.alertService.contactSupport(this.selectedAlert.id, this.contactMessage, this.selectedAlert).subscribe({
       next: () => {
-        alert('Your inquiry has been submitted to our compliance team. You will receive a response within 24-48 hours explaining the alert details.');
+        this.toastService.success('Your inquiry has been submitted to our compliance team. You will receive a response within 24-48 hours explaining the alert details.');
         this.closeModals();
       },
       error: (error) => {
         console.error('Error contacting support:', error);
-        alert('Failed to send inquiry. Please try again.');
+        this.toastService.error('Failed to send inquiry. Please try again.');
         this.sendingMessage = false;
       }
     });
@@ -193,6 +196,32 @@ export class Alerts implements OnInit {
   viewTicketDetails(ticket: CustomerTicket): void {
     this.selectedTicket = ticket;
     this.showTicketDetailsModal = true;
+  }
+
+  // Ticket filter methods
+  setTicketFilter(filter: string): void {
+    this.ticketFilter = filter;
+  }
+
+  getTicketsByStatus(status: string): CustomerTicket[] {
+    return this.tickets.filter(ticket => ticket.status === status);
+  }
+
+  getFilteredTickets(): CustomerTicket[] {
+    if (this.ticketFilter === 'all') {
+      return this.tickets;
+    }
+    return this.tickets.filter(ticket => ticket.status === this.ticketFilter);
+  }
+
+  // Get ticket card class based on status
+  getTicketCardClass(status: string): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'ticket-card-in-progress';
+      case 'RESOLVED': return 'ticket-card-resolved';
+      case 'CLOSED': return 'ticket-card-closed';
+      default: return '';
+    }
   }
 
   // Get ticket status badge class

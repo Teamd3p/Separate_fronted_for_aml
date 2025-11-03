@@ -268,10 +268,14 @@ export class ComplianceService {
   }
 
   // Update ticket status
-  updateTicketStatus(ticketId: number, status: string): Observable<Ticket> {
+  updateTicketStatus(ticketId: number, status: string, resolution?: string): Observable<Ticket> {
+    const payload: any = { status };
+    if (resolution) {
+      payload.resolution = resolution;
+    }
     return this.http.put<Ticket>(
       `${this.apiUrl}/helpdesk/tickets/${ticketId}/status`,
-      { status },
+      payload,
       { headers: this.getHeaders() }
     );
   }

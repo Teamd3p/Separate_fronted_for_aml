@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Transaction, Account } from '../../../core/models/dashboard.models';
 
 @Component({
@@ -70,7 +71,8 @@ export class Transactions implements OnInit {
     private transactionService: TransactionService,
     private dashboardService: DashboardService,
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -174,12 +176,12 @@ export class Transactions implements OnInit {
     if (!this.transactionForm.senderAccountNumber || 
         !this.transactionForm.receiverAccountNumber || 
         !this.transactionForm.amount) {
-      this.errorMessage = 'Please fill in all required fields';
+      this.toastService.error('Please fill in all required fields');
       return;
     }
 
     if (this.transactionForm.amount <= 0) {
-      this.errorMessage = 'Amount must be greater than 0';
+      this.toastService.error('Amount must be greater than 0');
       return;
     }
 
@@ -196,20 +198,15 @@ export class Transactions implements OnInit {
 
     this.transactionService.createTransaction(transactionData).subscribe({
       next: (newTransaction) => {
-        this.successMessage = 'Transaction submitted successfully!';
+        this.toastService.success('Transaction submitted successfully!');
         this.transactions.unshift(newTransaction);
         this.applyFilters();
         this.resetForm();
         this.isSubmitting = false;
-        
-        // Clear success message after 5 seconds
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (error) => {
         console.error('Error creating transaction:', error);
-        this.errorMessage = error.error?.message || 'Failed to submit transaction. Please try again.';
+        this.toastService.error(error.error?.message || 'Failed to submit transaction. Please try again.');
         this.isSubmitting = false;
       }
     });
@@ -533,12 +530,12 @@ export class Transactions implements OnInit {
   // Deposit submission
   submitDeposit(): void {
     if (!this.depositForm.accountNumber || !this.depositForm.amount) {
-      this.errorMessage = 'Please fill in all required fields';
+      this.toastService.error('Please fill in all required fields');
       return;
     }
 
     if (this.depositForm.amount <= 0) {
-      this.errorMessage = 'Amount must be greater than 0';
+      this.toastService.error('Amount must be greater than 0');
       return;
     }
 
@@ -558,15 +555,11 @@ export class Transactions implements OnInit {
     this.transactionService.createDeposit(depositData).subscribe({
       next: (newTransaction) => {
         console.log('Deposit successful:', newTransaction);
-        this.successMessage = 'Deposit processed successfully!';
+        this.toastService.success('Deposit processed successfully!');
         this.transactions.unshift(newTransaction);
         this.applyFilters();
         this.resetDepositForm();
         this.isSubmitting = false;
-        
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (error) => {
         console.error('Deposit failed:', error);
@@ -582,7 +575,7 @@ export class Transactions implements OnInit {
           errorMessage = 'Invalid deposit request. Please check your input.';
         }
         
-        this.errorMessage = errorMessage;
+        this.toastService.error(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -591,12 +584,12 @@ export class Transactions implements OnInit {
   // Withdrawal submission
   submitWithdrawal(): void {
     if (!this.withdrawalForm.accountNumber || !this.withdrawalForm.amount) {
-      this.errorMessage = 'Please fill in all required fields';
+      this.toastService.error('Please fill in all required fields');
       return;
     }
 
     if (this.withdrawalForm.amount <= 0) {
-      this.errorMessage = 'Amount must be greater than 0';
+      this.toastService.error('Amount must be greater than 0');
       return;
     }
 
@@ -616,15 +609,11 @@ export class Transactions implements OnInit {
     this.transactionService.createWithdrawal(withdrawalData).subscribe({
       next: (newTransaction) => {
         console.log('Withdrawal successful:', newTransaction);
-        this.successMessage = 'Withdrawal processed successfully!';
+        this.toastService.success('Withdrawal processed successfully!');
         this.transactions.unshift(newTransaction);
         this.applyFilters();
         this.resetWithdrawalForm();
         this.isSubmitting = false;
-        
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (error) => {
         console.error('Withdrawal failed:', error);
@@ -640,7 +629,7 @@ export class Transactions implements OnInit {
           errorMessage = 'Invalid withdrawal request. Please check your input.';
         }
         
-        this.errorMessage = errorMessage;
+        this.toastService.error(errorMessage);
         this.isSubmitting = false;
       }
     });

@@ -70,57 +70,56 @@
       </div>
     </div>
 
-    <!-- Resolved Alerts Section -->
-    <div class="notifications-section resolved-section" *ngIf="activeTab === 'all' || activeTab === 'resolved'">
-      <h2 class="section-title">✅ Resolved Alerts</h2>
-      <p class="section-subtitle">Previously resolved alerts</p>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && getResolvedAlerts().length === 0" class="empty-state">
-        <div class="empty-icon">📄</div>
-        <h3>No Resolved Alerts</h3>
-        <p>You don't have any resolved alerts yet.</p>
-      </div>
-
-      <!-- Resolved Alert Cards -->
-      <div *ngIf="!loading && getResolvedAlerts().length > 0" class="alerts-grid">
-        <div *ngFor="let alert of getResolvedAlerts()" class="alert-card alert-resolved" [class]="getAlertIconClass(alert)">
-          <div class="alert-status-badge badge-resolved">Resolved</div>
-          <div class="alert-icon">
-            <span *ngIf="alert.type === 'FLAGGED'">✅</span>
-            <span *ngIf="alert.type === 'CANCELED'">✅</span>
-            <span *ngIf="alert.type === 'SUSPICIOUS'">✅</span>
-          </div>
-          <div class="alert-content">
-            <div class="alert-header">
-              <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
-              <span class="alert-amount">{{ formatCurrency(alert.amount) }}</span>
-            </div>
-            <div class="alert-details">
-              <div class="alert-meta">
-                <span class="meta-item">
-                  <strong>ID:</strong> {{ alert.transactionId }}
-                </span>
-                <span class="meta-item">
-                  <strong>Date:</strong> {{ formatDate(alert.date) }}
-                </span>
-              </div>
-              <p class="alert-reason">{{ alert.reason }}</p>
-            </div>
-            <div class="alert-actions">
-              <button class="btn-secondary" (click)="viewDetails(alert)">
-                Details
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- Support Tickets Section -->
     <div class="tickets-section">
       <h2 class="section-title">My Support Tickets</h2>
       <p class="section-subtitle">Track your inquiries and their status</p>
+
+      <!-- Ticket Status Filter Menu -->
+      <div class="ticket-filter-menu">
+        <button 
+          class="filter-tab" 
+          [class.active]="ticketFilter === 'all'"
+          (click)="setTicketFilter('all')">
+          <span class="filter-icon">📋</span>
+          <span class="filter-label">All Tickets</span>
+          <span class="filter-count">{{ tickets.length }}</span>
+        </button>
+        <button 
+          class="filter-tab" 
+          [class.active]="ticketFilter === 'OPEN'"
+          (click)="setTicketFilter('OPEN')">
+          <span class="filter-icon">🔵</span>
+          <span class="filter-label">Open</span>
+          <span class="filter-count">{{ getTicketsByStatus('OPEN').length }}</span>
+        </button>
+        <button 
+          class="filter-tab" 
+          [class.active]="ticketFilter === 'IN_PROGRESS'"
+          (click)="setTicketFilter('IN_PROGRESS')">
+          <span class="filter-icon">🟡</span>
+          <span class="filter-label">In Progress</span>
+          <span class="filter-count">{{ getTicketsByStatus('IN_PROGRESS').length }}</span>
+        </button>
+        <button 
+          class="filter-tab" 
+          [class.active]="ticketFilter === 'RESOLVED'"
+          (click)="setTicketFilter('RESOLVED')">
+          <span class="filter-icon">🟢</span>
+          <span class="filter-label">Resolved</span>
+          <span class="filter-count">{{ getTicketsByStatus('RESOLVED').length }}</span>
+        </button>
+        <button 
+          class="filter-tab" 
+          [class.active]="ticketFilter === 'CLOSED'"
+          (click)="setTicketFilter('CLOSED')">
+          <span class="filter-icon">⚫</span>
+          <span class="filter-label">Closed</span>
+          <span class="filter-count">{{ getTicketsByStatus('CLOSED').length }}</span>
+        </button>
+      </div>
 
       <!-- Loading State -->
       <div *ngIf="loadingTickets" class="loading-state">
@@ -129,15 +128,22 @@
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loadingTickets && tickets.length === 0" class="empty-state">
+      <div *ngIf="!loadingTickets && getFilteredTickets().length === 0 && tickets.length === 0" class="empty-state">
         <div class="empty-icon">🎫</div>
         <h3>No Support Tickets</h3>
         <p>You haven't raised any support tickets yet. Use "Contact Support" on alerts to create one.</p>
       </div>
 
+      <!-- Empty Filter State -->
+      <div *ngIf="!loadingTickets && getFilteredTickets().length === 0 && tickets.length > 0" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>No {{ ticketFilter === 'all' ? '' : ticketFilter.replace('_', ' ') }} Tickets</h3>
+        <p>No tickets found with this status. Try selecting a different filter.</p>
+      </div>
+
       <!-- Tickets List -->
-      <div *ngIf="!loadingTickets && tickets.length > 0" class="tickets-list">
-        <div *ngFor="let ticket of tickets" class="ticket-card">
+      <div *ngIf="!loadingTickets && getFilteredTickets().length > 0" class="tickets-list">
+        <div *ngFor="let ticket of getFilteredTickets()" class="ticket-card" [ngClass]="getTicketCardClass(ticket.status)">
           <div class="ticket-header">
             <div class="ticket-info">
               <h3 class="ticket-subject">{{ ticket.subject }}</h3>
@@ -165,9 +171,16 @@
                 <strong>Resolved:</strong> {{ formatDate(ticket.resolvedAt) }}
               </span>
             </div>
-            <div *ngIf="ticket.resolution" class="ticket-resolution">
-              <strong>Resolution:</strong>
-              <p>{{ ticket.resolution }}</p>
+            
+            <!-- Resolution Box for RESOLVED tickets -->
+            <div *ngIf="ticket.status === 'RESOLVED' && ticket.resolution" class="ticket-resolution-box">
+              <div class="resolution-header">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <strong>Resolution:</strong>
+              </div>
+              <p class="resolution-text">{{ ticket.resolution }}</p>
             </div>
           </div>
           <div class="ticket-actions">

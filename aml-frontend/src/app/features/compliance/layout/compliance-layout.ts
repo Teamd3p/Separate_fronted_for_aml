@@ -4,6 +4,8 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { ToastComponent } from '../../../shared/components/toast/toast.component';
 import { filter } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 
@@ -19,7 +21,7 @@ interface Notification {
 @Component({
   selector: 'app-compliance-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ToastComponent],
   templateUrl: './compliance-layout.html',
   styleUrls: ['./compliance-layout.css']
 })
@@ -46,7 +48,8 @@ export class ComplianceLayout {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastService: ToastService
   ) {
     this.loadOfficerInfo();
     this.loadNotifications();
@@ -149,22 +152,22 @@ export class ComplianceLayout {
   changePassword(): void {
     // Validation
     if (!this.passwordData.currentPassword) {
-      alert('Current password is required!');
+      this.toastService.error('Current password is required!');
       return;
     }
 
     if (!this.passwordData.newPassword) {
-      alert('New password is required!');
+      this.toastService.error('New password is required!');
       return;
     }
 
     if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
-      alert('New passwords do not match!');
+      this.toastService.error('New passwords do not match!');
       return;
     }
 
     if (this.passwordData.newPassword.length < 8) {
-      alert('Password must be at least 8 characters long!');
+      this.toastService.error('Password must be at least 8 characters long!');
       return;
     }
 
@@ -172,7 +175,7 @@ export class ComplianceLayout {
     const token = localStorage.getItem('token');
     
     if (!token) {
-      alert('Session expired. Please login again.');
+      this.toastService.error('Session expired. Please login again.');
       this.router.navigate(['/auth/login']);
       return;
     }
@@ -194,7 +197,7 @@ export class ComplianceLayout {
       .subscribe({
         next: (response: any) => {
           console.log('Password change successful:', response);
-          alert(response.message || 'Password changed successfully!');
+          this.toastService.success(response.message || 'Password changed successfully!');
           this.closeChangePasswordModal();
         },
         error: (error) => {
@@ -208,7 +211,7 @@ export class ComplianceLayout {
             errorMessage = error.error.message;
           }
           
-          alert(errorMessage);
+          this.toastService.error(errorMessage);
         }
       });
   }
