@@ -73,8 +73,14 @@ export class KycComponent implements OnInit {
       console.log('Customer ID from token:', this.currentUserId);
       this.loadKycData();
     } else {
-      console.error('Unable to get customer ID from token');
-      this.errorMessage = 'Authentication error. Please log in again.';
+      console.warn('Unable to get customer ID from token, attempting to fetch from backend');
+      // Try to fetch from backend profile
+      const email = localStorage.getItem('email');
+      if (email) {
+        this.fetchCustomerIdFromBackend(email);
+      } else {
+        this.errorMessage = 'Authentication error. Please log in again.';
+      }
     }
   }
 

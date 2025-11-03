@@ -10,30 +10,6 @@
   <button (click)="refreshDashboard()" class="refresh-btn">Try Again</button>
 </div>
 
-<!-- Welcome Section -->
-<div class="welcome-section" *ngIf="!isLoading">
-  <div class="welcome-header">
-    <div>
-      <h2 class="welcome-title">Welcome, {{ getUserDisplayName() }}!</h2>
-      <p class="welcome-subtitle" *ngIf="customerProfile">
-        Overview of your recent financial activity. Last login: {{ formatDate(customerProfile.lastLogin) }}.
-      </p>
-      <p class="welcome-subtitle" *ngIf="!customerProfile">
-        Loading your account information...
-      </p>
-    </div>
-    <button (click)="loadApiData()" class="api-test-btn" title="Refresh Data">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M20.49 9C19.9828 7.58885 19.1209 6.35872 17.9845 5.41604C16.8482 4.47337 15.4745 3.85313 14.0069 3.61947C12.5392 3.38581 11.0299 3.54842 9.63415 4.08906C8.23841 4.62971 7.00966 5.53026 6.08 6.68" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M3.51 15C4.01719 16.4111 4.87906 17.6413 6.01547 18.584C7.15189 19.5266 8.52547 20.1469 9.99307 20.3805C11.4607 20.6142 12.97 20.4516 14.3658 19.9109C15.7616 19.3703 16.9903 18.4697 17.92 17.32" stroke="currentColor" stroke-width="2" fill="none"/>
-      </svg>
-      Refresh
-    </button>
-  </div>
-</div>
-
 <!-- Stats Grid -->
 <div class="stats-grid" *ngIf="!isLoading">
   <div class="stat-card transactions-card">
@@ -127,11 +103,11 @@
       <table class="data-table">
         <thead>
           <tr class="table-header">
-            <th>Transaction ID</th>
+           
             <th>Description</th>
             <th>Receiver Account</th>
             <th>Receiver Name</th>
-            <th>Country</th>
+           
             <th>Amount</th>
             <th>Date</th>
             <th>Status</th>
@@ -139,11 +115,9 @@
         </thead>
         <tbody>
           <tr class="table-row" *ngFor="let transaction of recentTransactions; trackBy: trackByTransactionId">
-            <td class="transaction-id">#{{ transaction.id || transaction.transactionId || 'N/A' }}</td>
             <td class="transaction-description">{{ getTransactionDescription(transaction) }}</td>
             <td class="transaction-account">{{ getReceiverAccount(transaction) }}</td>
             <td class="transaction-counterparty">{{ getReceiverName(transaction) }}</td>
-            <td class="transaction-country">{{ getCountry(transaction) }}</td>
             <td class="transaction-amount" [ngClass]="{'amount-positive': isCredit(transaction), 'amount-negative': isDebit(transaction)}">
               {{ formatCurrency(transaction.amount) }}
             </td>

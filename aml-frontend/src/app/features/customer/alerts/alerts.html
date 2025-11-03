@@ -1,10 +1,6 @@
 <div class="alerts-page">
   <div class="alerts-container">
-    <!-- Page Title -->
-    <div class="page-title-section">
-      <h1 class="page-title">Your Transaction Notifications</h1>
-      <p class="page-subtitle">Your recent compliance notifications.</p>
-    </div>
+ 
 
     <!-- Statistics Cards -->
     <div class="stats-grid">
@@ -18,9 +14,10 @@
       </div>
     </div>
 
-    <!-- Recent Notifications Section -->
-    <div class="notifications-section">
-      <h2 class="section-title">Recent Notifications</h2>
+    <!-- Pending Alerts Section -->
+    <div class="notifications-section" *ngIf="activeTab === 'all' || activeTab === 'pending'">
+      <h2 class="section-title">🔴 Pending Alerts</h2>
+      <p class="section-subtitle">Alerts requiring your attention</p>
 
       <!-- Loading State -->
       <div *ngIf="loading" class="loading-state">
@@ -29,15 +26,16 @@
       </div>
 
       <!-- Empty State -->
-      <div *ngIf="!loading && filteredAlerts.length === 0" class="empty-state">
-        <div class="empty-icon">🔔</div>
-        <h3>No Alerts Found</h3>
-        <p>You don't have any {{ activeTab === 'all' ? '' : activeTab }} alerts at the moment.</p>
+      <div *ngIf="!loading && getPendingAlerts().length === 0" class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h3>No Pending Alerts</h3>
+        <p>You don't have any pending alerts at the moment.</p>
       </div>
 
-      <!-- Alert Cards -->
-      <div *ngIf="!loading && filteredAlerts.length > 0" class="alerts-list">
-        <div *ngFor="let alert of filteredAlerts" class="alert-card" [class]="getAlertIconClass(alert)">
+      <!-- Pending Alert Cards -->
+      <div *ngIf="!loading && getPendingAlerts().length > 0" class="alerts-grid">
+        <div *ngFor="let alert of getPendingAlerts()" class="alert-card alert-pending" [class]="getAlertIconClass(alert)">
+          <div class="alert-status-badge badge-pending">Pending</div>
           <div class="alert-icon">
             <span *ngIf="alert.type === 'FLAGGED'">⚠️</span>
             <span *ngIf="alert.type === 'CANCELED'">🚫</span>
@@ -46,25 +44,72 @@
           <div class="alert-content">
             <div class="alert-header">
               <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
-              <span class="alert-amount">Amount: {{ formatCurrency(alert.amount) }}</span>
+              <span class="alert-amount">{{ formatCurrency(alert.amount) }}</span>
             </div>
             <div class="alert-details">
               <div class="alert-meta">
                 <span class="meta-item">
-                  <strong>Transaction ID:</strong> {{ alert.transactionId }}
+                  <strong>ID:</strong> {{ alert.transactionId }}
                 </span>
                 <span class="meta-item">
                   <strong>Date:</strong> {{ formatDate(alert.date) }}
                 </span>
               </div>
-              <p class="alert-reason"><strong>Reason:</strong> {{ alert.reason }}</p>
+              <p class="alert-reason">{{ alert.reason }}</p>
             </div>
             <div class="alert-actions">
               <button class="btn-secondary" (click)="viewDetails(alert)">
-                View Details
+                Details
               </button>
               <button class="btn-primary" (click)="openContactModal(alert)">
-                Contact Support
+                Support
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolved Alerts Section -->
+    <div class="notifications-section resolved-section" *ngIf="activeTab === 'all' || activeTab === 'resolved'">
+      <h2 class="section-title">✅ Resolved Alerts</h2>
+      <p class="section-subtitle">Previously resolved alerts</p>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && getResolvedAlerts().length === 0" class="empty-state">
+        <div class="empty-icon">📄</div>
+        <h3>No Resolved Alerts</h3>
+        <p>You don't have any resolved alerts yet.</p>
+      </div>
+
+      <!-- Resolved Alert Cards -->
+      <div *ngIf="!loading && getResolvedAlerts().length > 0" class="alerts-grid">
+        <div *ngFor="let alert of getResolvedAlerts()" class="alert-card alert-resolved" [class]="getAlertIconClass(alert)">
+          <div class="alert-status-badge badge-resolved">Resolved</div>
+          <div class="alert-icon">
+            <span *ngIf="alert.type === 'FLAGGED'">✅</span>
+            <span *ngIf="alert.type === 'CANCELED'">✅</span>
+            <span *ngIf="alert.type === 'SUSPICIOUS'">✅</span>
+          </div>
+          <div class="alert-content">
+            <div class="alert-header">
+              <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
+              <span class="alert-amount">{{ formatCurrency(alert.amount) }}</span>
+            </div>
+            <div class="alert-details">
+              <div class="alert-meta">
+                <span class="meta-item">
+                  <strong>ID:</strong> {{ alert.transactionId }}
+                </span>
+                <span class="meta-item">
+                  <strong>Date:</strong> {{ formatDate(alert.date) }}
+                </span>
+              </div>
+              <p class="alert-reason">{{ alert.reason }}</p>
+            </div>
+            <div class="alert-actions">
+              <button class="btn-secondary" (click)="viewDetails(alert)">
+                Details
               </button>
             </div>
           </div>
@@ -169,11 +214,11 @@
         <span class="detail-value severity-badge" [class]="selectedAlert.severity.toLowerCase()">{{ selectedAlert.severity }}</span>
       </div>
       <div class="detail-row full-width">
-        <span class="detail-label">Reason:</span>
+        <span class="detail-label">Description:</span>
         <p class="detail-description">{{ selectedAlert.reason }}</p>
       </div>
       <div class="detail-row full-width" *ngIf="selectedAlert.description">
-        <span class="detail-label">Additional Details:</span>
+        <span class="detail-label">Details:</span>
         <p class="detail-description">{{ selectedAlert.description }}</p>
       </div>
     </div>

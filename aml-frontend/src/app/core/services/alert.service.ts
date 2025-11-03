@@ -59,6 +59,11 @@ export class AlertService {
         
         // Return sample data for testing when no real alerts exist
         return of(this.getSampleAlerts());
+      }),
+      catchError((error) => {
+        console.error('Error fetching customer alerts:', error);
+        // Return sample data on error to prevent UI from breaking
+        return of(this.getSampleAlerts());
       })
     );
   }
@@ -240,19 +245,35 @@ Please review the alert and provide explanation to the customer about why this t
   private mapToAlert(data: any): AlertNotification {
     // Use the fetched transaction amount or fallback to demo amount
     const amount = data.transactionAmount || data.amount || 0;
+    
+    // Clean up rule triggered text - remove duplicate descriptions
+    const ruleText = data.ruleTriggered || data.reason || 'Flagged for review';
+    const cleanReason = this.cleanRuleDescription(ruleText);
 
     return {
       id: data.alertId || data.id,
       transactionId: data.transactionId || 'N/A',
       amount: amount,
       date: data.createdAt || data.timestamp,
-      reason: data.ruleTriggered || data.reason || 'Flagged for review',
+      reason: cleanReason,
       status: data.status || 'PENDING',
       type: this.determineTypeFromStatus(data.status),
       severity: this.determineSeverityFromRiskScore(data.riskScore),
-      description: data.ruleTriggered || data.description || '',
+      description: data.description || '',
       createdAt: data.createdAt
     };
+  }
+  
+  // Clean up rule description to remove duplicates and format nicely
+  private cleanRuleDescription(text: string): string {
+    if (!text) return 'Flagged for review';
+    
+    // Split by comma and remove duplicates
+    const parts = text.split(',').map(p => p.trim());
+    const uniqueParts = [...new Set(parts)];
+    
+    // Join with proper formatting
+    return uniqueParts.join(', ');
   }
 
   // Generate demo amounts for testing when real amounts not available

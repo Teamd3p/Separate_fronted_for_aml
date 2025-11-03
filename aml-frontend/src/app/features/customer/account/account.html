@@ -77,16 +77,10 @@
               class="form-input">
           </div>
 
-          <div class="form-group">
-            <label for="nickname">Account Nickname (Optional)</label>
-            <input 
-              type="text" 
-              id="nickname" 
-              [(ngModel)]="createForm.nickname" 
-              name="nickname" 
-              placeholder="e.g., My Business Account"
-              class="form-input">
-          </div>
+        
+
+
+
         </div>
 
         <div class="form-actions">
@@ -117,6 +111,29 @@
     <div>
       <h2 class="page-title">My Accounts</h2>
       <p class="page-subtitle">View and manage all your accounts.</p>
+    </div>
+    <div class="view-toggle">
+      <button 
+        class="view-btn" 
+        [class.active]="viewMode === 'grid'"
+        (click)="viewMode = 'grid'"
+        title="Grid View">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
+          <rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
+          <rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
+          <rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+      <button 
+        class="view-btn" 
+        [class.active]="viewMode === 'table'"
+        (click)="viewMode = 'table'"
+        title="Table View">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -163,13 +180,45 @@
     </div>
   </div>
 
+  <!-- Accounts Grid View -->
+  <div *ngIf="viewMode === 'grid'" class="accounts-grid">
+    <div *ngFor="let account of accounts" class="account-card" (click)="selectAccount(account)">
+      <div class="account-card-header">
+        <div class="account-card-icon" [style.background]="'linear-gradient(135deg, ' + (account.currency === 'INR' ? '#4F46E5' : account.currency === 'USD' ? '#10B981' : account.currency === 'EUR' ? '#F59E0B' : account.currency === 'GBP' ? '#EF4444' : '#8B5CF6') + ' 0%, ' + (account.currency === 'INR' ? '#7C3AED' : account.currency === 'USD' ? '#059669' : account.currency === 'EUR' ? '#D97706' : account.currency === 'GBP' ? '#DC2626' : '#6D28D9') + ' 100%)'">
+          <span class="currency-symbol">{{ getCurrencySymbol(account.currency) }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(account.status)">
+          {{ account.status || 'Active' }}
+        </span>
+      </div>
+      
+      <div class="account-card-body">
+        <div class="account-type-label">{{ account.accountType }}</div>
+        <div class="account-balance">
+          <span class="balance-amount">{{ formatCurrency(account.balance, account.currency) }}</span>
+        </div>
+        <div class="account-number-display">{{ account.accountNumber }}</div>
+      </div>
+      
+      <div class="account-card-footer">
+        <div class="account-meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span>Opened {{ formatDate(account.openDate) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Accounts Table -->
-  <div class="accounts-table-section">
+  <div *ngIf="viewMode === 'table'" class="accounts-table-section">
     <div class="accounts-table-container">
       <table class="accounts-table">
         <thead>
           <tr>
-            <th>Account ID</th>
+            
             <th>Account Number</th>
             <th>Type</th>
             <th>Currency</th>
@@ -181,7 +230,6 @@
         </thead>
         <tbody>
           <tr *ngFor="let account of accounts" class="account-row">
-            <td class="account-id">{{ account.id || 'ACC' + (accounts.indexOf(account) + 1).toString().padStart(3, '0') }}</td>
             <td class="account-number">{{ account.accountNumber }}</td>
             <td class="account-type">{{ account.accountType }}</td>
             <td class="currency">{{ account.currency }}</td>

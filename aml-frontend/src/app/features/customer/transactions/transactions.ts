@@ -15,6 +15,9 @@ import { Transaction, Account } from '../../../core/models/dashboard.models';
   styleUrl: './transactions.css',
 })
 export class Transactions implements OnInit {
+  // Make Math available in template
+  Math = Math;
+  
   // Transaction form
   transactionForm = {
     senderAccountNumber: '',
@@ -40,6 +43,12 @@ export class Transactions implements OnInit {
   selectedStatus: string = 'All';
   selectedDateFilter: string = 'Date (Newest)';
   selectedTransactionType: string = 'All';
+  
+  // Pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  totalPages: number = 1;
+  paginatedTransactions: Transaction[] = [];
   
   // Form tabs
   activeFormTab: string = 'transfer';
@@ -269,6 +278,54 @@ export class Transactions implements OnInit {
     }
 
     this.filteredTransactions = filtered;
+    this.updatePagination();
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredTransactions.length / this.itemsPerPage);
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = 1;
+    }
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedTransactions = this.filteredTransactions.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   clearFilters(): void {
@@ -276,6 +333,7 @@ export class Transactions implements OnInit {
     this.selectedStatus = 'All';
     this.selectedDateFilter = 'Date (Newest)';
     this.selectedTransactionType = 'All';
+    this.currentPage = 1;
     this.applyFilters();
   }
 

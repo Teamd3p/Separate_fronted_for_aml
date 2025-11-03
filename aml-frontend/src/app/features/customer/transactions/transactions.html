@@ -6,11 +6,7 @@
 
 <!-- Main Content -->
 <div *ngIf="!isLoading" class="transactions-container">
-  <!-- Page Header -->
-  <div class="page-header">
-    <h2 class="page-title">Transactions</h2>
-  </div>
-
+ 
   <!-- Success Message -->
   <div *ngIf="successMessage" class="success-message">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -321,7 +317,7 @@
       <table class="transactions-table">
         <thead>
           <tr>
-            <th>Transaction ID</th>
+            
             <th>Sender Account</th>
             <th>Counterparty</th>
             <th>Amount</th>
@@ -332,13 +328,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let transaction of filteredTransactions; let i = index" class="transaction-row">
-            <td>
-              <span class="transaction-id">#{{ transaction.transactionId || transaction.id }}</span>
-            </td>
+          <tr *ngFor="let transaction of paginatedTransactions; let i = index" class="transaction-row">
+            
             <td>
               <div class="sender-info">
+                <div class="sender-name">{{ transaction.customerName || 'N/A' }}</div>
                 <div class="sender-account">{{ transaction.senderAccountNumber || 'N/A' }}</div>
+
               </div>
             </td>
             <td>
@@ -378,6 +374,42 @@
           <path d="M12 2V22M17 5H9.5C7.01472 5 5 7.01472 5 9.5C5 11.9853 7.01472 14 9.5 14H14.5C16.9853 14 19 16.0147 19 18.5C19 20.9853 16.9853 23 14.5 23H6" stroke="#9CA3AF" stroke-width="2"/>
         </svg>
         <p>No transactions found matching your filters</p>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div *ngIf="filteredTransactions.length > 0" class="pagination-container">
+        <div class="pagination-info">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredTransactions.length) }} of {{ filteredTransactions.length }} transactions
+        </div>
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            (click)="previousPage()" 
+            [disabled]="currentPage === 1"
+            title="Previous Page">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          
+          <button 
+            *ngFor="let page of getPageNumbers()" 
+            class="pagination-btn page-number" 
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+          
+          <button 
+            class="pagination-btn" 
+            (click)="nextPage()" 
+            [disabled]="currentPage === totalPages"
+            title="Next Page">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>

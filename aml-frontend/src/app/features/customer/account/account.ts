@@ -18,6 +18,9 @@ export class Account implements OnInit {
   errorMessage: string = '';
   selectedAccount: AccountModel | null = null;
   
+  // View mode
+  viewMode: 'grid' | 'table' = 'grid';
+  
   // Account creation form
   showCreateForm: boolean = false;
   isCreating: boolean = false;
@@ -86,11 +89,26 @@ export class Account implements OnInit {
     this.selectedAccount = null;
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number, currency: string = 'USD'): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(amount);
+  }
+
+  getCurrencySymbol(currency: string): string {
+    const symbols: { [key: string]: string } = {
+      'INR': '₹',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'AUD': 'A$',
+      'CAD': 'C$',
+      'CHF': 'CHF',
+      'CNY': '¥'
+    };
+    return symbols[currency] || currency;
   }
 
   formatDate(dateString: string): string {
@@ -113,6 +131,10 @@ export class Account implements OnInit {
 
   getActiveAccountsCount(): number {
     return this.accounts.filter(acc => acc.status === 'ACTIVE').length;
+  }
+
+  toggleViewMode(): void {
+    this.viewMode = this.viewMode === 'grid' ? 'table' : 'grid';
   }
 
   // Account creation methods

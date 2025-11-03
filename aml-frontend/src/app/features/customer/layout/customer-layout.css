@@ -7,7 +7,7 @@
 
 /* Sidebar Styles */
 .customer-sidebar {
-  width: 220px;
+  width: 260px;
   background: white;
   border-right: 1px solid #e2e8f0;
   display: flex;
@@ -153,10 +153,15 @@
 
 /* Main Content Area */
 .main-content {
-  margin-left: 220px;
-  width: calc(100% - 220px);
+  margin-left: 260px;
+  width: calc(100% - 260px);
   min-height: 100vh;
   background-color: #f8fafc;
+}
+
+/* Content Wrapper with Padding */
+.content-wrapper {
+  padding: 0 2rem 2rem 2rem;
 }
 
 /* Top Bar Styles */
@@ -164,12 +169,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 1.25rem 2rem;
   background: white;
   border-bottom: 1px solid #e2e8f0;
   position: sticky;
   top: 0;
   z-index: 100;
+  margin-bottom: 1.5rem;
 }
 
 .top-bar-left {

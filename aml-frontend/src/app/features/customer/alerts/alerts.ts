@@ -252,6 +252,20 @@ export class Alerts implements OnInit {
     });
   }
 
+  // Get pending alerts
+  getPendingAlerts(): AlertNotification[] {
+    return this.filteredAlerts.filter(alert => 
+      alert.status === 'PENDING' || alert.status === 'FLAGGED' || alert.status === 'OPEN' || alert.status === 'NEW'
+    );
+  }
+
+  // Get resolved alerts
+  getResolvedAlerts(): AlertNotification[] {
+    return this.filteredAlerts.filter(alert => 
+      alert.status === 'RESOLVED' || alert.status === 'CLOSED' || alert.status === 'COMPLETED'
+    );
+  }
+
   // Navigation
   navigateTo(route: string): void {
     this.router.navigate([route]);
