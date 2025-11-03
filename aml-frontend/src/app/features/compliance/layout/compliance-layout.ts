@@ -2,8 +2,10 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { filter } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 
 interface Notification {
   id: number;
@@ -39,9 +41,12 @@ export class ComplianceLayout {
     confirmPassword: ''
   };
 
+  private apiUrl = environment.apiUrl;
+
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {
     this.loadOfficerInfo();
     this.loadNotifications();
@@ -142,15 +147,70 @@ export class ComplianceLayout {
   }
 
   changePassword(): void {
-    if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
-      alert('Passwords do not match');
+    // Validation
+    if (!this.passwordData.currentPassword) {
+      alert('Current password is required!');
       return;
     }
+
+    if (!this.passwordData.newPassword) {
+      alert('New password is required!');
+      return;
+    }
+
+    if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
+      alert('New passwords do not match!');
+      return;
+    }
+
+    if (this.passwordData.newPassword.length < 8) {
+      alert('Password must be at least 8 characters long!');
+      return;
+    }
+
+    // API call to change password
+    const token = localStorage.getItem('token');
     
-    // Call API to change password
+    if (!token) {
+      alert('Session expired. Please login again.');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    const payload = {
+      currentPassword: this.passwordData.currentPassword,
+      newPassword: this.passwordData.newPassword,
+      confirmPassword: this.passwordData.confirmPassword
+    };
+
     console.log('Changing password...');
-    this.closeChangePasswordModal();
-    alert('Password changed successfully');
+    
+    this.http.post(`${this.apiUrl}/auth/change-password`, payload, { headers })
+      .subscribe({
+        next: (response: any) => {
+          console.log('Password change successful:', response);
+          alert(response.message || 'Password changed successfully!');
+          this.closeChangePasswordModal();
+        },
+        error: (error) => {
+          console.error('Password change error:', error);
+          
+          let errorMessage = 'Failed to change password.';
+          
+          if (error.status === 401) {
+            errorMessage = 'Current password is incorrect.';
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          
+          alert(errorMessage);
+        }
+      });
   }
 
   logout(): void {

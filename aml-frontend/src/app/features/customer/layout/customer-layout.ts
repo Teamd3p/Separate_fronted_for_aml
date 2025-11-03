@@ -236,37 +236,15 @@ export class CustomerLayout implements OnInit {
       'Content-Type': 'application/json'
     });
 
-    const email = localStorage.getItem('email');
-    const userId = localStorage.getItem('userId');
-    const role = localStorage.getItem('role');
-    
-    if (!email) {
-      this.toastService.error('User email not found. Please login again.');
-      this.router.navigate(['/auth/login']);
-      return;
-    }
-    
-    // Build payload - email is the primary identifier
-    const payload: any = {
-      email: email,
-      oldPassword: this.passwordData.currentPassword,
+    // Backend uses JWT token to identify user, so we don't need to send email/userId
+    // Just send the password fields
+    const payload = {
       currentPassword: this.passwordData.currentPassword,
       newPassword: this.passwordData.newPassword,
       confirmPassword: this.passwordData.confirmPassword
     };
-    
-    // Add userId if available
-    if (userId && userId !== 'null') {
-      payload.userId = parseInt(userId);
-      payload.id = parseInt(userId);
-    }
-    
-    // Add role to help backend route to correct user table
-    if (role && role !== 'null') {
-      payload.role = role;
-    }
 
-    console.log('Changing password for customer:', email, 'userId:', userId, 'role:', role);
+    console.log('Changing password...');
     
     this.http.post(`${this.apiUrl}/auth/change-password`, payload, { headers })
       .subscribe({
