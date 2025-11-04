@@ -51,6 +51,11 @@ export class Transactions implements OnInit {
   totalPages: number = 1;
   paginatedTransactions: Transaction[] = [];
   
+  // Download modal
+  showDownloadModal: boolean = false;
+  downloadStartDate: string = '';
+  downloadEndDate: string = '';
+  
   // Form tabs
   activeFormTab: string = 'transfer';
   
@@ -312,17 +317,434 @@ export class Transactions implements OnInit {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxPagesToShow = 5;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
     
-    if (endPage - startPage < maxPagesToShow - 1) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (this.currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      } else if (this.currentPage >= this.totalPages - 2) {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.totalPages - 3; i <= this.totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1); // Ellipsis
+        for (let i = this.currentPage - 1; i <= this.currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(-1); // Ellipsis
+        pages.push(this.totalPages);
+      }
     }
     
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
     return pages;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  toggleDateSort(): void {
+    this.selectedDateFilter = this.selectedDateFilter === 'Date (Newest)' ? 'Date (Oldest)' : 'Date (Newest)';
+    this.applyFilters();
+  }
+
+  openDownloadModal(): void {
+    this.showDownloadModal = true;
+    this.downloadStartDate = '';
+    this.downloadEndDate = '';
+  }
+
+  closeDownloadModal(): void {
+    this.showDownloadModal = false;
+    this.downloadStartDate = '';
+    this.downloadEndDate = '';
+  }
+
+  getDownloadCount(): number {
+    if (!this.downloadStartDate && !this.downloadEndDate) {
+      return this.filteredTransactions.length;
+    }
+    
+    return this.getFilteredTransactionsByDate().length;
+  }
+
+  getFilteredTransactionsByDate(): Transaction[] {
+    if (!this.downloadStartDate && !this.downloadEndDate) {
+      return this.filteredTransactions;
+    }
+    
+    return this.filteredTransactions.filter(t => {
+      const transactionDate = new Date(t.timestamp || t.date || '');
+      const startDate = this.downloadStartDate ? new Date(this.downloadStartDate) : null;
+      const endDate = this.downloadEndDate ? new Date(this.downloadEndDate) : null;
+      
+      if (startDate && transactionDate < startDate) return false;
+      if (endDate && transactionDate > endDate) return false;
+      
+      return true;
+    });
+  }
+
+  downloadTransactionsPDF(): void {
+    const transactionsToDownload = this.getFilteredTransactionsByDate();
+    
+    if (transactionsToDownload.length === 0) {
+      this.toastService.error('No transactions to download');
+      return;
+    }
+    
+    try {
+      // Generate HTML content for PDF
+      const htmlContent = this.generateTransactionHTML(transactionsToDownload);
+      
+      // Create a temporary container
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        
+        // Wait for content to load then print
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+      
+      this.toastService.success(`${transactionsToDownload.length} transaction(s) ready to download`);
+      this.closeDownloadModal();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      this.toastService.error('Failed to generate PDF');
+    }
+  }
+
+  generateTransactionHTML(transactions: Transaction[]): string {
+    const dateRange = this.downloadStartDate && this.downloadEndDate 
+      ? `${this.downloadStartDate} to ${this.downloadEndDate}`
+      : 'All Transactions';
+    
+    const currentDate = new Date().toLocaleString();
+    const totalAmount = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Transaction Statement</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: 'Arial', sans-serif;
+            padding: 30px;
+            color: #333;
+            background: white;
+          }
+          
+          .statement-header {
+            border-bottom: 4px solid #007AFF;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          
+          .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007AFF;
+            margin-bottom: 5px;
+          }
+          
+          .statement-title {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+          }
+          
+          .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+          }
+          
+          .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+          }
+          
+          .info-label {
+            font-weight: 600;
+            color: #666;
+          }
+          
+          .info-value {
+            color: #333;
+            font-weight: 500;
+          }
+          
+          .summary-box {
+            background: #e3f2fd;
+            border-left: 4px solid #007AFF;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+          }
+          
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+          }
+          
+          .summary-label {
+            font-weight: 600;
+            color: #1565c0;
+          }
+          
+          .summary-value {
+            font-weight: bold;
+            color: #0d47a1;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          
+          thead {
+            background: #007AFF;
+            color: white;
+          }
+          
+          th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+          }
+          
+          tbody tr:nth-child(even) {
+            background: #f8f9fa;
+          }
+          
+          tbody tr:hover {
+            background: #e3f2fd;
+          }
+          
+          td {
+            padding: 12px 10px;
+            font-size: 13px;
+            color: #333;
+          }
+          
+          .amount-credit {
+            color: #2e7d32;
+            font-weight: 600;
+          }
+          
+          .amount-debit {
+            color: #c62828;
+            font-weight: 600;
+          }
+          
+          .status-completed {
+            background: #c8e6c9;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          
+          .status-pending {
+            background: #fff9c4;
+            color: #f57f17;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          
+          .status-failed {
+            background: #ffcdd2;
+            color: #c62828;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+          }
+          
+          .footer p {
+            margin: 5px 0;
+          }
+          
+          .disclaimer {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            font-size: 11px;
+            color: #856404;
+          }
+          
+          @media print {
+            body {
+              padding: 15px;
+            }
+            
+            table {
+              page-break-inside: auto;
+            }
+            
+            tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
+            
+            thead {
+              display: table-header-group;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <!-- Header -->
+        <div class="statement-header">
+          <div class="company-name">AML FINANCIAL SERVICES</div>
+          <div class="statement-title">Transaction Statement</div>
+        </div>
+        
+        <!-- Info Section -->
+        <div class="info-section">
+          <div>
+            <div class="info-item">
+              <span class="info-label">Statement Date:</span>
+              <span class="info-value">${currentDate}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Period:</span>
+              <span class="info-value">${dateRange}</span>
+            </div>
+          </div>
+          <div>
+            <div class="info-item">
+              <span class="info-label">Total Transactions:</span>
+              <span class="info-value">${transactions.length}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Document ID:</span>
+              <span class="info-value">STMT-${Date.now()}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Summary Box -->
+        <div class="summary-box">
+          <div class="summary-row">
+            <span class="summary-label">Total Transaction Volume:</span>
+            <span class="summary-value">${this.formatCurrency(totalAmount, transactions[0]?.currency || 'USD')}</span>
+          </div>
+        </div>
+        
+        <!-- Transaction Table -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 8%;">Date</th>
+              <th style="width: 10%;">Transaction ID</th>
+              <th style="width: 15%;">From Account</th>
+              <th style="width: 15%;">To Account</th>
+              <th style="width: 15%;">Receiver</th>
+              <th style="width: 12%;">Amount</th>
+              <th style="width: 10%;">Type</th>
+              <th style="width: 10%;">Status</th>
+              <th style="width: 5%;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
+    transactions.forEach((transaction) => {
+      const transactionType = this.getTransactionTypeFromData(transaction);
+      const amountClass = transactionType === 'credit' ? 'amount-credit' : 'amount-debit';
+      const statusClass = transaction.status === 'COMPLETED' ? 'status-completed' 
+                        : transaction.status === 'PENDING' ? 'status-pending' 
+                        : 'status-failed';
+      
+      html += `
+            <tr>
+              <td>${this.formatDate(transaction.timestamp || transaction.date || '')}</td>
+              <td><strong>${transaction.transactionId || transaction.id || 'N/A'}</strong></td>
+              <td>${transaction.senderAccountNumber || 'N/A'}</td>
+              <td>${transaction.receiverAccountNumber || 'N/A'}</td>
+              <td>${this.getReceiverName(transaction)}</td>
+              <td class="${amountClass}">${this.formatCurrency(transaction.amount, transaction.currency)}</td>
+              <td>${transaction.transactionType || transaction.type || 'N/A'}</td>
+              <td><span class="${statusClass}">${this.getStatusLabel(transaction.status)}</span></td>
+              <td>${transaction.description || '-'}</td>
+            </tr>
+      `;
+    });
+    
+    html += `
+          </tbody>
+        </table>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <p><strong>AML Financial Services</strong></p>
+          <p>This is a computer-generated statement and does not require a signature.</p>
+          <p>Generated on: ${currentDate}</p>
+        </div>
+        
+        <div class="disclaimer">
+          <strong>Important Notice:</strong> This statement is confidential and intended solely for the addressee. 
+          If you have received this in error, please notify us immediately. Please verify all transactions and 
+          report any discrepancies within 30 days.
+        </div>
+      </body>
+      </html>
+    `;
+    
+    return html;
   }
 
   clearFilters(): void {

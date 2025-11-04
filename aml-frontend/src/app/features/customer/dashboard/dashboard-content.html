@@ -119,7 +119,7 @@
             <td class="transaction-account">{{ getReceiverAccount(transaction) }}</td>
             <td class="transaction-counterparty">{{ getReceiverName(transaction) }}</td>
             <td class="transaction-amount" [ngClass]="{'amount-positive': isCredit(transaction), 'amount-negative': isDebit(transaction)}">
-              {{ formatCurrency(transaction.amount) }}
+              {{ formatCurrency(transaction.amount, transaction.currency) }}
             </td>
             <td class="transaction-date">{{ formatDate(getTransactionDate(transaction)) }}</td>
             <td class="transaction-status">
@@ -167,7 +167,7 @@
         </div>
         <div class="modal-info-item">
           <span class="modal-info-label">Amount</span>
-          <span class="modal-info-value amount-highlight">{{ formatCurrency(selectedTransaction.amount) }}</span>
+          <span class="modal-info-value amount-highlight">{{ formatCurrency(selectedTransaction.amount, selectedTransaction.currency) }}</span>
         </div>
         <div class="modal-info-item">
           <span class="modal-info-label">Sender Account Number</span>

@@ -313,13 +313,6 @@ export class KycReview implements OnInit {
     this.closeActionModal();
   }
 
-  markForManualReview(doc: KycDocument): void {
-    this.updateDocumentStatus(doc, KycStatus.MANUAL_REVIEW, 'Marked for manual review');
-  }
-
-  markAsExpired(doc: KycDocument): void {
-    this.updateDocumentStatus(doc, KycStatus.EXPIRED, 'Document marked as expired');
-  }
 
   updateDocumentStatus(doc: KycDocument, status: KycStatus, notes: string): void {
     const request: KycDocumentVerificationRequest = {
@@ -431,7 +424,6 @@ export class KycReview implements OnInit {
     return this.kycService.getStatusClass(status);
   }
 
-
   getDocumentTypeDisplay(type: DocumentType): string {
     return this.kycService.getDocumentTypeDisplay(type);
   }
@@ -443,13 +435,9 @@ export class KycReview implements OnInit {
   canPerformAction(doc: KycDocument, action: string): boolean {
     switch (action) {
       case 'verify':
-        return doc.status === KycStatus.PENDING || doc.status === KycStatus.MANUAL_REVIEW;
-      case 'reject':
-        return doc.status === KycStatus.PENDING || doc.status === KycStatus.MANUAL_REVIEW;
-      case 'manual_review':
         return doc.status === KycStatus.PENDING;
-      case 'expire':
-        return doc.status !== KycStatus.EXPIRED;
+      case 'reject':
+        return doc.status === KycStatus.PENDING;
       default:
         return false;
     }

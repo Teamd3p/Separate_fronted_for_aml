@@ -32,6 +32,8 @@ export class Alerts implements OnInit {
   // Filter states
   activeTab: 'all' | 'pending' | 'resolved' = 'all';
   searchTerm: string = '';
+  viewMode: 'grid' | 'list' = 'grid';
+  ticketViewMode: 'grid' | 'list' = 'grid';
   
   // Modal states
   showDetailsModal: boolean = false;

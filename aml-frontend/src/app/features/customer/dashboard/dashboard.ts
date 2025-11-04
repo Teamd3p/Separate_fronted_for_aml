@@ -136,10 +136,13 @@ export class Dashboard implements OnInit {
     this.router.navigate(['/auth/login']);
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+  formatCurrency(amount: number, currency: string = 'USD'): string {
+    const currencyCode = currency || 'USD';
+    const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
+    
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'USD'
+      currency: currencyCode
     }).format(amount);
   }
 

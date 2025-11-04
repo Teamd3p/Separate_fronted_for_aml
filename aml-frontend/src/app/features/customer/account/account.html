@@ -147,7 +147,8 @@
       </div>
       <div class="summary-content">
         <span class="summary-label">Total Balance</span>
-        <span class="summary-value">{{ formatCurrency(getTotalBalance()) }}</span>
+        <span class="summary-value" *ngIf="accounts.length > 0">{{ formatCurrency(getTotalBalance(), accounts[0]?.currency) }}</span>
+        <span class="summary-value" *ngIf="accounts.length === 0">$0.00</span>
       </div>
     </div>
 
@@ -233,7 +234,7 @@
             <td class="account-number">{{ account.accountNumber }}</td>
             <td class="account-type">{{ account.accountType }}</td>
             <td class="currency">{{ account.currency }}</td>
-            <td class="balance">{{ formatCurrency(account.balance) }}</td>
+            <td class="balance">{{ formatCurrency(account.balance, account.currency) }}</td>
             <td>
               <span class="status-badge" [ngClass]="getStatusClass(account.status)">
                 {{ account.status || 'Active' }}
@@ -287,7 +288,7 @@
       </div>
       <div class="detail-row">
         <span class="detail-label">Balance</span>
-        <span class="detail-value balance-large">{{ formatCurrency(selectedAccount.balance) }}</span>
+        <span class="detail-value balance-large">{{ formatCurrency(selectedAccount.balance, selectedAccount.currency) }}</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">Currency</span>

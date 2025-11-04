@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterOutlet, RouterModule, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
+import { CustomerProfileService } from '../../../core/services/customer-profile.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { filter } from 'rxjs/operators';
 import { ToastComponent } from '../../../shared/components/toast/toast.component';
@@ -43,10 +45,13 @@ export class CustomerLayout implements OnInit {
 
   private apiUrl = environment.apiUrl;
 
+  displayName: string = 'Customer';
+
   constructor(
     private router: Router,
     private toastService: ToastService,
-    private http: HttpClient
+    private http: HttpClient,
+    private profileService: CustomerProfileService
   ) {}
 
   ngOnInit(): void {
@@ -59,8 +64,41 @@ export class CustomerLayout implements OnInit {
     
     this.currentRoute = this.router.url;
     
+    // Load user profile name
+    this.loadUserName();
+    
     // Load notifications from system data
     this.loadNotifications();
+  }
+
+  loadUserName(): void {
+    // First check localStorage
+    const firstName = localStorage.getItem('firstName');
+    const lastName = localStorage.getItem('lastName');
+    if (firstName && lastName) {
+      this.displayName = `${firstName} ${lastName}`;
+      return;
+    }
+
+    // If not in localStorage, fetch from profile API
+    this.profileService.getProfile().subscribe({
+      next: (profile) => {
+        if (profile.firstName && profile.lastName) {
+          this.displayName = `${profile.firstName} ${profile.lastName}`;
+          // Store in localStorage for future use
+          localStorage.setItem('firstName', profile.firstName);
+          localStorage.setItem('lastName', profile.lastName);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading profile name:', error);
+        // Fallback to email if profile fetch fails
+        const email = localStorage.getItem('email');
+        if (email) {
+          this.displayName = email.split('@')[0];
+        }
+      }
+    });
   }
 
   loadNotifications(): void {
@@ -152,16 +190,7 @@ export class CustomerLayout implements OnInit {
   }
 
   getUserName(): string {
-    const firstName = localStorage.getItem('firstName');
-    const lastName = localStorage.getItem('lastName');
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    const email = localStorage.getItem('email');
-    if (email) {
-      return email.split('@')[0];
-    }
-    return 'Customer';
+    return this.displayName;
   }
 
   toggleNotifications(): void {
