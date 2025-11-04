@@ -76,7 +76,7 @@ export class Reports implements OnInit {
     private router: Router,
     private http: HttpClient,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadReportData();
@@ -97,40 +97,13 @@ export class Reports implements OnInit {
           this.loading = false;
         },
         error: () => {
-          // Fallback: Generate from existing data
-          this.generateFallbackData(headers);
+
         }
       });
 
     // Load chart data
     this.loadChartData(headers);
-    this.loadTrendData(headers);
     this.loadTopRiskCustomers(headers);
-  }
-
-  private generateFallbackData(headers: HttpHeaders): void {
-    // Generate stats from alerts and transactions
-    this.http.get<any[]>(`${this.apiUrl}/compliance/alerts`, { headers })
-      .subscribe({
-        next: (alerts) => {
-          this.stats.totalAlerts = alerts.length;
-          this.stats.pendingAlerts = alerts.filter(a => a.status === 'PENDING' || a.status === 'NEW').length;
-          this.stats.resolvedAlerts = alerts.filter(a => a.status === 'RESOLVED' || a.status === 'CLOSED').length;
-          this.stats.totalSARs = alerts.filter(a => a.sarGenerated).length;
-          this.stats.submittedSARs = alerts.filter(a => a.sarStatus === 'SUBMITTED').length;
-          this.stats.draftedSARs = alerts.filter(a => a.sarStatus === 'DRAFTED').length;
-          
-          // Calculate flagged transactions
-          this.stats.flaggedTransactions = alerts.filter(a => a.transactionId).length;
-          this.stats.totalTransactions = this.stats.flaggedTransactions * 10; // Estimate
-          
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-          this.toastService.error('Failed to load report data');
-        }
-      });
   }
 
   private loadChartData(headers: HttpHeaders): void {
@@ -141,11 +114,7 @@ export class Reports implements OnInit {
           this.alertsByType = data;
         },
         error: () => {
-          // Fallback data with realistic alert types
-          this.alertsByType = {
-            labels: ['High Value Transaction', 'Suspicious Pattern', 'Rapid Movement', 'Cross Border', 'Structuring', 'PEP Related', 'Geographic Risk'],
-            values: [3, 2, 2, 1, 1, 1, 1]
-          };
+         
         }
       });
 
@@ -165,18 +134,6 @@ export class Reports implements OnInit {
       });
   }
 
-  private loadTrendData(headers: HttpHeaders): void {
-    this.http.get<TrendData[]>(`${this.apiUrl}/admin/reports/trends?period=${this.selectedPeriod}`, { headers })
-      .subscribe({
-        next: (data) => {
-          this.trendData = data;
-        },
-        error: () => {
-          // Fallback trend data
-          this.trendData = this.generateFallbackTrends();
-        }
-      });
-  }
 
   private loadTopRiskCustomers(headers: HttpHeaders): void {
     this.http.get<TopRiskCustomer[]>(`${this.apiUrl}/admin/reports/top-risk-customers`, { headers })
@@ -195,15 +152,6 @@ export class Reports implements OnInit {
       });
   }
 
-  private generateFallbackTrends(): TrendData[] {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      alerts: Math.floor(Math.random() * 50) + 20,
-      sars: Math.floor(Math.random() * 20) + 5,
-      transactions: Math.floor(Math.random() * 1000) + 500
-    }));
-  }
 
   onPeriodChange(): void {
     this.loadReportData();
@@ -224,7 +172,7 @@ export class Reports implements OnInit {
     // Determine file extension
     const fileExtension = format === 'excel' ? 'xlsx' : format;
 
-    this.http.get(`${this.apiUrl}/admin/reports/export?format=${format}&period=${this.selectedPeriod}`, 
+    this.http.get(`${this.apiUrl}/admin/reports/export?format=${format}&period=${this.selectedPeriod}`,
       { headers, responseType: 'blob' })
       .subscribe({
         next: (blob) => {
@@ -254,11 +202,11 @@ export class Reports implements OnInit {
         }
       });
   }
-  
+
   private generateClientSideReport(format: string): void {
     // Client-side report generation fallback
     this.toastService.info(`Generating ${format.toUpperCase()} report (client-side)...`);
-    
+
     if (format === 'pdf') {
       // Generate HTML-based report that can be printed as PDF
       this.generateHTMLReport();
@@ -278,7 +226,7 @@ export class Reports implements OnInit {
       this.toastService.success('Report downloaded as text file');
     }
   }
-  
+
   private generateHTMLReport(): void {
     const reportHTML = this.generateReportHTML();
     const printWindow = window.open('', '_blank');
@@ -294,7 +242,7 @@ export class Reports implements OnInit {
       this.toastService.error('Please allow popups to generate PDF report');
     }
   }
-  
+
   private generateCSVReport(): void {
     const csvContent = this.generateCSVContent();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -306,7 +254,7 @@ export class Reports implements OnInit {
     window.URL.revokeObjectURL(url);
     this.toastService.success('CSV report downloaded successfully!');
   }
-  
+
   private generateReportHTML(): string {
     const date = new Date().toLocaleDateString();
     return `
@@ -400,12 +348,12 @@ export class Reports implements OnInit {
 </html>
     `.trim();
   }
-  
+
   private generateCSVContent(): string {
     let csv = 'AML COMPLIANCE REPORT\n';
     csv += `Generated: ${new Date().toLocaleDateString()}\n`;
     csv += `Period: ${this.selectedPeriod}\n\n`;
-    
+
     csv += 'KEY STATISTICS\n';
     csv += 'Metric,Value\n';
     csv += `Total Transactions,${this.stats.totalTransactions}\n`;
@@ -418,30 +366,30 @@ export class Reports implements OnInit {
     csv += `Drafted SARs,${this.stats.draftedSARs}\n`;
     csv += `High Risk Customers,${this.stats.highRiskCustomers}\n`;
     csv += `Average Risk Score,${this.stats.averageRiskScore}\n\n`;
-    
+
     csv += 'TOP RISK CUSTOMERS\n';
     csv += 'Rank,Customer Name,Risk Score,Alert Count,Last Activity\n';
     this.topRiskCustomers.forEach((c, i) => {
       csv += `${i + 1},"${c.name}",${c.riskScore},${c.alertCount},"${c.lastActivity}"\n`;
     });
     csv += '\n';
-    
+
     csv += 'ALERTS BY TYPE\n';
     csv += 'Type,Count\n';
     this.alertsByType.labels.forEach((label, i) => {
       csv += `"${label}",${this.alertsByType.values[i]}\n`;
     });
     csv += '\n';
-    
+
     csv += 'ALERTS BY STATUS\n';
     csv += 'Status,Count\n';
     this.alertsByStatus.labels.forEach((label, i) => {
       csv += `"${label}",${this.alertsByStatus.values[i]}\n`;
     });
-    
+
     return csv;
   }
-  
+
   private generateReportContent(): string {
     const date = new Date().toLocaleDateString();
     return `

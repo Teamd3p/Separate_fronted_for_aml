@@ -50,7 +50,6 @@ export class AuthService {
                 } else {
                   // If userId not in response or token, try to fetch user profile
                   console.warn('UserId not found in login response or token. Will attempt to fetch from profile.');
-                  this.fetchUserProfile(response.token);
                 }
               }
               
@@ -66,7 +65,6 @@ export class AuthService {
             } else {
               // No user object in response, try to fetch profile
               console.warn('No user object in login response. Will attempt to fetch from profile.');
-              this.fetchUserProfile(response.token);
             }
             
             this.currentUserSubject.next({ 
@@ -279,41 +277,6 @@ export class AuthService {
       console.error('Error extracting userId from token:', error);
       return null;
     }
-  }
-
-  private fetchUserProfile(token: string): void {
-    // Try to fetch user profile to get userId
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-    
-    // Try admin profile endpoint first
-    this.http.get<any>(`${this.API_URL}/admin/profile`, { headers })
-      .subscribe({
-        next: (profile) => {
-          if (profile && (profile.userId || profile.id)) {
-            const userId = profile.userId || profile.id;
-            localStorage.setItem('userId', userId.toString());
-            console.log('Fetched and stored userId from admin profile:', userId);
-          }
-        },
-        error: () => {
-          // If admin profile fails, try customer profile
-          this.http.get<any>(`${this.API_URL}/customer/profile`, { headers })
-            .subscribe({
-              next: (profile) => {
-                if (profile && (profile.userId || profile.id || profile.customerId)) {
-                  const userId = profile.userId || profile.id || profile.customerId;
-                  localStorage.setItem('userId', userId.toString());
-                  console.log('Fetched and stored userId from customer profile:', userId);
-                }
-              },
-              error: (err) => {
-                console.error('Failed to fetch user profile for userId:', err);
-              }
-            });
-        }
-      });
   }
 
   private getHttpOptions() {

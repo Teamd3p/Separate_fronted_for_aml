@@ -40,9 +40,8 @@ export class Account implements OnInit {
   currencies = [
     { value: 'INR', label: 'Indian Rupee (INR)' },
     { value: 'USD', label: 'US Dollar (USD)' },
-    { value: 'EUR', label: 'Euro (EUR)' },
-    { value: 'JPY', label: 'Japanese Yen (JPY)' },
-    { value: 'GBP', label: 'British Pound (GBP)' }
+    { value: 'EUR', label: 'Euro (EUR)' }
+    
   ];
 
   constructor(

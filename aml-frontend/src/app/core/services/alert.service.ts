@@ -79,15 +79,12 @@ export class AlertService {
             transactionAmount: amount
           })),
           catchError(() => of({
-            ...alert,
-            transactionAmount: this.generateDemoAmount(alert.alertId || 1)
+            ...alert
           }))
         );
       } else {
         return of({
-          ...alert,
-          transactionAmount: this.generateDemoAmount(alert.alertId || 1)
-        });
+          ...alert        });
       }
     });
 
@@ -112,44 +109,7 @@ export class AlertService {
 
   // Sample alerts for testing
   private getSampleAlerts(): AlertNotification[] {
-    return [
-      {
-        id: 1,
-        transactionId: 'TXN780123',
-        amount: 5000.00,
-        date: '2024-07-28',
-        reason: 'Unusual transfer pattern to high-risk region identified',
-        status: 'PENDING',
-        type: 'FLAGGED',
-        severity: 'HIGH',
-        description: 'Transaction exceeds normal pattern for this customer',
-        createdAt: '2024-07-28T10:30:00'
-      },
-      {
-        id: 2,
-        transactionId: 'TXN123457',
-        amount: 5000.00,
-        date: '2024-07-27',
-        reason: 'Originating account flagged for suspicious activity',
-        status: 'RESOLVED',
-        type: 'CANCELED',
-        severity: 'HIGH',
-        description: 'Account verification completed successfully',
-        createdAt: '2024-07-27T14:20:00'
-      },
-      {
-        id: 3,
-        transactionId: 'TXN876543',
-        amount: 750.00,
-        date: '2024-07-26',
-        reason: 'Transaction exceeding daily limit for new accounts',
-        status: 'PENDING',
-        type: 'FLAGGED',
-        severity: 'MEDIUM',
-        description: 'New account requires additional verification',
-        createdAt: '2024-07-26T09:15:00'
-      }
-    ];
+    return [];
   }
 
   // Get alert statistics - calculated from alerts since no stats endpoint exists
@@ -279,11 +239,6 @@ Please review the alert and provide explanation to the customer about why this t
     return uniqueParts.join(', ');
   }
 
-  // Generate demo amounts for testing when real amounts not available
-  private generateDemoAmount(alertId: number): number {
-    const amounts = [1500.00, 2750.50, 5000.00, 850.25, 12000.00, 3200.75];
-    return amounts[alertId % amounts.length];
-  }
 
   // Determine alert type from status
   private determineTypeFromStatus(status: string): 'FLAGGED' | 'CANCELED' | 'SUSPICIOUS' {

@@ -119,21 +119,9 @@ export class Dashboard implements OnInit {
           this.updateTrendScales();
         },
         error: () => {
-          // Fallback: Generate from alerts
-          this.generateFallbackTrends();
+          
         }
       });
-  }
-
-  private generateFallbackTrends(): void {
-    const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    this.trendData = months.map(month => ({
-      month,
-      alerts: Math.floor(Math.random() * 50) + 20,
-      sars: Math.floor(Math.random() * 20) + 5,
-      transactions: Math.floor(Math.random() * 1000) + 500
-    }));
-    this.updateTrendScales();
   }
 
   loadTransactionTrendData(): void {

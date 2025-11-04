@@ -6,7 +6,6 @@ import { KeywordService } from '../../../core/services/keyword.service';
 import { Keyword, KeywordCreateRequest, KeywordUpdateRequest } from '../../../core/models/keyword.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
-import { KeywordApiTestService } from '../../../core/services/keyword-api-test.service';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
@@ -74,7 +73,6 @@ export class Keywords implements OnInit {
 
   constructor(
     private keywordService: KeywordService,
-    private keywordApiTestService: KeywordApiTestService,
     private router: Router,
     private toastService: ToastService,
     private confirmationService: ConfirmationDialogService
@@ -450,12 +448,4 @@ export class Keywords implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  // Debug methods - can be called from browser console
-  async runApiTests(): Promise<void> {
-    await this.keywordApiTestService.testKeywordEndpoints();
-  }
-
-  async testUpdateKeywordById(id: number): Promise<void> {
-    await this.keywordApiTestService.testUpdateKeyword(id);
-  }
 }

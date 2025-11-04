@@ -17,7 +17,7 @@ export class CountryService {
     private authTokenService: AuthTokenService
   ) {}
 
-  // Get all countries
+  // Get all countries (requires authentication)
   getCountries(): Observable<Country[]> {
     return this.http.get<any>(`${this.API_URL}/admin/countries`, this.getHttpOptions()).pipe(
       map((response: any) => {
@@ -34,6 +34,32 @@ export class CountryService {
         }
 
         return countriesData.map(country => this.mapToCountry(country));
+      })
+    );
+  }
+
+  // Get all countries (public endpoint, no authentication required)
+  getPublicCountries(): Observable<Country[]> {
+    return this.http.get<any>(`${this.API_URL}/countries`).pipe(
+      map((response: any) => {
+        // Handle different response formats
+        let countriesData: any[] = [];
+        if (Array.isArray(response)) {
+          countriesData = response;
+        } else if (response && Array.isArray(response.data)) {
+          countriesData = response.data;
+        } else if (response && Array.isArray(response.content)) {
+          countriesData = response.content;
+        } else if (response && Array.isArray(response.countries)) {
+          countriesData = response.countries;
+        }
+
+        return countriesData.map(country => this.mapToCountry(country));
+      }),
+      catchError(error => {
+        console.error('Error loading public countries:', error);
+        // Return fallback countries if API fails
+        return throwError(() => error);
       })
     );
   }
