@@ -47,8 +47,8 @@
       <div class="status-card">
         <div class="status-header">
           <h2>KYC Status Overview</h2>
-          <span class="overall-status" [ngClass]="kycStatus?.kycComplete ? 'status-complete' : 'status-incomplete'">
-            {{ kycStatus?.overallKycStatus }}
+          <span class="overall-status" [ngClass]="kycStatus.kycComplete ? 'status-complete' : 'status-incomplete'">
+            {{ kycStatus.overallKycStatus }}
           </span>
         </div>
         
@@ -64,19 +64,19 @@
 
         <div class="status-stats">
           <div class="stat-item">
-            <div class="stat-number">{{ kycStatus?.totalDocuments }}</div>
+            <div class="stat-number">{{ kycStatus.totalDocuments }}</div>
             <div class="stat-label">Total Documents</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number verified">{{ kycStatus?.verifiedDocuments }}</div>
+            <div class="stat-number verified">{{ kycStatus.verifiedDocuments }}</div>
             <div class="stat-label">Verified</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number pending">{{ kycStatus?.pendingDocuments }}</div>
+            <div class="stat-number pending">{{ kycStatus.pendingDocuments }}</div>
             <div class="stat-label">Pending</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number rejected">{{ kycStatus?.rejectedDocuments }}</div>
+            <div class="stat-number rejected">{{ kycStatus.rejectedDocuments }}</div>
             <div class="stat-label">Rejected</div>
           </div>
         </div>
@@ -251,8 +251,8 @@
                 <small>JPEG, PNG, PDF (Max 10MB)</small>
               </p>
               <p *ngIf="uploadForm.file" class="file-selected">
-                <strong>{{ uploadForm.file?.name }}</strong><br>
-                <small>{{ formatFileSize(uploadForm.file?.size || 0) }}</small>
+                <strong>{{ uploadForm.file.name }}</strong><br>
+                <small>{{ formatFileSize(uploadForm.file.size || 0) }}</small>
               </p>
             </div>
           </div>

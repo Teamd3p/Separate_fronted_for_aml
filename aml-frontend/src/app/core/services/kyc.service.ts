@@ -112,13 +112,6 @@ export class KycService {
     );
   }
 
-  // Get expiring documents
-  getExpiringDocuments(daysAhead: number = 30): Observable<KycDocument[]> {
-    return this.http.get<ApiResponse<KycDocument[]>>(`${this.API_URL}/expiring?daysAhead=${daysAhead}`, this.getHttpOptions()).pipe(
-      map((response: ApiResponse<KycDocument[]>) => response.data || [])
-    );
-  }
-
   // Update risk score
   updateRiskScore(documentId: number, riskScore: number): Observable<KycDocument> {
     return this.http.put<ApiResponse<KycDocument>>(`${this.API_URL}/${documentId}/risk-score?riskScore=${riskScore}`, {}, this.getHttpOptions()).pipe(
@@ -178,9 +171,6 @@ export class KycService {
       case KycStatus.PENDING: return 'Pending';
       case KycStatus.VERIFIED: return 'Verified';
       case KycStatus.REJECTED: return 'Rejected';
-      case KycStatus.EXPIRED: return 'Expired';
-      case KycStatus.UNDER_REVIEW: return 'Under Review';
-      case KycStatus.MANUAL_REVIEW: return 'Manual Review';
       default: return status;
     }
   }
@@ -190,9 +180,6 @@ export class KycService {
       case KycStatus.VERIFIED: return 'status-verified';
       case KycStatus.PENDING: return 'status-pending';
       case KycStatus.REJECTED: return 'status-rejected';
-      case KycStatus.EXPIRED: return 'status-expired';
-      case KycStatus.UNDER_REVIEW: return 'status-under-review';
-      case KycStatus.MANUAL_REVIEW: return 'status-manual-review';
       default: return 'status-unknown';
     }
   }

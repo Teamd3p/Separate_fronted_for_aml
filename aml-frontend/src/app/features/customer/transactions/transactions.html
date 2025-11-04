@@ -303,13 +303,28 @@
         <option value="FLAGGED">Flagged</option>
       </select>
 
-      <select 
-        [(ngModel)]="selectedDateFilter"
-        (ngModelChange)="applyFilters()"
-        class="filter-select">
-        <option value="Date (Newest)">Date (Newest)</option>
-        <option value="Date (Oldest)">Date (Oldest)</option>
-      </select>
+      <button 
+        class="sort-btn"
+        (click)="toggleDateSort()"
+        title="Toggle Sort Order">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path *ngIf="selectedDateFilter === 'Date (Newest)'" d="M12 5v14M19 12l-7 7-7-7"/>
+          <path *ngIf="selectedDateFilter === 'Date (Oldest)'" d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+        {{ selectedDateFilter === 'Date (Newest)' ? 'Newest First' : 'Oldest First' }}
+      </button>
+
+      <button 
+        class="download-btn"
+        (click)="openDownloadModal()"
+        title="Download Transactions">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF
+      </button>
     </div>
 
     <!-- Transactions Table -->
@@ -358,11 +373,10 @@
             <td class="date">{{ formatDate(transaction.timestamp || transaction.date || '') }}</td>
             <td class="actions">
               <button class="view-details-btn" (click)="viewTransactionDetails(transaction)" title="View Details">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z"/>
+                  <circle cx="12" cy="12" r="3"/>
                 </svg>
-                <span>View</span>
               </button>
             </td>
           </tr>
@@ -379,36 +393,79 @@
       <!-- Pagination Controls -->
       <div *ngIf="filteredTransactions.length > 0" class="pagination-container">
         <div class="pagination-info">
-          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredTransactions.length) }} of {{ filteredTransactions.length }} transactions
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredTransactions.length) }} of {{ filteredTransactions.length }} entries
         </div>
-        <div class="pagination-controls">
-          <button 
-            class="pagination-btn" 
-            (click)="previousPage()" 
-            [disabled]="currentPage === 1"
-            title="Previous Page">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </button>
+        
+        <div class="pagination-wrapper">
+          <div class="pagination-controls">
+            <!-- First Page -->
+            <button 
+              class="pagination-btn" 
+              (click)="goToPage(1)" 
+              [disabled]="currentPage === 1"
+              title="First Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="11 17 6 12 11 7"/>
+                <polyline points="18 17 13 12 18 7"/>
+              </svg>
+            </button>
+            
+            <!-- Previous Page -->
+            <button 
+              class="pagination-btn" 
+              (click)="previousPage()" 
+              [disabled]="currentPage === 1"
+              title="Previous Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            
+            <!-- Page Numbers -->
+            <button 
+              *ngFor="let page of getPageNumbers()" 
+              class="pagination-btn page-number" 
+              [class.active]="page === currentPage"
+              [class.ellipsis]="page === -1"
+              [disabled]="page === -1"
+              (click)="page !== -1 && goToPage(page)">
+              {{ page === -1 ? '...' : page }}
+            </button>
+            
+            <!-- Next Page -->
+            <button 
+              class="pagination-btn" 
+              (click)="nextPage()" 
+              [disabled]="currentPage === totalPages"
+              title="Next Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            
+            <!-- Last Page -->
+            <button 
+              class="pagination-btn" 
+              (click)="goToPage(totalPages)" 
+              [disabled]="currentPage === totalPages"
+              title="Last Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7"/>
+                <polyline points="6 17 11 12 6 7"/>
+              </svg>
+            </button>
+          </div>
           
-          <button 
-            *ngFor="let page of getPageNumbers()" 
-            class="pagination-btn page-number" 
-            [class.active]="page === currentPage"
-            (click)="goToPage(page)">
-            {{ page }}
-          </button>
-          
-          <button 
-            class="pagination-btn" 
-            (click)="nextPage()" 
-            [disabled]="currentPage === totalPages"
-            title="Next Page">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </button>
+          <!-- Page Size Selector -->
+          <div class="page-size-selector">
+            <label>Show:</label>
+            <select [(ngModel)]="itemsPerPage" (ngModelChange)="onPageSizeChange()">
+              <option [value]="10">10</option>
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -470,6 +527,66 @@
         <span class="detail-label">Description</span>
         <span class="detail-value">{{ selectedTransaction.description }}</span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Download Modal -->
+<div *ngIf="showDownloadModal" class="modal-overlay" (click)="closeDownloadModal()">
+  <div class="modal-content download-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Download Transactions</h3>
+      <button class="close-btn" (click)="closeDownloadModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p class="modal-description">Select a date range to download transactions, or download all transactions.</p>
+      
+      <div class="date-range-section">
+        <div class="form-group">
+          <label for="startDate">Start Date (Optional)</label>
+          <input 
+            type="date" 
+            id="startDate" 
+            [(ngModel)]="downloadStartDate"
+            class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="endDate">End Date (Optional)</label>
+          <input 
+            type="date" 
+            id="endDate" 
+            [(ngModel)]="downloadEndDate"
+            class="form-input">
+        </div>
+      </div>
+      
+      <div class="download-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>{{ getDownloadCount() }} transaction(s) will be downloaded</span>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeDownloadModal()">Cancel</button>
+      <button class="btn-primary" (click)="downloadTransactionsPDF()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF
+      </button>
     </div>
   </div>
 </div>

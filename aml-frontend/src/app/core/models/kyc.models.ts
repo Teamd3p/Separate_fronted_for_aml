@@ -75,10 +75,7 @@ export enum DocumentType {
 export enum KycStatus {
   PENDING = 'PENDING',
   VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED',
-  EXPIRED = 'EXPIRED',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-  MANUAL_REVIEW = 'MANUAL_REVIEW'
+  REJECTED = 'REJECTED'
 }
 
 export interface ApiResponse<T> {

@@ -37,8 +37,12 @@ body {
 }
 
 .sidebar-header {
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem;
   border-bottom: 1px solid #e2e8f0;
+  background: white;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .logo {
@@ -48,19 +52,34 @@ body {
 }
 
 .logo-icon {
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background-color: #e0f2fe;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
-.logo-text {
-  font-size: 1.25rem;
+.logo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.2;
+}
+
+.logo-title {
+  font-size: 1rem;
   font-weight: 700;
-  color: #007AFF;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.logo-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
 }
 
 /* Navigation */
@@ -133,19 +152,21 @@ body {
 .top-header {
   background: white;
   border-bottom: 1px solid #e2e8f0;
-  padding: 1rem 2rem;
+  padding: 1.5rem 2.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 50;
+  min-height: 80px;
 }
 
 .header-left .page-title {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.75rem;
+  font-weight: 700;
   color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 .header-right {
@@ -222,7 +243,7 @@ body {
 /* Dashboard Content */
 .dashboard-content {
   flex: 1;
-  padding: 2rem;
+  padding: 2.5rem;
   background: #f8fafc;
 }
 
@@ -377,22 +398,26 @@ body {
   color: #ef4444;
   font-weight: 600;
 }
+
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .stat-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .stat-card::before {
@@ -402,12 +427,12 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  border-radius: 12px 12px 0 0;
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .stat-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* Gradient Backgrounds for Stats */
@@ -419,39 +444,64 @@ body {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 }
 
-.alerts-card::before {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+.accounts-card::before {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
-.pending-card::before {
+.alerts-card::before {
   background: linear-gradient(135deg, #f59e0b, #d97706);
 }
 
-.stat-header {
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.stat-icon {
-  flex-shrink: 0;
+.stat-icon-wrapper.green {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.stat-icon-wrapper.blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stat-icon-wrapper.purple {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.stat-icon-wrapper.orange {
+  background: #fed7aa;
+  color: #d97706;
+}
+
+.stat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .stat-label {
   font-size: 0.875rem;
   font-weight: 500;
   color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
   color: #0f172a;
-}
-
-.alert-value {
-  color: #ef4444;
+  line-height: 1;
 }
 
 /* Financial Stats Grid */

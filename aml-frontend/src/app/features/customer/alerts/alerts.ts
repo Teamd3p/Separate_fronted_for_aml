@@ -9,8 +9,8 @@ import { ToastService } from '../../../core/services/toast.service';
   selector: 'app-alerts',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './alerts.html',
-  styleUrls: ['./alerts.css', './modal-styles.css'],
+  templateUrl: './alerts-new.html',
+  styleUrls: ['./alerts-tabs.css'],
 })
 export class Alerts implements OnInit {
   alerts: AlertNotification[] = [];
@@ -31,7 +31,11 @@ export class Alerts implements OnInit {
   
   // Filter states
   activeTab: 'all' | 'pending' | 'resolved' = 'all';
+  activeMainTab: 'alerts' | 'tickets' = 'alerts';
+  alertFilter: 'all' | 'pending' | 'investigating' | 'decided' = 'all';
   searchTerm: string = '';
+  viewMode: 'grid' | 'list' = 'grid';
+  ticketViewMode: 'grid' | 'list' = 'grid';
   
   // Modal states
   showDetailsModal: boolean = false;
@@ -144,6 +148,20 @@ export class Alerts implements OnInit {
   switchTab(tab: 'all' | 'pending' | 'resolved'): void {
     this.activeTab = tab;
     this.applyFilters();
+  }
+
+  // Get filtered alerts based on filter
+  getFilteredAlerts(): AlertNotification[] {
+    if (this.alertFilter === 'all') {
+      return this.alerts;
+    } else if (this.alertFilter === 'pending') {
+      return this.getPendingAlerts();
+    } else if (this.alertFilter === 'investigating') {
+      return this.getInvestigatingAlerts();
+    } else if (this.alertFilter === 'decided') {
+      return this.getDecidedAlerts();
+    }
+    return this.alerts;
   }
 
   // Search
@@ -328,11 +346,28 @@ export class Alerts implements OnInit {
     });
   }
 
-  // Get resolved alerts
-  getResolvedAlerts(): AlertNotification[] {
-    return this.filteredAlerts.filter(alert => 
-      alert.status === 'RESOLVED' || alert.status === 'CLOSED' || alert.status === 'COMPLETED'
-    );
+  // Format ticket description for better display
+  formatTicketDescription(description: string): string {
+    if (!description) return '';
+    
+    // Parse the description and format it with HTML
+    let formatted = description;
+    
+    // Format section headers
+    formatted = formatted.replace(/ALERT INQUIRY/g, '<h4>Alert Inquiry</h4>');
+    formatted = formatted.replace(/ALERT DETAILS:/g, '<div class="alert-details"><h4>Alert Details:</h4>');
+    formatted = formatted.replace(/CUSTOMER MESSAGE:/g, '</div><div class="customer-message"><h4>Customer Message:</h4>');
+    formatted = formatted.replace(/ACTION REQUIRED:/g, '</div><div class="action-required"><h4>Action Required:</h4>');
+    
+    // Format bullet points
+    formatted = formatted.replace(/- ([^-\n]+)/g, '<p>• $1</p>');
+    
+    // Close any open divs
+    if (formatted.includes('<div')) {
+      formatted += '</div>';
+    }
+    
+    return formatted;
   }
 
   // Navigation

@@ -913,19 +913,24 @@
 /* Pagination Styles */
 .pagination-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1rem;
-  background: white;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
   border-top: 1px solid #e2e8f0;
-  margin-top: 1rem;
-  border-radius: 0 0 12px 12px;
 }
 
 .pagination-info {
   font-size: 0.875rem;
   color: #64748b;
   font-weight: 500;
+}
+
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
 .pagination-controls {
@@ -944,7 +949,7 @@
   border: 1px solid #e2e8f0;
   background: white;
   color: #64748b;
-  border-radius: 8px;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -953,13 +958,14 @@
 
 .pagination-btn:hover:not(:disabled) {
   background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #1e293b;
+  border-color: #007AFF;
+  color: #007AFF;
 }
 
 .pagination-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  background: #f8fafc;
 }
 
 .pagination-btn.page-number.active {
@@ -968,8 +974,204 @@
   color: white;
 }
 
+.pagination-btn.ellipsis {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
 .pagination-btn svg {
   flex-shrink: 0;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-size-selector label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-size-selector select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-size-selector select:hover {
+  border-color: #007AFF;
+}
+
+.page-size-selector select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* Sort Button */
+.sort-btn,
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: white;
+  color: #1e293b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  border-color: #007AFF;
+  color: #007AFF;
+  background: #f0f9ff;
+}
+
+.download-btn {
+  background: #007AFF;
+  color: white;
+  border-color: #007AFF;
+}
+
+.download-btn:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.sort-btn svg,
+.download-btn svg {
+  flex-shrink: 0;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.view-details-btn,
+.download-pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 36px;
+  height: 36px;
+}
+
+.view-details-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.view-details-btn:hover {
+  background: #e5e7eb;
+  color: #007AFF;
+}
+
+.download-pdf-btn {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.download-pdf-btn:hover {
+  background: #bfdbfe;
+}
+
+/* Download Modal */
+.download-modal {
+  max-width: 500px;
+}
+
+.modal-description {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.date-range-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.download-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  color: #1e40af;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.download-info svg {
+  flex-shrink: 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-secondary,
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.btn-primary {
+  background: #007AFF;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
 }
 
 @media (max-width: 768px) {
