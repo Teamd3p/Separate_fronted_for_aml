@@ -162,6 +162,21 @@
   border-left: 4px solid #f59e0b;
 }
 
+.alert-card.alert-investigating {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.alert-card.alert-decided {
+  background: #f0fdf4;
+  border-left: 4px solid #10b981;
+  opacity: 0.95;
+}
+
+.alert-card.alert-decided:hover {
+  opacity: 1;
+}
+
 .alert-card.alert-resolved {
   background: #f0fdf4;
   border-left: 4px solid #10b981;
@@ -188,6 +203,30 @@
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fbbf24;
+}
+
+.badge-investigating {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+.badge-decided {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.badge-decided.badge-true-positive {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.badge-decided.badge-false-positive {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
 }
 
 .badge-resolved {

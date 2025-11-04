@@ -10,11 +10,12 @@ export interface AlertNotification {
   amount: number;
   date: string;
   reason: string;
-  status: 'PENDING' | 'RESOLVED' | 'FLAGGED' | 'CANCELED' | 'OPEN' | 'NEW' | 'CLOSED' | 'COMPLETED';
+  status: 'PENDING' | 'RESOLVED' | 'FLAGGED' | 'CANCELED' | 'OPEN' | 'NEW' | 'CLOSED' | 'COMPLETED' | 'INVESTIGATING' | 'IN_PROGRESS' | 'TRUE_POSITIVE' | 'FALSE_POSITIVE';
   type: 'FLAGGED' | 'CANCELED' | 'SUSPICIOUS';
   severity: 'HIGH' | 'MEDIUM' | 'LOW';
   description?: string;
   createdAt?: string;
+  assignedOfficer?: string;  // Name of the assigned compliance officer
 }
 
 export interface AlertStats {
@@ -187,7 +188,8 @@ export class AlertService {
     const ticketRequest = {
       subject: `Alert Inquiry - Transaction ${alert?.transactionId || 'ID: ' + alertId}`,
       description: this.buildAlertTicketDescription(alert, message),
-      priority: this.determineTicketPriority(alert?.severity)
+      priority: this.determineTicketPriority(alert?.severity),
+      alertId: alertId  // Link ticket to the alert
     };
     
     console.log('Creating ticket with request:', ticketRequest);
@@ -260,7 +262,8 @@ Please review the alert and provide explanation to the customer about why this t
       type: this.determineTypeFromStatus(data.status),
       severity: this.determineSeverityFromRiskScore(data.riskScore),
       description: data.description || '',
-      createdAt: data.createdAt
+      createdAt: data.createdAt,
+      assignedOfficer: data.assignedOfficerName || data.assignedToOfficer || null
     };
   }
   

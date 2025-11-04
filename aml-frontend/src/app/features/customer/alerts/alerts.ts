@@ -10,7 +10,7 @@ import { ToastService } from '../../../core/services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './alerts.html',
-  styleUrl: './alerts.css',
+  styleUrls: ['./alerts.css', './modal-styles.css'],
 })
 export class Alerts implements OnInit {
   alerts: AlertNotification[] = [];
@@ -35,6 +35,9 @@ export class Alerts implements OnInit {
   
   // Modal states
   showDetailsModal: boolean = false;
+  showPendingModal: boolean = false;
+  showInvestigatingModal: boolean = false;
+  showDecisionModal: boolean = false;
   showContactModal: boolean = false;
   showTicketDetailsModal: boolean = false;
   selectedAlert: AlertNotification | null = null;
@@ -148,10 +151,23 @@ export class Alerts implements OnInit {
     this.applyFilters();
   }
 
-  // View alert details
+  // View alert details - opens appropriate modal based on status
   viewDetails(alert: AlertNotification): void {
     this.selectedAlert = alert;
-    this.showDetailsModal = true;
+    
+    // Determine which modal to show based on alert status
+    const status = alert.status.toUpperCase();
+    
+    if (status === 'OPEN' || status === 'NEW' || status === 'PENDING') {
+      this.showPendingModal = true;
+    } else if (status === 'INVESTIGATING' || status === 'IN_PROGRESS') {
+      this.showInvestigatingModal = true;
+    } else if (status === 'RESOLVED' || status === 'CLOSED' || status === 'COMPLETED' || status === 'TRUE_POSITIVE' || status === 'FALSE_POSITIVE') {
+      this.showDecisionModal = true;
+    } else {
+      // Fallback to general details modal
+      this.showDetailsModal = true;
+    }
   }
 
   // Open contact support modal
@@ -167,15 +183,23 @@ export class Alerts implements OnInit {
       return;
     }
 
+    // Check if alert is assigned to an officer
+    if (!this.selectedAlert.assignedOfficer) {
+      this.toastService.error('This alert has not been assigned to an officer yet. Please wait for assignment before creating a support ticket.');
+      return;
+    }
+
     this.sendingMessage = true;
     this.alertService.contactSupport(this.selectedAlert.id, this.contactMessage, this.selectedAlert).subscribe({
       next: () => {
-        this.toastService.success('Your inquiry has been submitted to our compliance team. You will receive a response within 24-48 hours explaining the alert details.');
+        this.toastService.success('Your inquiry has been submitted to the assigned compliance officer. You will receive a response within 24-48 hours.');
         this.closeModals();
+        this.loadTickets(); // Reload tickets to show the new one
       },
       error: (error) => {
         console.error('Error contacting support:', error);
-        this.toastService.error('Failed to send inquiry. Please try again.');
+        const errorMsg = error.error?.message || error.message || 'Failed to send inquiry. Please try again.';
+        this.toastService.error(errorMsg);
         this.sendingMessage = false;
       }
     });
@@ -184,6 +208,9 @@ export class Alerts implements OnInit {
   // Close modals
   closeModals(): void {
     this.showDetailsModal = false;
+    this.showPendingModal = false;
+    this.showInvestigatingModal = false;
+    this.showDecisionModal = false;
     this.showContactModal = false;
     this.showTicketDetailsModal = false;
     this.selectedAlert = null;
@@ -246,6 +273,26 @@ export class Alerts implements OnInit {
     }
   }
 
+  // Get alerts by category
+  getPendingAlerts(): AlertNotification[] {
+    return this.alerts.filter(a => 
+      a.status === 'PENDING' || a.status === 'OPEN' || a.status === 'NEW' || a.status === 'FLAGGED'
+    );
+  }
+
+  getInvestigatingAlerts(): AlertNotification[] {
+    return this.alerts.filter(a => 
+      a.status === 'INVESTIGATING' || a.status === 'IN_PROGRESS'
+    );
+  }
+
+  getDecidedAlerts(): AlertNotification[] {
+    return this.alerts.filter(a => 
+      a.status === 'RESOLVED' || a.status === 'CLOSED' || a.status === 'COMPLETED' || 
+      a.status.includes('TRUE_POSITIVE') || a.status.includes('FALSE_POSITIVE')
+    );
+  }
+
   // Get alert icon class
   getAlertIconClass(alert: AlertNotification): string {
     if (alert.type === 'CANCELED' || alert.status === 'CANCELED') {
@@ -279,13 +326,6 @@ export class Alerts implements OnInit {
       month: '2-digit',
       day: '2-digit'
     });
-  }
-
-  // Get pending alerts
-  getPendingAlerts(): AlertNotification[] {
-    return this.filteredAlerts.filter(alert => 
-      alert.status === 'PENDING' || alert.status === 'FLAGGED' || alert.status === 'OPEN' || alert.status === 'NEW'
-    );
   }
 
   // Get resolved alerts

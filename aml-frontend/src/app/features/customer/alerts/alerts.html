@@ -15,9 +15,9 @@
     </div>
 
     <!-- Pending Alerts Section -->
-    <div class="notifications-section" *ngIf="activeTab === 'all' || activeTab === 'pending'">
+    <div class="notifications-section">
       <h2 class="section-title">🔴 Pending Alerts</h2>
-      <p class="section-subtitle">Alerts requiring your attention</p>
+      <p class="section-subtitle">Alerts under initial review</p>
 
       <!-- Loading State -->
       <div *ngIf="loading" class="loading-state">
@@ -63,6 +63,90 @@
               </button>
               <button class="btn-primary" (click)="openContactModal(alert)">
                 Support
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Investigating Alerts Section -->
+    <div class="notifications-section" *ngIf="!loading && getInvestigatingAlerts().length > 0">
+      <h2 class="section-title">🔍 Under Investigation</h2>
+      <p class="section-subtitle">Alerts being actively reviewed by compliance officers</p>
+
+      <div class="alerts-grid">
+        <div *ngFor="let alert of getInvestigatingAlerts()" class="alert-card alert-investigating" [class]="getAlertIconClass(alert)">
+          <div class="alert-status-badge badge-investigating">Investigating</div>
+          <div class="alert-icon">
+            <span>🔍</span>
+          </div>
+          <div class="alert-content">
+            <div class="alert-header">
+              <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
+              <span class="alert-amount">{{ formatCurrency(alert.amount) }}</span>
+            </div>
+            <div class="alert-details">
+              <div class="alert-meta">
+                <span class="meta-item">
+                  <strong>ID:</strong> {{ alert.transactionId }}
+                </span>
+                <span class="meta-item">
+                  <strong>Date:</strong> {{ formatDate(alert.date) }}
+                </span>
+                <span class="meta-item" *ngIf="alert.assignedOfficer">
+                  <strong>Officer:</strong> {{ alert.assignedOfficer }}
+                </span>
+              </div>
+              <p class="alert-reason">{{ alert.reason }}</p>
+            </div>
+            <div class="alert-actions">
+              <button class="btn-secondary" (click)="viewDetails(alert)">
+                Details
+              </button>
+              <button class="btn-primary" (click)="openContactModal(alert)">
+                Contact Officer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decided Alerts Section -->
+    <div class="notifications-section" *ngIf="!loading && getDecidedAlerts().length > 0">
+      <h2 class="section-title">✅ Decided Alerts</h2>
+      <p class="section-subtitle">Alerts with final decisions</p>
+
+      <div class="alerts-grid">
+        <div *ngFor="let alert of getDecidedAlerts()" class="alert-card alert-decided" [class]="getAlertIconClass(alert)">
+          <div class="alert-status-badge badge-decided" [class.badge-true-positive]="alert.status.includes('TRUE_POSITIVE')" [class.badge-false-positive]="alert.status.includes('FALSE_POSITIVE')">
+            {{ alert.status.replace('_', ' ') }}
+          </div>
+          <div class="alert-icon">
+            <span *ngIf="alert.status.includes('TRUE_POSITIVE')">⚠️</span>
+            <span *ngIf="alert.status.includes('FALSE_POSITIVE')">✅</span>
+            <span *ngIf="!alert.status.includes('TRUE_POSITIVE') && !alert.status.includes('FALSE_POSITIVE')">✓</span>
+          </div>
+          <div class="alert-content">
+            <div class="alert-header">
+              <h3 class="alert-title">{{ getAlertTypeLabel(alert) }}</h3>
+              <span class="alert-amount">{{ formatCurrency(alert.amount) }}</span>
+            </div>
+            <div class="alert-details">
+              <div class="alert-meta">
+                <span class="meta-item">
+                  <strong>ID:</strong> {{ alert.transactionId }}
+                </span>
+                <span class="meta-item">
+                  <strong>Date:</strong> {{ formatDate(alert.date) }}
+                </span>
+              </div>
+              <p class="alert-reason">{{ alert.reason }}</p>
+            </div>
+            <div class="alert-actions">
+              <button class="btn-primary" (click)="viewDetails(alert)">
+                View Decision
               </button>
             </div>
           </div>
@@ -194,50 +278,192 @@
   </div>
 </div>
 
-<!-- View Details Modal -->
-<div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeModals()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+<!-- Pending Alert Modal -->
+<div *ngIf="showPendingModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content modal-pending" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Alert Details</h3>
+      <div class="modal-title-group">
+        <span class="modal-icon">🔴</span>
+        <h3>Pending Alert - Under Review</h3>
+      </div>
       <button class="close-btn" (click)="closeModals()">×</button>
     </div>
     <div class="modal-body" *ngIf="selectedAlert">
-      <div class="detail-row">
-        <span class="detail-label">Transaction ID:</span>
-        <span class="detail-value">{{ selectedAlert.transactionId }}</span>
+      <div class="status-banner pending-banner">
+        <strong>⏳ Status:</strong> Your transaction is currently under review by our compliance team.
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Amount:</span>
-        <span class="detail-value">{{ formatCurrency(selectedAlert.amount) }}</span>
+      
+      <div class="detail-section">
+        <h4 class="section-heading">Transaction Information</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value">{{ selectedAlert.transactionId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value amount-highlight">{{ formatCurrency(selectedAlert.amount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">{{ formatDate(selectedAlert.date) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Severity</span>
+            <span class="severity-badge" [class]="selectedAlert.severity.toLowerCase()">{{ selectedAlert.severity }}</span>
+          </div>
+        </div>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Date:</span>
-        <span class="detail-value">{{ formatDate(selectedAlert.date) }}</span>
+
+      <div class="detail-section">
+        <h4 class="section-heading">Alert Reason</h4>
+        <div class="reason-box">
+          <p>{{ selectedAlert.reason }}</p>
+        </div>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Type:</span>
-        <span class="detail-value">{{ getAlertTypeLabel(selectedAlert) }}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Status:</span>
-        <span class="detail-value status-badge" [class]="selectedAlert.status.toLowerCase()">{{ selectedAlert.status }}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Severity:</span>
-        <span class="detail-value severity-badge" [class]="selectedAlert.severity.toLowerCase()">{{ selectedAlert.severity }}</span>
-      </div>
-      <div class="detail-row full-width">
-        <span class="detail-label">Description:</span>
-        <p class="detail-description">{{ selectedAlert.reason }}</p>
-      </div>
-      <div class="detail-row full-width" *ngIf="selectedAlert.description">
-        <span class="detail-label">Details:</span>
-        <p class="detail-description">{{ selectedAlert.description }}</p>
+
+      <div class="info-box">
+        <strong>ℹ️ What happens next?</strong>
+        <p>Our compliance team will review this transaction. You'll be notified once the review is complete. This typically takes 24-48 hours.</p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" (click)="closeModals()">Close</button>
-      <button class="btn-primary" (click)="openContactModal(selectedAlert!); showDetailsModal = false">Contact Support</button>
+      <button class="btn-primary" (click)="openContactModal(selectedAlert!); showPendingModal = false">
+        <span>💬</span> Contact Support
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Investigating Alert Modal -->
+<div *ngIf="showInvestigatingModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content modal-investigating" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-icon">🔍</span>
+        <h3>Investigation in Progress</h3>
+      </div>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedAlert">
+      <div class="status-banner investigating-banner">
+        <strong>🔍 Status:</strong> A compliance officer is actively investigating this transaction.
+      </div>
+      
+      <div class="detail-section">
+        <h4 class="section-heading">Transaction Information</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value">{{ selectedAlert.transactionId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value amount-highlight">{{ formatCurrency(selectedAlert.amount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">{{ formatDate(selectedAlert.date) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Severity</span>
+            <span class="severity-badge" [class]="selectedAlert.severity.toLowerCase()">{{ selectedAlert.severity }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4 class="section-heading">Investigation Details</h4>
+        <div class="reason-box">
+          <p>{{ selectedAlert.reason }}</p>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedAlert.assignedOfficer">
+        <h4 class="section-heading">Assigned Officer</h4>
+        <div class="officer-info">
+          <span class="officer-icon">👤</span>
+          <span>{{ selectedAlert.assignedOfficer }}</span>
+        </div>
+      </div>
+
+      <div class="info-box investigating-info">
+        <strong>⚡ Investigation Status:</strong>
+        <p>Our compliance officer is reviewing all transaction details and may request additional information. You can contact support if you have questions.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModals()">Close</button>
+      <button class="btn-primary" (click)="openContactModal(selectedAlert!); showInvestigatingModal = false">
+        <span>💬</span> Contact Officer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Decision/Resolved Alert Modal -->
+<div *ngIf="showDecisionModal" class="modal-overlay" (click)="closeModals()">
+  <div class="modal-content modal-decision" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="modal-icon">✅</span>
+        <h3>Alert Decision</h3>
+      </div>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedAlert">
+      <div class="status-banner decision-banner" [class.true-positive]="selectedAlert.status.includes('TRUE_POSITIVE')" [class.false-positive]="selectedAlert.status.includes('FALSE_POSITIVE')">
+        <strong>✓ Status:</strong> Investigation completed - {{ selectedAlert.status.replace('_', ' ') }}
+      </div>
+      
+      <div class="detail-section">
+        <h4 class="section-heading">Transaction Information</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value">{{ selectedAlert.transactionId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value amount-highlight">{{ formatCurrency(selectedAlert.amount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">{{ formatDate(selectedAlert.date) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Final Status</span>
+            <span class="status-badge" [class]="selectedAlert.status.toLowerCase()">{{ selectedAlert.status.replace('_', ' ') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4 class="section-heading">Alert Reason</h4>
+        <div class="reason-box">
+          <p>{{ selectedAlert.reason }}</p>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedAlert.description">
+        <h4 class="section-heading">Resolution Details</h4>
+        <div class="resolution-box">
+          <p>{{ selectedAlert.description }}</p>
+        </div>
+      </div>
+
+      <div class="info-box decision-info">
+        <strong *ngIf="selectedAlert.status.includes('TRUE_POSITIVE')">⚠️ Action Required:</strong>
+        <strong *ngIf="selectedAlert.status.includes('FALSE_POSITIVE')">✅ No Action Required:</strong>
+        <strong *ngIf="!selectedAlert.status.includes('TRUE_POSITIVE') && !selectedAlert.status.includes('FALSE_POSITIVE')">ℹ️ Case Closed:</strong>
+        <p *ngIf="selectedAlert.status.includes('TRUE_POSITIVE')">This transaction has been flagged as suspicious. Our team may contact you for additional verification.</p>
+        <p *ngIf="selectedAlert.status.includes('FALSE_POSITIVE')">This alert was a false positive. Your transaction is legitimate and no further action is needed.</p>
+        <p *ngIf="!selectedAlert.status.includes('TRUE_POSITIVE') && !selectedAlert.status.includes('FALSE_POSITIVE')">This alert has been resolved. If you have questions, please contact support.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="closeModals()">Close</button>
     </div>
   </div>
 </div>
