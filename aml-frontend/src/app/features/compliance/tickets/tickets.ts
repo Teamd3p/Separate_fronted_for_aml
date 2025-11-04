@@ -207,13 +207,8 @@ export class Tickets implements OnInit {
       },
       error: (error) => {
         console.error('Error updating status:', error);
-<<<<<<< HEAD
         const errorMsg = error.error?.error || error.error?.message || 'Failed to update status';
         this.toastService.error(errorMsg);
-=======
-        const errorMsg = error.error?.message || error.message || 'Failed to update status. Please try again.';
-        this.errorMessage = errorMsg;
->>>>>>> 01b07542f3ea03eea4e79c419919361a9e005a20
         this.updatingStatus = false;
         // Revert the status change in UI
         if (this.selectedTicket) {
@@ -222,10 +217,6 @@ export class Tickets implements OnInit {
             this.selectedTicket.status = originalTicket.status;
           }
         }
-<<<<<<< HEAD
-=======
-        setTimeout(() => this.errorMessage = '', 5000);
->>>>>>> 01b07542f3ea03eea4e79c419919361a9e005a20
       }
     });
   }
