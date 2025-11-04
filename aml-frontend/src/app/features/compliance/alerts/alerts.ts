@@ -421,23 +421,49 @@ export class Alerts implements OnInit {
     return statusMap[status] || 'status-open';
   }
 
+  parseTriggeredRules(ruleString: string): string[] {
+    if (!ruleString) return [];
+    // Split by comma and trim each rule
+    return ruleString.split(',').map(rule => rule.trim()).filter(rule => rule.length > 0);
+  }
+
+  getRuleType(rule: string): string {
+    if (!rule) return 'UNKNOWN';
+    
+    if (rule.includes('Threshold') || rule.includes('Large Transaction')) {
+      return 'THRESHOLD';
+    } else if (rule.includes('Velocity') || rule.includes('High Activity') || rule.includes('Burst') || rule.includes('Rapid')) {
+      return 'VELOCITY';
+    } else if (rule.includes('Structuring') || rule.includes('Smurfing') || rule.includes('Potential Structuring')) {
+      return 'STRUCTURING';
+    } else if (rule.includes('Cross-Border') || rule.includes('High-Risk')) {
+      return 'GEOGRAPHIC';
+    } else if (rule.includes('Frequency') || rule.includes('Weekend')) {
+      return 'FREQUENCY';
+    } else if (rule.includes('Daily Volume') || rule.includes('Volume')) {
+      return 'VOLUME';
+    } else {
+      return 'BEHAVIORAL';
+    }
+  }
+
   getRuleDescription(rule: string): string {
     if (!rule) return 'No rule information available';
     
     if (rule.includes('Threshold') || rule.includes('Large Transaction')) {
-      return 'This transaction exceeded the regulatory threshold limit for single transactions, which may indicate an attempt to move large sums of money that require additional scrutiny under AML regulations.';
-    } else if (rule.includes('Velocity') || rule.includes('High Activity') || rule.includes('Burst')) {
-      return 'Unusual transaction velocity detected - multiple transactions occurring in a short time period, which could indicate rapid movement of funds to obscure the money trail.';
-    } else if (rule.includes('Structuring') || rule.includes('Smurfing')) {
-      return 'Potential structuring activity detected - breaking down large transactions into smaller amounts to avoid reporting thresholds, a common money laundering technique.';
+      return 'Transaction exceeded regulatory threshold limit requiring additional scrutiny under AML regulations.';
+    } else if (rule.includes('Velocity') || rule.includes('High Activity') || rule.includes('Burst') || rule.includes('Rapid')) {
+      return 'Multiple transactions in short time period indicating rapid movement of funds.';
+    } else if (rule.includes('Structuring') || rule.includes('Smurfing') || rule.includes('Potential Structuring')) {
+      return 'Breaking down large transactions into smaller amounts to avoid reporting thresholds.';
     } else if (rule.includes('Cross-Border') || rule.includes('High-Risk')) {
-      return 'Transaction involves high-risk jurisdictions or cross-border transfers that may be associated with money laundering, terrorist financing, or sanctions violations.';
+      return 'Transaction involves high-risk jurisdictions or cross-border transfers.';
     } else if (rule.includes('Frequency') || rule.includes('Weekend')) {
-      return 'Abnormal transaction frequency or timing patterns detected, such as unusual activity during weekends or off-hours, which may indicate attempts to avoid detection.';
-    } else if (rule.includes('Daily Volume')) {
-      return 'Daily transaction volume significantly exceeds normal patterns for this customer, potentially indicating layering of illicit funds through multiple transactions.';
+      return 'Abnormal transaction frequency or timing patterns detected.';
+    } else if (rule.includes('Daily Volume') || rule.includes('Volume')) {
+      return 'Daily transaction volume significantly exceeds normal patterns.';
     } else {
-      return 'This transaction triggered our AML monitoring system due to suspicious patterns that deviate from the customer\'s normal behavior and may indicate potential money laundering activity.';
+      return 'Suspicious patterns deviating from normal customer behavior detected.';
     }
   }
 

@@ -513,10 +513,6 @@
               <span>{{ selectedAlert.customerName }} (ID: {{ selectedAlert.customerId }})</span>
             </div>
             <div class="detail-item">
-              <label>Rule Triggered:</label>
-              <span>{{ selectedAlert.ruleTriggered }}</span>
-            </div>
-            <div class="detail-item">
               <label>Risk Score:</label>
               <span class="risk-badge" [class]="getRiskClass(selectedAlert.riskScore)">
                 {{ selectedAlert.riskScore }}
@@ -537,6 +533,31 @@
               <span *ngIf="selectedAlert.transactionId">#{{ selectedAlert.transactionId }}</span>
               <span *ngIf="!selectedAlert.transactionId" class="text-muted">N/A</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Rules Triggered Table -->
+        <div class="investigation-section">
+          <h3>Rules Triggered</h3>
+          <div class="rules-table-container">
+            <table class="rules-table">
+              <thead>
+                <tr>
+                  <th>Rule Name</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let rule of parseTriggeredRules(selectedAlert.ruleTriggered)">
+                  <td class="rule-name">{{ rule }}</td>
+                  <td>
+                    <span class="rule-type-badge">{{ getRuleType(rule) }}</span>
+                  </td>
+                  <td class="rule-desc">{{ getRuleDescription(rule) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 

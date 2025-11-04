@@ -1702,7 +1702,80 @@ h1, h2, h3, h4, h5, h6 {
 
 .rule-description strong {
   color: #1f2937;
+}
+
+/* Rules Table */
+.rules-table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rules-table thead {
+  background: #f9fafb;
+}
+
+.rules-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.rules-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.rules-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.rules-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.rules-table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+  vertical-align: top;
+}
+
+.rules-table .rule-name {
+  font-weight: 500;
+  color: #1f2937;
+  min-width: 200px;
+}
+
+.rules-table .rule-type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background: #007AFF;
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.rules-table .rule-desc {
+  color: #4b5563;
+  line-height: 1.5;
+  max-width: 400px;
 }
 
 .details-grid {
