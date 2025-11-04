@@ -147,7 +147,7 @@ export class Transactions implements OnInit {
     const statusMap: any = {
       'COMPLETED': 'status-completed',
       'PENDING': 'status-pending',
-      'FAILED': 'status-failed',
+      'BLOCKED': 'status-failed',
       'FLAGGED': 'status-flagged'
     };
     return statusMap[status] || 'status-pending';
@@ -195,6 +195,11 @@ export class Transactions implements OnInit {
     }
     
     return pages;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
   viewTransactionDetails(transaction: Transaction): void {

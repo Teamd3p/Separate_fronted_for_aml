@@ -27,10 +27,35 @@
   <!-- SARs Table -->
   <div *ngIf="!isLoading" class="sars-table-container">
     <div class="table-header">
-      <h2>All SARs ({{ sars.length }})</h2>
+      <h2>All SARs ({{ filteredSars.length }})</h2>
     </div>
 
-    <div *ngIf="sars.length === 0" class="empty-state">
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filter-grid">
+        <div class="search-box">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search by SAR ID or Alert ID..."
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="applyFilters()">
+        </div>
+
+        <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()" class="filter-select">
+          <option value="all">All Status</option>
+          <option value="DRAFT">Draft</option>
+          <option value="SUBMITTED">Submitted</option>
+          <option value="PENDING">Pending</option>
+          <option value="ACKNOWLEDGED">Acknowledged</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="filteredSars.length === 0" class="empty-state">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
@@ -51,7 +76,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let sar of sars">
+        <tr *ngFor="let sar of paginatedSars">
           <td><span class="sar-id">#{{ sar.sarId }}</span></td>
           <td><span class="alert-id">#{{ sar.alertId }}</span></td>
             <td>
@@ -102,6 +127,75 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div *ngIf="sars.length > 0" class="pagination-container">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, sars.length) }} of {{ sars.length }} entries
+      </div>
+      <div class="pagination-wrapper">
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)"
+            title="First">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"/>
+              <polyline points="18 17 13 12 18 7"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === 1"
+            (click)="previousPage()"
+            title="Previous">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+
+          <button 
+            *ngFor="let page of getPageNumbers()"
+            class="pagination-number"
+            [class.active]="page === currentPage"
+            [class.ellipsis]="page === -1"
+            [disabled]="page === -1"
+            (click)="page !== -1 && goToPage(page)">
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === totalPages"
+            (click)="nextPage()"
+            title="Next">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)"
+            title="Last">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"/>
+              <polyline points="6 17 11 12 6 7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pagination-size">
+          <label>Show:</label>
+          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" class="page-size-select">
+            <option [value]="10">10</option>
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+          </select>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

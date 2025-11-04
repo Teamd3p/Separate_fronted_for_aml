@@ -107,10 +107,22 @@ interface SARDetailView {
   styleUrls: ['./sar.css']
 })
 export class Sar implements OnInit {
+  Math = Math; // Expose Math to template
   sars: SAR[] = [];
+  filteredSars: SAR[] = [];
+  paginatedSars: SAR[] = [];
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+  
+  // Filters
+  searchQuery = '';
+  filterStatus = 'all';
+  
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  totalPages = 1;
   
   // SAR Form
   showSarForm = false;
@@ -169,6 +181,7 @@ export class Sar implements OnInit {
     this.complianceService.getAllSARs().subscribe({
       next: (sars) => {
         this.sars = sars;
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
@@ -177,6 +190,96 @@ export class Sar implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.sars];
+    
+    // Filter by status
+    if (this.filterStatus !== 'all') {
+      filtered = filtered.filter(s => s.status === this.filterStatus);
+    }
+    
+    // Search filter
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.sarId.toString().includes(query) ||
+        s.alertId.toString().includes(query)
+      );
+    }
+    
+    this.filteredSars = filtered;
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredSars.length / this.pageSize);
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedSars = this.filteredSars.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    if (this.totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (this.currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(-1);
+        pages.push(this.totalPages);
+      } else if (this.currentPage >= this.totalPages - 2) {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = this.totalPages - 3; i <= this.totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = this.currentPage - 1; i <= this.currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(-1);
+        pages.push(this.totalPages);
+      }
+    }
+    
+    return pages;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
   openSarForm(alertId: number): void {

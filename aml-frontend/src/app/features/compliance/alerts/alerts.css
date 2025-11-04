@@ -1266,6 +1266,12 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -1337,6 +1343,42 @@ h1, h2, h3, h4, h5, h6 {
 
 .pagination-number:disabled {
   cursor: default;
+}
+
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-size label {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-size-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #1e293b;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-size-select:hover {
+  border-color: #007AFF;
+}
+
+.page-size-select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 /* Alerts Table */
@@ -1490,10 +1532,15 @@ h1, h2, h3, h4, h5, h6 {
 .action-buttons {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
-.btn-assign, .btn-investigate, .btn-sar {
+.action-buttons button {
+  min-width: 90px;
+  justify-content: center;
+}
+
+.btn-assign, .btn-investigate, .btn-sar, .btn-history {
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -1533,7 +1580,16 @@ h1, h2, h3, h4, h5, h6 {
   background: #c7d2fe;
 }
 
-.btn-assign svg, .btn-investigate svg, .btn-sar svg {
+.btn-history {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.btn-history:hover {
+  background: #ccfbf1;
+}
+
+.btn-assign svg, .btn-investigate svg, .btn-sar svg, .btn-history svg {
   stroke-width: 2;
 }
 

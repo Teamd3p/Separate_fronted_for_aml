@@ -124,7 +124,14 @@ export const routes: Routes = [
         path: 'tickets',
         loadComponent: () => import('./features/compliance/tickets/tickets').then(m => m.Tickets)
       },
-     
+      {
+        path: 'customer-alert-history',
+        loadComponent: () => import('./features/compliance/customer-alert-history/customer-alert-history').then(m => m.CustomerAlertHistory)
+      },
+      {
+        path: 'customer-alert-history/:customerId',
+        loadComponent: () => import('./features/compliance/customer-alert-history/customer-alert-history').then(m => m.CustomerAlertHistory)
+      },
       {
         path: '',
         redirectTo: 'dashboard',

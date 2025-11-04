@@ -363,6 +363,12 @@
   font-weight: 500;
 }
 
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -434,6 +440,42 @@
 
 .pagination-number:disabled {
   cursor: default;
+}
+
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-size label {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-size-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #1e293b;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-size-select:hover {
+  border-color: #007AFF;
+}
+
+.page-size-select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 /* Transaction Details Modal */

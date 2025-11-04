@@ -1,0 +1,123 @@
+<div class="customer-alert-history-container">
+  <!-- Header -->
+  <div class="page-header">
+    <button class="back-button" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Back to Alerts
+    </button>
+    <h1>Customer Alert History</h1>
+    <p class="subtitle" *ngIf="customerName">{{ customerName }} (Customer ID: {{ customerId }})</p>
+  </div>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="search-container">
+      <div class="search-box-large">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search by Customer Name or ID..."
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="searchByCustomer()">
+      </div>
+      <button class="btn-search" (click)="searchByCustomer()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        Search
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-banner">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading alert history...</p>
+  </div>
+
+  <!-- Alerts Table -->
+  <div *ngIf="!isLoading" class="alerts-table-container">
+    <div *ngIf="alerts.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h3>No alerts found</h3>
+      <p>This customer has no alert history</p>
+    </div>
+
+    <table *ngIf="alerts.length > 0" class="alerts-table">
+      <thead>
+        <tr>
+          <th>Alert ID</th>
+          <th>Transaction ID</th>
+          <th>Risk Score</th>
+          <th>Status</th>
+          <th>Investigation Status</th>
+          <th>Assigned Officer</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alert of filteredAlerts">
+          <td>
+            <span class="alert-id">#{{ alert.alertId }}</span>
+          </td>
+          <td>
+            <span class="transaction-id">#{{ alert.transactionId }}</span>
+          </td>
+        
+          <td>
+            <span class="risk-badge" [class]="getRiskClass(alert.riskScore)">
+              {{ alert.riskScore }}/100
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(alert.status)">
+              {{ alert.status }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class]="getStatusClass(alert.investigationStatus)">
+              {{ alert.investigationStatus }}
+            </span>
+          </td>
+          <td>
+            <div class="officer-info">
+              <div class="officer-name">{{ alert.assignedOfficerName || 'Unassigned' }}</div>
+              <div class="officer-email">{{ alert.assignedToOfficer || '-' }}</div>
+            </div>
+          </td>
+          <td>{{ alert.createdAt | date:'short' }}</td>
+          <td>
+            <button class="btn-view" (click)="viewAlertDetails(alert.alertId)" title="View Details">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              View
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -191,40 +191,71 @@
     </table>
 
     <!-- Pagination Controls -->
-    <div *ngIf="filteredAlerts.length > pageSize" class="pagination-container">
+    <div *ngIf="filteredAlerts.length > 0" class="pagination-container">
       <div class="pagination-info">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredAlerts.length) }} of {{ filteredAlerts.length }} alerts
+        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredAlerts.length) }} of {{ filteredAlerts.length }} entries
       </div>
-      <div class="pagination-controls">
-        <button 
-          class="pagination-btn" 
-          [disabled]="currentPage === 1"
-          (click)="previousPage()"
-          title="Previous">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <polyline points="15 18 9 12 15 6" stroke-width="2"/>
-          </svg>
-        </button>
+      <div class="pagination-wrapper">
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)"
+            title="First">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"/>
+              <polyline points="18 17 13 12 18 7"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === 1"
+            (click)="previousPage()"
+            title="Previous">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
 
-        <button 
-          *ngFor="let page of getPageNumbers()"
-          class="pagination-number"
-          [class.active]="page === currentPage"
-          [class.ellipsis]="page === -1"
-          [disabled]="page === -1"
-          (click)="page !== -1 && goToPage(page)">
-          {{ page === -1 ? '...' : page }}
-        </button>
+          <button 
+            *ngFor="let page of getPageNumbers()"
+            class="pagination-number"
+            [class.active]="page === currentPage"
+            [class.ellipsis]="page === -1"
+            [disabled]="page === -1"
+            (click)="page !== -1 && goToPage(page)">
+            {{ page === -1 ? '...' : page }}
+          </button>
 
-        <button 
-          class="pagination-btn" 
-          [disabled]="currentPage === totalPages"
-          (click)="nextPage()"
-          title="Next">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <polyline points="9 18 15 12 9 6" stroke-width="2"/>
-          </svg>
-        </button>
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === totalPages"
+            (click)="nextPage()"
+            title="Next">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn pagination-nav"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)"
+            title="Last">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"/>
+              <polyline points="6 17 11 12 6 7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pagination-size">
+          <label>Show:</label>
+          <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" class="page-size-select">
+            <option [value]="10">10</option>
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -266,10 +297,24 @@
               <span>{{ selectedAlert.customerName }}</span>
             </div>
             <div class="detail-item">
+              <label>Customer ID:</label>
+              <span>{{ selectedAlert.customerId }}</span>
+            </div>
+            <div class="detail-item">
               <label>Risk Score:</label>
               <span class="risk-badge" [class]="getRiskClass(selectedAlert.riskScore)">
                 {{ selectedAlert.riskScore }}/100
               </span>
+            </div>
+            <div class="detail-item">
+              <label>Alert History:</label>
+              <button class="btn-history" (click)="viewCustomerAlertHistory(selectedAlert.customerId)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                View History
+              </button>
             </div>
             <div class="detail-item">
               <label>Status:</label>

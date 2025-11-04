@@ -181,6 +181,11 @@ export class Alerts implements OnInit {
     return pages;
   }
 
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
   applyFilters(): void {
     let alerts = this.activeTab === 'all' ? this.allAlerts : this.assignedAlerts;
     
@@ -354,7 +359,11 @@ export class Alerts implements OnInit {
     this.receiverAccountDetails = null;
     this.customerTransactions = [];
     this.investigationNotes = '';
-    this.loadingAccountDetails = false;
+    this.investigationAction = 'INVESTIGATING';
+  }
+
+  viewCustomerAlertHistory(customerId: number): void {
+    this.router.navigate(['/compliance/customer-alert-history', customerId]);
   }
 
   submitInvestigation(): void {

@@ -279,58 +279,6 @@ export class Rules implements OnInit {
     this.loadRules();
   }
 
-  // Add sample data for testing
-  private addSampleData(): void {
-    this.rules = [
-      {
-        id: 1,
-        name: 'Rapid Transactions 10m',
-        type: 'FREQUENCY',
-        impact: 75,
-        isActive: true,
-        description: 'Detects rapid transaction patterns within 10 minutes',
-        condition: '{"field": "transaction_count", "operator": ">", "value": 5}',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        name: 'High Risk Geographic Location',
-        type: 'GEOGRAPHIC',
-        impact: 85,
-        isActive: true,
-        description: 'Flags transactions from high-risk countries',
-        condition: '{"sourceTable": "high_risk_countries", "filter": {"status": "active"}}',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 3,
-        name: 'Suspicious Keywords Detection',
-        type: 'KEYWORD',
-        impact: 60,
-        isActive: false,
-        description: 'Scans transaction descriptions for suspicious terms',
-        condition: '{"regex": "(?i)\\b(cash|money|transfer)\\b", "field": "description"}',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 4,
-        name: 'Large Amount Threshold',
-        type: 'THRESHOLD',
-        impact: 90,
-        isActive: true,
-        description: 'Triggers on transactions above specified amount',
-        condition: '{"regex": "^[1-9][0-9]*0{4,}$", "field": "amount"}',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    this.updateStatistics();
-    this.applyFilters();
-  }
-
   // Load rules from API
   loadRules(): void {
     this.loading = true;

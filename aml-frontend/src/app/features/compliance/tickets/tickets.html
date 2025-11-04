@@ -103,7 +103,7 @@
       <tbody>
         <tr *ngFor="let ticket of filteredTickets" (click)="openTicketModal(ticket)" class="clickable-row">
           <td><span class="ticket-id">#{{ ticket.ticketId }}</span></td>
-          <td>{{ ticket.customerName }}</td>
+          <td>{{ ticket.customerName || 'N/A' }}</td>
           <td>
             <div class="subject-text">{{ ticket.subject }}</div>
           </td>
@@ -153,38 +153,14 @@
           <div class="info-row">
             <div class="info-item">
               <label>Customer:</label>
-              <span>{{ selectedTicket.customerName }}</span>
+              <span>{{ selectedTicket.customerName || 'N/A' }}</span>
             </div>
             <div class="info-item">
               <label>Customer ID:</label>
-              <span>#{{ selectedTicket.customerId }}</span>
+              <span>#{{ selectedTicket.customerId || 'N/A' }}</span>
             </div>
           </div>
           <div class="info-row">
-<<<<<<< HEAD
-            <div class="info-item status-update-section">
-              <label>Status:</label>
-              <div class="status-controls">
-                <select 
-                  [(ngModel)]="newStatus" 
-                  [disabled]="isStatusLocked()"
-                  class="status-select">
-                  <option value="OPEN">Open</option>
-                  <option value="ASSIGNED">Assigned</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="RESOLVED">Resolved</option>
-                  <option value="CLOSED">Closed</option>
-                </select>
-                <button 
-                  class="btn-update-status"
-                  (click)="submitStatusUpdate()"
-                  [disabled]="isStatusLocked() || updatingStatus || newStatus === selectedTicket.status"
-                >
-                  {{ updatingStatus ? 'Updating...' : 'Update Status' }}
-                </button>
-              </div>
-              <span class="current-status">Current: <strong>{{ selectedTicket.status }}</strong></span>
-=======
             <div class="info-item">
               <label>Priority:</label>
               <select 
@@ -201,16 +177,15 @@
             <div class="info-item">
               <label>Status:</label>
               <select 
-                [value]="selectedTicket.status" 
-                (change)="updateStatus($any($event.target).value)"
-                [disabled]="updatingStatus"
+                [(ngModel)]="newStatus"
+                (change)="submitStatusUpdate()"
+                [disabled]="updatingStatus || isStatusLocked()"
                 class="status-select">
                 <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">In Progress</option>
                 <option value="RESOLVED">Resolved</option>
                 <option value="CLOSED">Closed</option>
               </select>
->>>>>>> 01b07542f3ea03eea4e79c419919361a9e005a20
             </div>
           </div>
         </div>
@@ -225,11 +200,6 @@
         </div>
       </div>
 
-<<<<<<< HEAD
-      
-
-      
-=======
 
       <!-- Response Form -->
       <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED'">
@@ -263,7 +233,6 @@
           </button>
         </div>
       </div>
->>>>>>> 01b07542f3ea03eea4e79c419919361a9e005a20
 
       <!-- Resolved Ticket Notice -->
       <div *ngIf="selectedTicket.status === 'RESOLVED'" class="ticket-resolved-notice">

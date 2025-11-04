@@ -86,6 +86,71 @@
   color: #1e293b;
 }
 
+/* Filters Section */
+.filters-section {
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  transition: all 0.2s ease;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-weight: 500;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover {
+  border-color: #007AFF;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
 /* Empty State */
 .empty-state {
   display: flex;
@@ -200,13 +265,16 @@
 .action-buttons {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
-.btn-submit, .btn-view {
+.action-buttons button {
   display: flex;
   align-items: center;
   gap: 0.375rem;
+  min-width: 110px;
   padding: 0.5rem 0.75rem;
+  justify-content: center;
   border: none;
   border-radius: 0.375rem;
   font-size: 0.875rem;
@@ -231,6 +299,147 @@
 
 .btn-view:hover {
   background: #e5e7eb;
+}
+
+.btn-download {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-download:hover {
+  background: #2563eb;
+}
+
+/* Pagination */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pagination-info {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #007AFF;
+  color: #007AFF;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #64748b;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-number:hover:not(:disabled):not(.ellipsis) {
+  background: #f8fafc;
+  border-color: #007AFF;
+  color: #007AFF;
+}
+
+.pagination-number.active {
+  background: #007AFF;
+  border-color: #007AFF;
+  color: white;
+  font-weight: 600;
+}
+
+.pagination-number.ellipsis {
+  border: none;
+  background: none;
+  cursor: default;
+  color: #94a3b8;
+}
+
+.pagination-number:disabled {
+  cursor: default;
+}
+
+.pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-size label {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.page-size-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #1e293b;
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-size-select:hover {
+  border-color: #007AFF;
+}
+
+.page-size-select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 /* Modal */
