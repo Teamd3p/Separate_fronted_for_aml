@@ -161,31 +161,28 @@
             </div>
           </div>
           <div class="info-row">
-            <div class="info-item">
-              <label>Priority:</label>
-              <select 
-                [value]="selectedTicket.priority" 
-                (change)="updatePriority($any($event.target).value)"
-                [disabled]="updatingPriority"
-                class="priority-select">
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-            <div class="info-item">
+            <div class="info-item status-update-section">
               <label>Status:</label>
-              <select 
-                [(ngModel)]="newStatus"
-                (change)="submitStatusUpdate()"
-                [disabled]="updatingStatus || isStatusLocked()"
-                class="status-select">
-                <option value="OPEN">Open</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-              </select>
+              <div class="status-controls">
+                <select 
+                  [(ngModel)]="newStatus" 
+                  [disabled]="isStatusLocked()"
+                  class="status-select">
+                  <option value="OPEN">Open</option>
+                  <option value="ASSIGNED">Assigned</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+                <button 
+                  class="btn-update-status"
+                  (click)="submitStatusUpdate()"
+                  [disabled]="isStatusLocked() || updatingStatus || newStatus === selectedTicket.status"
+                >
+                  {{ updatingStatus ? 'Updating...' : 'Update Status' }}
+                </button>
+              </div>
+              <span class="current-status">Current: <strong>{{ selectedTicket.status }}</strong></span>
             </div>
           </div>
         </div>
@@ -197,40 +194,6 @@
             <span>Created: {{ selectedTicket.createdAt | date:'medium' }}</span>
             <span *ngIf="selectedTicket.resolvedAt">Resolved: {{ selectedTicket.resolvedAt | date:'medium' }}</span>
           </div>
-        </div>
-      </div>
-
-
-      <!-- Response Form -->
-      <div class="response-form" *ngIf="selectedTicket.status !== 'CLOSED' && selectedTicket.status !== 'RESOLVED'">
-        <h3>Your Response</h3>
-        <textarea 
-          [(ngModel)]="responseMessage"
-          class="form-control"
-          rows="4"
-          placeholder="Type your response to the customer..."></textarea>
-        
-        <div class="form-actions">
-          <button class="btn-secondary" (click)="closeTicketModal()">Cancel</button>
-          <button 
-            class="btn-primary" 
-            (click)="submitResponse()"
-            [disabled]="!responseMessage.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            Send Response
-          </button>
-          <button 
-            class="btn-resolve" 
-            (click)="resolveTicket()"
-            [disabled]="!responseMessage.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Resolve & Close
-          </button>
         </div>
       </div>
 

@@ -211,7 +211,6 @@ export class Tickets implements OnInit {
       },
       error: (error) => {
         console.error('Error updating status:', error);
-
         const errorMsg = error.error?.message || error.message || 'Failed to update status. Please try again.';
         this.errorMessage = errorMsg;
         this.updatingStatus = false;
