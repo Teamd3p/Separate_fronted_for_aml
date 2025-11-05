@@ -486,9 +486,28 @@
         <!-- Take Action Section -->
         <div class="investigation-section">
           <h3>Take Action</h3>
+          
+          <!-- Warning if cannot take action -->
+          <div *ngIf="!canTakeAction()" class="alert-warning-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span *ngIf="isFinalStatus(selectedAlert.status)">
+              This alert has been finalized with status: <strong>{{ selectedAlert.status }}</strong>. No further actions can be taken.
+            </span>
+            <span *ngIf="!isFinalStatus(selectedAlert.status) && selectedAlert.assignedOfficerName && !isAlertAssignedToMe(selectedAlert)">
+              This alert is assigned to <strong>{{ selectedAlert.assignedOfficerName }}</strong>. Only the assigned officer can take action.
+            </span>
+          </div>
+          
           <div class="form-group">
             <label>Action: *</label>
-            <select [(ngModel)]="investigationAction" class="form-control">
+            <select 
+              [(ngModel)]="investigationAction" 
+              class="form-control"
+              [disabled]="!canTakeAction()">
               <option value="INVESTIGATING">Continue Investigation</option>
               <option value="TRUE_POSITIVE">Mark as True Positive</option>
               <option value="FALSE_POSITIVE">Mark as False Positive</option>
@@ -503,12 +522,18 @@
               class="form-control"
               rows="5"
               placeholder="Enter your investigation findings, observations, and reasoning for the action taken..."
+              [disabled]="!canTakeAction()"
               required></textarea>
           </div>
 
           <div class="modal-actions">
-            <button class="btn-secondary" (click)="closeInvestigationModal()">Cancel</button>
-            <button class="btn-primary" (click)="submitInvestigation()" [disabled]="!investigationNotes.trim()">
+            <button class="btn-secondary" (click)="closeInvestigationModal()">
+              {{ canTakeAction() ? 'Cancel' : 'Close' }}
+            </button>
+            <button 
+              class="btn-primary" 
+              (click)="submitInvestigation()" 
+              [disabled]="!investigationNotes.trim() || !canTakeAction()">
               Submit Investigation
             </button>
           </div>
@@ -695,3 +720,6 @@
     </div>
   </div>
 </div>
+
+<!-- Toast Notifications -->
+<app-toast></app-toast>

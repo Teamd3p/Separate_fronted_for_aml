@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ComplianceService, Alert, Transaction } from '../../../core/services/compliance.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { ToastComponent } from '../../../shared/components/toast/toast.component';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ToastComponent],
   templateUrl: './alerts.html',
   styleUrl: './alerts.css',
 })
@@ -50,7 +52,8 @@ export class Alerts implements OnInit {
   constructor(
     private complianceService: ComplianceService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -390,7 +393,19 @@ export class Alerts implements OnInit {
 
   submitInvestigation(): void {
     if (!this.selectedAlert || !this.investigationNotes.trim()) {
-      this.errorMessage = 'Please provide investigation notes';
+      this.toastService.error('Please provide investigation notes');
+      return;
+    }
+    
+    // Check if alert already has a final decision
+    if (this.isFinalStatus(this.selectedAlert.status)) {
+      this.toastService.error(`Cannot change status. Alert already marked as ${this.selectedAlert.status}. This is a final decision.`);
+      return;
+    }
+    
+    // Check if alert is assigned to another officer
+    if (this.selectedAlert.assignedOfficerName && !this.isAlertAssignedToMe(this.selectedAlert)) {
+      this.toastService.error(`This alert is assigned to ${this.selectedAlert.assignedOfficerName}. Only the assigned officer can take action.`);
       return;
     }
     
@@ -405,15 +420,30 @@ export class Alerts implements OnInit {
     
     this.complianceService.takeActionOnAlert(this.selectedAlert.alertId, request).subscribe({
       next: (updatedAlert) => {
-        this.successMessage = `Investigation action "${this.investigationAction}" recorded successfully`;
+        this.toastService.success(`Investigation action "${this.investigationAction}" recorded successfully`);
         this.closeInvestigationModal();
         this.loadAlerts();
-        setTimeout(() => this.successMessage = '', 3000);
       },
       error: (error) => {
         console.error('Error submitting investigation:', error);
-        this.errorMessage = error.error?.message || 'Failed to submit investigation';
-        setTimeout(() => this.errorMessage = '', 3000);
+        
+        // Handle different error scenarios
+        if (error.status === 403 || error.status === 401) {
+          this.toastService.error('You do not have permission to take action on this alert. It may be assigned to another officer.');
+        } else if (error.status === 409) {
+          this.toastService.error('This alert has already been processed by another officer.');
+        } else if (error.status === 500) {
+          const errorMsg = error.error?.message || error.error?.error || 'Server error occurred';
+          if (errorMsg.toLowerCase().includes('assigned') || errorMsg.toLowerCase().includes('officer')) {
+            this.toastService.error('This alert is assigned to another officer. Only the assigned officer can take action.');
+          } else if (errorMsg.toLowerCase().includes('status')) {
+            this.toastService.error('Cannot change status. This alert may have been finalized by another officer.');
+          } else {
+            this.toastService.error(`Failed to submit investigation: ${errorMsg}`);
+          }
+        } else {
+          this.toastService.error(error.error?.message || 'Failed to submit investigation. Please try again.');
+        }
       }
     });
   }
@@ -491,5 +521,40 @@ export class Alerts implements OnInit {
 
   isUnassigned(alert: Alert): boolean {
     return !alert.assignedOfficerName || alert.assignedOfficerName.trim() === '';
+  }
+
+  isAlertAssignedToMe(alert: Alert): boolean {
+    // Get current officer's name from localStorage
+    const firstName = localStorage.getItem('firstName') || '';
+    const lastName = localStorage.getItem('lastName') || '';
+    const currentOfficerName = `${firstName} ${lastName}`.trim();
+    
+    // Check if alert is assigned to current officer
+    if (!alert.assignedOfficerName || !currentOfficerName) {
+      return false;
+    }
+    
+    return alert.assignedOfficerName.toLowerCase() === currentOfficerName.toLowerCase();
+  }
+
+  isFinalStatus(status: string): boolean {
+    const finalStatuses = ['TRUE_POSITIVE', 'FALSE_POSITIVE', 'ESCALATED'];
+    return finalStatuses.includes(status);
+  }
+
+  canTakeAction(): boolean {
+    if (!this.selectedAlert) return false;
+    
+    // Cannot take action if status is final
+    if (this.isFinalStatus(this.selectedAlert.status)) {
+      return false;
+    }
+    
+    // Cannot take action if assigned to another officer
+    if (this.selectedAlert.assignedOfficerName && !this.isAlertAssignedToMe(this.selectedAlert)) {
+      return false;
+    }
+    
+    return true;
   }
 }
