@@ -36,6 +36,7 @@ export class Alerts implements OnInit {
   filterStatus = 'all';
   filterRiskLevel = 'all';
   searchQuery = '';
+  sortNewestFirst = true; // Default to newest first
   
   // Pagination
   currentPage = 1;
@@ -220,9 +221,30 @@ export class Alerts implements OnInit {
       );
     }
     
+    // Sort by date
+    alerts = this.sortAlerts(alerts);
+    
     this.filteredAlerts = alerts;
     this.currentPage = 1; // Reset to first page when filters change
     this.updatePagination();
+  }
+
+  sortAlerts(alerts: Alert[]): Alert[] {
+    return alerts.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      
+      if (this.sortNewestFirst) {
+        return dateB - dateA; // Newest first (descending)
+      } else {
+        return dateA - dateB; // Oldest first (ascending)
+      }
+    });
+  }
+
+  toggleSortOrder(): void {
+    this.sortNewestFirst = !this.sortNewestFirst;
+    this.applyFilters();
   }
 
   assignToMe(alert: Alert, event: Event): void {

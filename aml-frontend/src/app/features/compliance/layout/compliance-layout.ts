@@ -4,6 +4,7 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { ComplianceService } from '../../../core/services/compliance.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ToastComponent } from '../../../shared/components/toast/toast.component';
 import { filter } from 'rxjs/operators';
@@ -47,6 +48,7 @@ export class ComplianceLayout {
 
   constructor(
     private authService: AuthService,
+    private complianceService: ComplianceService,
     private router: Router,
     private http: HttpClient,
     private toastService: ToastService
@@ -63,13 +65,57 @@ export class ComplianceLayout {
   }
 
   loadOfficerInfo(): void {
-    // Get officer info from auth service or local storage
-    const user = this.authService.getCurrentUser();
-    this.currentOfficer = user || {
-      firstName: 'Compliance',
-      lastName: 'Officer',
-      email: localStorage.getItem('email') || 'officer@aml.com'
+    // First, try to get from localStorage
+    const firstName = localStorage.getItem('firstName');
+    const lastName = localStorage.getItem('lastName');
+    const email = localStorage.getItem('email');
+    
+    // Set initial values from localStorage
+    this.currentOfficer = {
+      firstName: firstName || 'Compliance',
+      lastName: lastName || 'Officer',
+      email: email || 'officer@aml.com'
     };
+    
+    // Then fetch from API to get the most up-to-date info
+    this.complianceService.getOfficerProfile().subscribe({
+      next: (profile) => {
+        console.log('Officer profile loaded:', profile);
+        
+        // Update currentOfficer with API data
+        this.currentOfficer = {
+          firstName: profile.firstName || firstName || 'Compliance',
+          lastName: profile.lastName || lastName || 'Officer',
+          email: profile.email || email || 'officer@aml.com'
+        };
+        
+        // Update localStorage with fresh data
+        if (profile.firstName) {
+          localStorage.setItem('firstName', profile.firstName);
+        }
+        if (profile.lastName) {
+          localStorage.setItem('lastName', profile.lastName);
+        }
+        if (profile.email) {
+          localStorage.setItem('email', profile.email);
+        }
+      },
+      error: (error) => {
+        console.log('Could not load officer profile from API, using localStorage values');
+        // Keep the localStorage values we already set
+      }
+    });
+  }
+
+  getOfficerFullName(): string {
+    if (this.currentOfficer && this.currentOfficer.firstName && this.currentOfficer.lastName) {
+      const fullName = `${this.currentOfficer.firstName} ${this.currentOfficer.lastName}`.trim();
+      // Only return full name if it's not the default values
+      if (fullName !== 'Compliance Officer') {
+        return fullName;
+      }
+    }
+    return 'Compliance Officer';
   }
 
   loadNotifications(): void {

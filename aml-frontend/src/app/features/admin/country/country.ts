@@ -362,7 +362,7 @@ export class Country implements OnInit {
   }
 
   // Utility methods
-  getRiskBadgeClass(riskLevel: string): string {
+  getRiskBadgeClass(riskLevel?: string): string {
     switch (riskLevel) {
       case 'CRITICAL': return 'risk-badge critical';
       case 'HIGH': return 'risk-badge high';
