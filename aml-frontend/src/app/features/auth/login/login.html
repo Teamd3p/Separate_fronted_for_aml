@@ -118,7 +118,13 @@
           <label>CAPTCHA</label>
           <div class="captcha-container">
             <div class="captcha-image">
-              <span class="captcha-text">{{ captchaNum1 }} + {{ captchaNum2 }} = ?</span>
+              <canvas 
+                #captchaCanvas 
+                class="captcha-canvas"
+                oncontextmenu="return false;"
+                ondragstart="return false;"
+                style="user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; pointer-events: none; display: block;">
+              </canvas>
             </div>
             <button type="button" class="refresh-captcha-btn" (click)="refreshCaptcha()" title="Refresh Captcha">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">

@@ -314,8 +314,9 @@
 
 .captcha-image {
   flex: 1;
-  padding: 0.875rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
@@ -329,6 +330,17 @@
   color: #ffffff;
   letter-spacing: 0.05em;
   font-family: 'Courier New', monospace;
+}
+
+.captcha-canvas {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+  cursor: default;
 }
 
 .refresh-captcha-btn {

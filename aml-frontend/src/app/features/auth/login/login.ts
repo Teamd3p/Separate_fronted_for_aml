@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -13,7 +13,8 @@ import { LoginRequest } from '../../../core/models/auth.models';
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
-export class Login {
+export class Login implements AfterViewInit {
+  @ViewChild('captchaCanvas', { static: false }) captchaCanvas!: ElementRef<HTMLCanvasElement>;
   showPassword: boolean = false;
   isLoading: boolean = false;
   errorMessage: string = '';
@@ -32,7 +33,9 @@ export class Login {
   constructor(
     private authService: AuthService,
     private router: Router
-  ) {
+  ) {}
+
+  ngAfterViewInit(): void {
     this.generateCaptcha();
   }
 
@@ -41,6 +44,65 @@ export class Login {
     this.captchaNum2 = Math.floor(Math.random() * 10) + 1;
     this.captchaCorrect = this.captchaNum1 + this.captchaNum2;
     this.captchaAnswer = '';
+    this.drawCaptcha();
+  }
+
+  drawCaptcha(): void {
+    if (!this.captchaCanvas) return;
+    
+    const canvas = this.captchaCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size to match the original design
+    canvas.width = 200;
+    canvas.height = 48;
+
+    // Random light background color (realistic CAPTCHA style)
+    const bgColors = ['#f0f4f8', '#e8f0fe', '#fef3e8', '#f0fdf4', '#fef2f2', '#f5f3ff'];
+    ctx.fillStyle = bgColors[Math.floor(Math.random() * bgColors.length)];
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add random noise lines
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = this.getRandomColor(150, 200);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+
+    // Add noise dots
+    for (let i = 0; i < 30; i++) {
+      ctx.fillStyle = this.getRandomColor(100, 200);
+      ctx.beginPath();
+      ctx.arc(
+        Math.random() * canvas.width,
+        Math.random() * canvas.height,
+        1,
+        0,
+        2 * Math.PI
+      );
+      ctx.fill();
+    }
+
+    // Draw the math problem text with random dark color
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.fillStyle = this.getRandomColor(20, 80);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.05em';
+    
+    const text = `${this.captchaNum1} + ${this.captchaNum2} = ?`;
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  }
+
+  getRandomColor(min: number, max: number): string {
+    const r = Math.floor(Math.random() * (max - min) + min);
+    const g = Math.floor(Math.random() * (max - min) + min);
+    const b = Math.floor(Math.random() * (max - min) + min);
+    return `rgb(${r}, ${g}, ${b})`;
   }
 
   refreshCaptcha(): void {
