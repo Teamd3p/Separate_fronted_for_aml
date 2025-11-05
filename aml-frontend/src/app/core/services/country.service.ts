@@ -76,11 +76,15 @@ export class CountryService {
 
   // Create new country
   createCountry(countryData: CountryCreateRequest): Observable<Country> {
-    const payload = {
+    const payload: any = {
       countryCode: countryData.code?.toUpperCase(),
-      countryName: countryData.name,
-      riskLevel: countryData.riskLevel || 'MEDIUM'
+      countryName: countryData.name
     };
+    
+    // Only include riskLevel if provided
+    if (countryData.riskLevel) {
+      payload.riskLevel = countryData.riskLevel;
+    }
     
     return this.http.post<any>(`${this.API_URL}/admin/countries`, payload, this.getHttpOptions()).pipe(
       map((response: any) => {

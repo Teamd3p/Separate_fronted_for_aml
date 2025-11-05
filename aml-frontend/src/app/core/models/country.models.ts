@@ -1,7 +1,7 @@
 export interface Country {
   code: string; // Primary key
   name: string;
-  riskLevel: string;
+  riskLevel?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -9,7 +9,7 @@ export interface Country {
 export interface CountryCreateRequest {
   code: string;
   name: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }
 
 export interface CountryUpdateRequest {
