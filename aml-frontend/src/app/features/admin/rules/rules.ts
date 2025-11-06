@@ -82,7 +82,7 @@ export class Rules implements OnInit {
   // Rule type configurations
   ruleTypeConfigs: { [key: string]: RuleTypeConfig } = {
     'THRESHOLD': {
-      description: 'Detects large or specific type transactions exceeding set threshold(s)',
+      description: 'Detects transactions based on amount thresholds and account behavior patterns',
       fields: [
         {
           name: 'amountThreshold',
@@ -90,23 +90,23 @@ export class Rules implements OnInit {
           type: 'number',
           required: false,
           placeholder: '100000',
-          description: 'Minimum transaction amount that triggers the rule (use this OR min/max amount)'
+          description: 'Simple threshold amount (use this OR minAmount+maxAmount)'
         },
         {
           name: 'minAmount',
           label: 'Minimum Amount',
           type: 'number',
           required: false,
-          placeholder: '50000',
-          description: 'Minimum amount for range-based checks'
+          placeholder: '9000',
+          description: 'Minimum amount for range-based rules'
         },
         {
           name: 'maxAmount',
           label: 'Maximum Amount',
           type: 'number',
           required: false,
-          placeholder: '200000',
-          description: 'Maximum amount for range-based checks'
+          placeholder: '10000',
+          description: 'Maximum amount for range-based rules'
         },
         {
           name: 'currency',
@@ -121,7 +121,7 @@ export class Rules implements OnInit {
             { value: 'EUR', label: 'EUR' },
             { value: 'GBP', label: 'GBP' }
           ],
-          description: 'Currency to which rule applies'
+          description: 'Currency code (defaults to "ANY")'
         },
         {
           name: 'transactionType',
@@ -133,14 +133,43 @@ export class Rules implements OnInit {
             { value: 'CREDIT', label: 'CREDIT' },
             { value: 'DEBIT', label: 'DEBIT' },
             { value: 'TRANSFER', label: 'TRANSFER' },
-            { value: 'DEPOSIT', label: 'DEPOSIT' }
+            { value: 'DEPOSIT', label: 'DEPOSIT' },
+            { value: 'WITHDRAWAL', label: 'WITHDRAWAL' }
           ],
-          description: 'Restricts rule to a particular transaction type'
+          description: 'Filter by transaction type'
+        },
+        {
+          name: 'amountToBalanceRatio',
+          label: 'Amount to Balance Ratio',
+          type: 'number',
+          required: false,
+          placeholder: '0.8',
+          description: 'Trigger if amount exceeds % of balance (e.g., 0.8 = 80%)',
+          min: 0,
+          max: 1
+        },
+        {
+          name: 'historicalDays',
+          label: 'Historical Days',
+          type: 'number',
+          required: false,
+          placeholder: '30',
+          description: 'Days to look back for average calculation',
+          min: 1
+        },
+        {
+          name: 'deviationFactor',
+          label: 'Deviation Factor',
+          type: 'number',
+          required: false,
+          placeholder: '3.0',
+          description: 'Multiplier for historical average (e.g., 3.0 = 3x average)',
+          min: 1
         }
       ]
     },
     'FREQUENCY': {
-      description: 'Detects multiple transactions by same customer in short time (burst activity)',
+      description: 'Detects rapid succession of transactions within a time window',
       fields: [
         {
           name: 'maxTransactions',
@@ -149,52 +178,80 @@ export class Rules implements OnInit {
           required: true,
           placeholder: '5',
           min: 1,
-          description: 'Maximum number of allowed transactions in the time window'
+          description: 'Maximum allowed transactions in window'
         },
         {
           name: 'timeWindowMinutes',
           label: 'Time Window (Minutes)',
           type: 'number',
           required: true,
-          placeholder: '60',
+          placeholder: '30',
           min: 1,
-          description: 'Time window in minutes to check transaction frequency'
+          description: 'Time window in minutes'
+        },
+        {
+          name: 'dormantDays',
+          label: 'Dormant Days',
+          type: 'number',
+          required: false,
+          placeholder: '90',
+          min: 1,
+          description: 'Days of inactivity before flagging'
+        },
+        {
+          name: 'minAmount',
+          label: 'Minimum Amount',
+          type: 'number',
+          required: false,
+          placeholder: '50000',
+          description: 'Minimum amount for dormant account check'
         }
       ]
     },
     'VELOCITY': {
-      description: 'Detects fast-moving (high frequency + amount) transactions above a limit',
+      description: 'Detects rapid movement of funds with specific patterns',
       fields: [
+        {
+          name: 'timeWindowMinutes',
+          label: 'Time Window (Minutes)',
+          type: 'number',
+          required: true,
+          placeholder: '1440',
+          min: 1,
+          description: 'Time window for velocity check'
+        },
         {
           name: 'minAmount',
           label: 'Minimum Amount',
           type: 'number',
           required: true,
           placeholder: '10000',
-          description: 'Minimum amount to consider for velocity checks'
+          description: 'Minimum transaction amount to consider'
         },
         {
           name: 'maxTransactions',
           label: 'Max Transactions',
           type: 'number',
           required: true,
-          placeholder: '3',
+          placeholder: '5',
           min: 1,
-          description: 'Maximum number of transactions allowed'
+          description: 'Maximum allowed transactions'
         },
         {
-          name: 'timeWindowMinutes',
-          label: 'Time Window (Minutes)',
-          type: 'number',
-          required: true,
-          placeholder: '120',
-          min: 1,
-          description: 'Time window in minutes for velocity analysis'
+          name: 'checkAlternation',
+          label: 'Check Alternating Pattern',
+          type: 'select',
+          required: false,
+          options: [
+            { value: '', label: 'No' },
+            { value: 'true', label: 'Yes' }
+          ],
+          description: 'Check for alternating credit/debit pattern'
         }
       ]
     },
     'FUNNEL_ACCOUNT': {
-      description: 'Detects many senders funneling to one receiver (typical of money laundering)',
+      description: 'Detects funnel accounts (many senders to one receiver - fan-in pattern)',
       fields: [
         {
           name: 'minSenders',
@@ -203,7 +260,7 @@ export class Rules implements OnInit {
           required: true,
           placeholder: '5',
           min: 1,
-          description: 'Minimum number of unique senders sending to the same receiver'
+          description: 'Minimum unique senders to trigger'
         },
         {
           name: 'timeWindowMinutes',
@@ -212,12 +269,12 @@ export class Rules implements OnInit {
           required: true,
           placeholder: '60',
           min: 1,
-          description: 'Time window in minutes for funnel detection'
+          description: 'Time window for counting senders'
         }
       ]
     },
     'GEOGRAPHIC': {
-      description: 'Detects transactions involving risky countries (based on country risk level DB)',
+      description: 'Detects transactions involving high-risk countries based on sender/receiver location',
       fields: [
         {
           name: 'highRiskAmountThreshold',
@@ -225,7 +282,7 @@ export class Rules implements OnInit {
           type: 'number',
           required: false,
           placeholder: '50000',
-          description: 'Amount threshold for high-risk countries'
+          description: 'Amount threshold for HIGH risk countries (default: 50000)'
         },
         {
           name: 'mediumRiskAmountThreshold',
@@ -233,24 +290,24 @@ export class Rules implements OnInit {
           type: 'number',
           required: false,
           placeholder: '500000',
-          description: 'Amount threshold for medium-risk countries'
+          description: 'Amount threshold for MEDIUM risk countries (default: 500000)'
         }
       ]
     },
     'KEYWORD': {
-      description: 'Detects suspicious words/phrases in transaction descriptions (uses keywords from DB)',
+      description: 'Detects suspicious keywords in transaction descriptions using database-stored keywords',
       fields: []
     },
     'PATTERN': {
-      description: 'Detects patterns using regex in transaction fields',
+      description: 'Detects specific patterns using regex matching on transaction fields',
       fields: [
         {
           name: 'regex',
           label: 'Regular Expression',
           type: 'text',
           required: true,
-          placeholder: '(?i)bribe|illegal|smurf',
-          description: 'Regex pattern to match in transaction field'
+          placeholder: '.*round.*trip.*',
+          description: 'Regular expression pattern'
         },
         {
           name: 'field',
@@ -262,7 +319,7 @@ export class Rules implements OnInit {
             { value: 'description', label: 'Description' },
             { value: 'amount', label: 'Amount' }
           ],
-          description: 'Transaction field where regex will be applied'
+          description: 'Field to match (defaults to "description")'
         }
       ]
     }
@@ -701,7 +758,7 @@ export class Rules implements OnInit {
         
         // Transaction type validation
         if (parsed.transactionType !== undefined) {
-          const validTypes = ['DEBIT', 'CREDIT', 'TRANSFER', 'DEPOSIT'];
+          const validTypes = ['DEBIT', 'CREDIT', 'TRANSFER', 'DEPOSIT', 'WITHDRAWAL'];
           if (typeof parsed.transactionType !== 'string' || !validTypes.includes(parsed.transactionType.toUpperCase())) {
             return false;
           }

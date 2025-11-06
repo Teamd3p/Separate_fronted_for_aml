@@ -111,10 +111,14 @@ export class Reports implements OnInit {
     this.http.get<any>(`${this.apiUrl}/admin/reports/alerts-by-type`, { headers })
       .subscribe({
         next: (data) => {
+          console.log('🔍 Alerts by Type Response:', data);
+          console.log('Labels:', data.labels);
+          console.log('Values:', data.values);
           this.alertsByType = data;
         },
-        error: () => {
-         
+        error: (error) => {
+          console.error('❌ Error loading alerts by type:', error);
+          this.alertsByType = { labels: [], values: [] };
         }
       });
 

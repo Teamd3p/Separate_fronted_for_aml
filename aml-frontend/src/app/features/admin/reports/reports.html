@@ -151,51 +151,6 @@
 
   </div>
 
-  <!-- Top Risk Customers -->
-  <div class="risk-customers-section" *ngIf="!loading">
-    <div class="section-header">
-      <h2>Top Risk Customers</h2>
-      <p>Customers with highest risk scores requiring attention</p>
-    </div>
-    
-    <div class="risk-table">
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Customer Name</th>
-            <th>Risk Score</th>
-            <th>Alert Count</th>
-            <th>Last Activity</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let customer of topRiskCustomers; let i = index">
-            <td><span class="rank-badge">{{ i + 1 }}</span></td>
-            <td>
-              <div class="customer-info">
-                <div class="customer-avatar">{{ customer.name.charAt(0) }}</div>
-                <span class="customer-name">{{ customer.name }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="risk-score" [ngClass]="getRiskScoreClass(customer.riskScore)">
-                {{ customer.riskScore }}
-              </span>
-            </td>
-            <td><span class="alert-count">{{ customer.alertCount }}</span></td>
-            <td><span class="last-activity">{{ customer.lastActivity }}</span></td>
-            <td>
-              <button class="btn-view" (click)="navigateToCustomer(customer.id)">
-                View Details
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
   <!-- Key Insights -->
   <div class="insights-section" *ngIf="!loading">
