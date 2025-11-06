@@ -283,6 +283,15 @@ export class Sar implements OnInit {
   }
 
   openSarForm(alertId: number): void {
+    // First check if a SAR already exists for this alert
+    const existingSAR = this.sars.find(sar => sar.alertId === alertId);
+    
+    if (existingSAR) {
+      this.errorMessage = `A SAR (#${existingSAR.sarId}) already exists for this alert. Only one SAR can be generated per alert.`;
+      setTimeout(() => this.errorMessage = '', 5000);
+      return;
+    }
+    
     this.showSarForm = true;
     this.selectedAlertId = alertId;
     this.resetSarData();

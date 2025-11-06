@@ -413,7 +413,7 @@ export class RegisterComponent implements OnInit {
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       middleName: [''],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      dateOfBirth: ['', [Validators.required]],
+      dateOfBirth: ['', [Validators.required, this.futureDateValidator()]],
       nationality: ['', [Validators.required]],
       contactNumber: ['', [Validators.required, Validators.pattern('^[0-9]{10,15}$')]],
       password: ['', [
@@ -425,7 +425,7 @@ export class RegisterComponent implements OnInit {
       city: ['', [Validators.required]],
       state: ['', [Validators.required]],
       country: ['', [Validators.required]],
-      pincode: ['', [Validators.required]],
+      pincode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]],
       agreement: [false, [Validators.requiredTrue]]
     });
   }
@@ -435,7 +435,6 @@ export class RegisterComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     this.countrySearchTerm = input.value;
     this.showCountryDropdown = true;
-    
     if (this.countrySearchTerm) {
       this.filteredCountries = this.countries.filter(country =>
         country.name.toLowerCase().startsWith(this.countrySearchTerm.toLowerCase()) ||
@@ -451,13 +450,11 @@ export class RegisterComponent implements OnInit {
     this.selectedCountry = country;
     this.countrySearchTerm = country.name;
     this.showCountryDropdown = false;
-    
     // Set country code (ISO 2-char) in form
     this.registrationForm.patchValue({
       country: country.code,
       nationality: country.name // Auto-populate nationality
     });
-    
     console.log('Form values after selection:', {
       country: this.registrationForm.get('country')?.value,
       nationality: this.registrationForm.get('nationality')?.value
@@ -490,6 +487,22 @@ export class RegisterComponent implements OnInit {
 
       const valid = hasNumber && hasUpper && hasLower && hasSpecial;
       return valid ? null : { 'passwordStrength': true };
+    };
+  }
+
+  private futureDateValidator(): ValidatorFn {
+    return (control: AbstractControl): {[key: string]: any} | null => {
+      if (!control.value) return null;
+      
+      const selectedDate = new Date(control.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      
+      if (selectedDate > today) {
+        return { 'futureDate': true };
+      }
+      
+      return null;
     };
   }
 
@@ -543,8 +556,12 @@ export class RegisterComponent implements OnInit {
       if (field.errors['required']) return `${fieldName} is required`;
       if (field.errors['email']) return 'Invalid email format';
       if (field.errors['minlength']) return `${fieldName} is too short`;
-      if (field.errors['pattern']) return `Invalid ${fieldName} format`;
+      if (field.errors['pattern']) {
+        if (fieldName === 'pincode') return 'PIN code must be exactly 6 digits';
+        return `Invalid ${fieldName} format`;
+      }
       if (field.errors['passwordStrength']) return 'Password must contain uppercase, lowercase, number, and special character';
+      if (field.errors['futureDate']) return 'Date of birth cannot be in the future';
     }
     return '';
   }
